@@ -13,10 +13,11 @@ Voir [spec-taches-notes-veille.md](./spec-taches-notes-veille.md) pour la spéci
 <img width="714" height="593" alt="Capture d’écran 2026-07-16 à 21 38 39" src="https://github.com/user-attachments/assets/32ea0e84-4e15-4f18-bdcc-2fb538a575a1" />
 <img width="700" height="501" alt="Capture d’écran 2026-07-16 à 21 38 46" src="https://github.com/user-attachments/assets/6ee8ba8d-762b-4692-8520-63d58cf1aa40" />
 
-
-<img width="710" height="326" alt="Capture d’écran 2026-07-16 à 21 39 05" src="https://github.com/user-attachments/assets/56fa12e2-3c03-4934-a0ce-b8c90c4d904d" />
+<br>
 <img width="709" height="562" alt="Capture d’écran 2026-07-16 à 21 38 57" src="https://github.com/user-attachments/assets/5a973566-5bbe-4118-ab2e-ec4b594a8df5" />
 <img width="672" height="499" alt="Capture d’écran 2026-07-16 à 21 39 15" src="https://github.com/user-attachments/assets/91cee900-887d-4509-85d7-c30229a42297" />
+<img width="710" height="326" alt="Capture d’écran 2026-07-16 à 21 39 05" src="https://github.com/user-attachments/assets/56fa12e2-3c03-4934-a0ce-b8c90c4d904d" />
+
 
 
 
