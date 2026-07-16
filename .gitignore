@@ -1,0 +1,38 @@
+# Environnement / secrets
+.env
+.env.local
+.env.*.local
+
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+backend/app/*.db
+
+# Pièces jointes uploadées localement
+backend/app/uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+frontend/dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Éditeurs / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp

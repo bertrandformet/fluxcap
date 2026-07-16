@@ -1,0 +1,584 @@
+/* POC non stylé : mise en page minimale pour la lisibilité, l'habillage viendra ensuite */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #111;
+  background: #fafafa;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.context-switch {
+  display: flex;
+}
+
+.context-switch button.active {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.groupe-contexte {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.groupe-contexte button {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid #ccc;
+  margin: 0;
+  padding: 0.4rem 0.8rem;
+  background: #fff;
+}
+
+.groupe-contexte .bouton-conges {
+  border-right: none;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.tab.active {
+  border-bottom: 2px solid #333;
+  font-weight: bold;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.task-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.task-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-card h3 {
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #eee;
+}
+
+.task-meta {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.25rem 0;
+}
+
+.task-actions,
+.cloture-actions,
+.veille-actions,
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bouton-icone {
+  min-width: 2.25rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.bouton-icone.actif {
+  background: #333;
+  filter: none;
+}
+
+.pomodoro {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pomodoro input {
+  width: 3.5rem;
+}
+
+.pomodoro-actif {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+  min-width: 12rem;
+}
+
+.pomodoro-info {
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-phase {
+  font-weight: bold;
+}
+
+.pomodoro-barre {
+  height: 0.4rem;
+  background: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pomodoro-progression {
+  height: 100%;
+  background: #333;
+  transition: width 1s linear;
+}
+
+.pomodoro-controles {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.bloc-recurrentes {
+  border: 2px dashed #888;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  margin-top: 1.5rem;
+}
+
+.bouton-nouvelle-tache {
+  margin-bottom: 1rem;
+}
+
+.bouton-conges.actif {
+  background: #333;
+  color: #fff;
+}
+
+.taches-grisees {
+  opacity: 0.55;
+  filter: grayscale(70%);
+}
+
+.veille-domaine {
+  margin-bottom: 1.25rem;
+}
+
+.veille-item {
+  border-bottom: 1px solid #eee;
+  padding: 0.5rem 0;
+}
+
+.import-lien {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background: #fff;
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+}
+
+.note-item {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.5rem;
+  background: #fff;
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.note-actions-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.groupe-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.groupe-actions:not(:first-child) {
+  padding-left: 0.5rem;
+  border-left: 1px solid #ddd;
+}
+
+.note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.explication {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.domaine-groupe {
+  margin-bottom: 1.25rem;
+}
+
+.domaine-list {
+  list-style: none;
+  padding: 0;
+}
+
+.domaine-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  background: #fff;
+}
+
+.domaine-item span {
+  flex: 1;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.modal-note {
+  font-style: italic;
+  color: #555;
+}
+
+.compteur {
+  font-weight: bold;
+}
+
+.erreur {
+  color: #b00020;
+}
+
+.markdown-editor {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.markdown-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  padding: 0.3rem;
+  background: #eee;
+  border-bottom: 1px solid #ccc;
+}
+
+.markdown-toolbar button {
+  min-width: 1.75rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.markdown-editor textarea {
+  width: 100%;
+  border: none;
+  padding: 0.5rem;
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+}
+
+.markdown-editor textarea:focus {
+  outline: none;
+}
+
+.markdown-apercu {
+  padding: 0.5rem 0.75rem;
+  min-height: 4rem;
+}
+
+.markdown-apercu :first-child {
+  margin-top: 0;
+}
+
+.markdown-apercu :last-child {
+  margin-bottom: 0;
+}
+
+.info {
+  color: #0a5c9e;
+}
+
+.badge-alerte {
+  background: #fde0d0;
+  color: #a03e00;
+  font-weight: bold;
+}
+
+.filtre-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.selection-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+.note-checkbox {
+  margin-right: 0.4rem;
+}
+
+.champ-fichier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  border: 1px solid #767676;
+  border-radius: 4px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.9rem;
+  background: #efefef;
+  cursor: pointer;
+}
+
+.champ-fichier input[type="file"] {
+  /* input natif masqué : le label ci-dessus tient lieu de bouton cliquable */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.pieces-jointes {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0;
+}
+
+.pieces-jointes li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.piece-jointe-image {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.repartition {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.repartition-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.repartition-label {
+  width: 9rem;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repartition-barre {
+  flex: 1;
+  height: 0.6rem;
+  background: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.repartition-remplissage {
+  height: 100%;
+  background: #333;
+}
+
+.repartition-valeur {
+  width: 3.5rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.entete-ecran {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panneau-sources {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0 1.5rem;
+  background: #fff;
+}
+
+.filtre-domaines {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.filtre-domaine-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.source-inactive {
+  color: #999;
+  text-decoration: line-through;
+}
+
+/* Mobile : barre d'onglets flottante en bas d'écran, plus accessible au pouce */
+@media (max-width: 640px) {
+  .app {
+    padding-bottom: 5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    gap: 0;
+    margin: 0;
+    padding: 0.4rem 0.3rem calc(0.4rem + env(safe-area-inset-bottom));
+    background: #fff;
+    border-bottom: none;
+    border-top: 1px solid #ddd;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab.active {
+    border-bottom: none;
+    border-top: 2px solid #333;
+  }
+}
