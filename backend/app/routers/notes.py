@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFil
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.config import UPLOAD_DIR
 from app.database import get_db
 from app.models import Note, PieceJointe, Priorite, Tache
 from app.schemas import NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
@@ -20,8 +21,7 @@ from app.services.export_notes import GENERATEURS
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
-UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 MAX_TAILLE_OCTETS = 10 * 1024 * 1024  # 10 Mo
 
 

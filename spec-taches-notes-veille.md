@@ -11,7 +11,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 |---|---|
 | PWA React + FastAPI, logique et écrans locaux | ✅ |
 | Authentification (mot de passe / WebAuthn) | ⏳ hors périmètre POC |
-| Déploiement Vercel/Render/OVH | ⏳ hors périmètre POC |
+| Déploiement Vercel/Render | 🚧 configuration prête (render.yaml, variables d'env), déploiement effectif à faire côté comptes Render/Vercel |
 | Planning des notifications (horaires Pro/Perso) | ⏳ hors périmètre POC — aucune notification push |
 | Mode congés | ⚠️ bascule visuelle + Pro grisé/dépriorisé implémentés ; pas de changement de planning de notifications (puisqu'aucune notification n'existe encore) |
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
@@ -32,7 +32,7 @@ Les domaines/sources ne sont plus des listes figées (DGESCO, DNE, DINUM...) : i
 ## Architecture générale
 - **PWA multiplateforme** (web, mobile iOS/Android, desktop) — un seul code, navigation responsive (barre d'onglets flottante en bas d'écran sur mobile, nav classique en haut sur desktop)
 - **Stack** : React + Vite (frontend) + FastAPI + SQLite (backend)
-- **Hébergement gratuit** (cible finale, pas encore fait) : Vercel (frontend) + Render (backend, cold start toléré). Repli possible : serveur OVH personnel existant (utilisé pour uneIAparjour.fr)
+- **Hébergement** (cible finale, config prête, déploiement à faire) : Vercel (frontend, gratuit) + Render (backend, plan payant Starter ~7$/mois requis pour le disque persistant SQLite/pièces jointes). Repli possible : serveur OVH personnel existant (utilisé pour uneIAparjour.fr)
 - **Repo public** avec données factices/exemples ; vraies données et configuration dans `.env` ignoré par git, jamais commité
 - **Authentification** (pas encore faite) : mot de passe classique ET Face ID/Touch ID (WebAuthn/passkey), les deux disponibles au choix
 - **Approche de développement** : POC fonctionnel d'abord dans Claude Code (logique et données), habillage visuel ensuite via Claude Design une fois le code existant, avec handoff retour vers Claude Code
