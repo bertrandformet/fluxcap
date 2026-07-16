@@ -8,6 +8,33 @@ import {
   serialiserCredentialInscription,
 } from "../utils/webauthn.js";
 
+function CodeRecuperation({ code, onContinuer }) {
+  return (
+    <div className="tnv-form" style={{ width: "100%", maxWidth: 360 }}>
+      <div>
+        <p className="tnv-eyebrow">Important</p>
+        <h1 className="tnv-h1" style={{ fontSize: 24 }}>
+          Ton code de récupération
+        </h1>
+      </div>
+      <p className="tnv-meta-text">
+        Note ce code quelque part en sécurité (gestionnaire de mots de passe, papier...). Il te permettra de
+        redéfinir un mot de passe si tu perds l'accès à ton mot de passe et à tes clés d'accès. Il ne sera plus
+        jamais affiché — un nouveau sera généré si tu l'utilises.
+      </p>
+      <p
+        className="tnv-h1"
+        style={{ fontSize: 22, textAlign: "center", letterSpacing: 1, padding: "var(--tnv-space-4)", background: "var(--tnv-card-2)", borderRadius: "var(--tnv-radius-card)" }}
+      >
+        {code}
+      </p>
+      <button type="button" className="tnv-btn tnv-btn--primary" onClick={onContinuer}>
+        J'ai noté ce code, continuer
+      </button>
+    </div>
+  );
+}
+
 export default function Connexion({ onConnecte }) {
   const [statutConnu, setStatutConnu] = useState(false);
   const [configure, setConfigure] = useState(false);
@@ -15,8 +42,12 @@ export default function Connexion({ onConnecte }) {
   const [motDePasse, setMotDePasse] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [nomAppareil, setNomAppareil] = useState("");
+  const [modeRecuperation, setModeRecuperation] = useState(false);
+  const [codeRecup, setCodeRecup] = useState("");
+  const [nouveauMotDePasse, setNouveauMotDePasse] = useState("");
   const [erreur, setErreur] = useState(null);
   const [enCours, setEnCours] = useState(false);
+  const [codeAAfficher, setCodeAAfficher] = useState(null);
 
   useEffect(() => {
     api
@@ -34,6 +65,12 @@ export default function Connexion({ onConnecte }) {
     return repli;
   }
 
+  function terminerConnexion(reponse) {
+    api.definirJeton(reponse.jeton);
+    if (reponse.code_recuperation) setCodeAAfficher(reponse.code_recuperation);
+    else onConnecte();
+  }
+
   async function soumettreMotDePasse(e) {
     e.preventDefault();
     setErreur(null);
@@ -44,10 +81,27 @@ export default function Connexion({ onConnecte }) {
     setEnCours(true);
     try {
       const reponse = configure ? await api.authConnexion(motDePasse) : await api.authConfigurerMotDePasse(motDePasse);
-      api.definirJeton(reponse.jeton);
-      onConnecte();
+      terminerConnexion(reponse);
     } catch (err) {
       setErreur(configure ? "Mot de passe incorrect." : err.message.replace(/^\d+ [^—]+— /, ""));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  async function soumettreRecuperation(e) {
+    e.preventDefault();
+    setErreur(null);
+    if (nouveauMotDePasse.length < 8) {
+      setErreur("Le nouveau mot de passe doit faire au moins 8 caractères.");
+      return;
+    }
+    setEnCours(true);
+    try {
+      const reponse = await api.authRecuperer(codeRecup, nouveauMotDePasse);
+      terminerConnexion(reponse);
+    } catch (err) {
+      setErreur("Code de récupération incorrect.");
     } finally {
       setEnCours(false);
     }
@@ -61,8 +115,7 @@ export default function Connexion({ onConnecte }) {
       const options = await api.webauthnOptionsInscription(nom);
       const credential = await navigator.credentials.create({ publicKey: optionsInscriptionDepuisJson(options) });
       const reponse = await api.webauthnVerifierInscription(nom, serialiserCredentialInscription(credential));
-      api.definirJeton(reponse.jeton);
-      onConnecte();
+      terminerConnexion(reponse);
     } catch (err) {
       setErreur(messageErreur(err, "Impossible d'enregistrer cette clé d'accès."));
     } finally {
@@ -77,8 +130,7 @@ export default function Connexion({ onConnecte }) {
       const options = await api.webauthnOptionsAuthentification();
       const credential = await navigator.credentials.get({ publicKey: optionsAuthentificationDepuisJson(options) });
       const reponse = await api.webauthnVerifierAuthentification(serialiserCredentialAuthentification(credential));
-      api.definirJeton(reponse.jeton);
-      onConnecte();
+      terminerConnexion(reponse);
     } catch (err) {
       setErreur(messageErreur(err, "Échec de la connexion par clé d'accès."));
     } finally {
@@ -94,8 +146,54 @@ export default function Connexion({ onConnecte }) {
     );
   }
 
+  if (codeAAfficher) {
+    return (
+      <div className="tnv-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+        <CodeRecuperation code={codeAAfficher} onContinuer={onConnecte} />
+      </div>
+    );
+  }
+
   const webauthnUtilisable = webauthnDisponible && estWebauthnDisponible();
   const proposerInscriptionCle = !configure && estWebauthnDisponible();
+
+  if (configure && modeRecuperation) {
+    return (
+      <div className="tnv-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+        <form onSubmit={soumettreRecuperation} className="tnv-form" style={{ width: "100%", maxWidth: 360 }}>
+          <div>
+            <p className="tnv-eyebrow">Tâches, Notes &amp; Veille</p>
+            <h1 className="tnv-h1" style={{ fontSize: 24 }}>
+              Récupération
+            </h1>
+          </div>
+          <p className="tnv-meta-text">Entre le code de récupération noté au premier réglage, et choisis un nouveau mot de passe.</p>
+          {erreur && <p className="tnv-error">{erreur}</p>}
+          <input
+            className="tnv-input"
+            type="text"
+            placeholder="Code de récupération"
+            value={codeRecup}
+            onChange={(e) => setCodeRecup(e.target.value)}
+            autoFocus
+          />
+          <input
+            className="tnv-input"
+            type="password"
+            placeholder="Nouveau mot de passe"
+            value={nouveauMotDePasse}
+            onChange={(e) => setNouveauMotDePasse(e.target.value)}
+          />
+          <button type="submit" className="tnv-btn tnv-btn--primary" disabled={enCours || !codeRecup || !nouveauMotDePasse}>
+            {enCours ? "…" : "Réinitialiser le mot de passe"}
+          </button>
+          <button type="button" className="tnv-btn tnv-btn--ghost" onClick={() => { setModeRecuperation(false); setErreur(null); }}>
+            Annuler
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="tnv-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
@@ -144,6 +242,12 @@ export default function Connexion({ onConnecte }) {
             {enCours ? "…" : configure ? "Se connecter avec le mot de passe" : "Définir le mot de passe"}
           </button>
         </form>
+
+        {configure && (
+          <button type="button" className="tnv-btn tnv-btn--ghost" onClick={() => setModeRecuperation(true)}>
+            Mot de passe oublié ?
+          </button>
+        )}
 
         {proposerInscriptionCle && (
           <>

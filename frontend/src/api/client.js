@@ -87,6 +87,8 @@ export const api = {
     request(`/auth/setup-mot-de-passe`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
   authConnexion: (mot_de_passe) =>
     request(`/auth/login`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
+  authRecuperer: (code, nouveau_mot_de_passe) =>
+    request(`/auth/recuperer`, { method: "POST", body: JSON.stringify({ code, nouveau_mot_de_passe }) }),
 
   webauthnOptionsInscription: (nom) =>
     request(`/auth/webauthn/inscription/options`, { method: "POST", body: JSON.stringify({ nom }) }),

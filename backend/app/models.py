@@ -230,6 +230,10 @@ class Utilisateur(Base):
     tentatives_echouees: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     verrouille_jusqu_a: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
+    # Code de récupération à usage unique (regénéré à chaque utilisation), affiché en
+    # clair une seule fois au client — seul son hash est conservé.
+    code_recuperation_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
     identifiants_webauthn: Mapped[list["IdentifiantWebauthn"]] = relationship(
         back_populates="utilisateur", cascade="all, delete-orphan"
     )

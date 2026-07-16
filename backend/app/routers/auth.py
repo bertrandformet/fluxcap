@@ -13,7 +13,15 @@ from webauthn.helpers.structs import PublicKeyCredentialDescriptor, UserVerifica
 from app.config import WEBAUTHN_ORIGIN, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME
 from app.database import get_db
 from app.models import DefiWebauthn, IdentifiantWebauthn, Utilisateur
-from app.services.securite import creer_jeton_session, hacher_mot_de_passe, lire_jeton_session, verifier_mot_de_passe
+from app.services.securite import (
+    creer_jeton_session,
+    formater_code_recuperation,
+    generer_code_recuperation,
+    hacher_mot_de_passe,
+    lire_jeton_session,
+    normaliser_code_recuperation,
+    verifier_mot_de_passe,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -28,6 +36,12 @@ class MotDePasseEntree(BaseModel):
 
 class SessionSortie(BaseModel):
     jeton: str
+    code_recuperation: Optional[str] = None
+
+
+class RecuperationEntree(BaseModel):
+    code: str
+    nouveau_mot_de_passe: str
 
 
 class StatutSortie(BaseModel):
@@ -87,6 +101,12 @@ def _utilisateur_pour_inscription(authorization: Optional[str], db: Session) -> 
     return utilisateur
 
 
+def _generer_code_recuperation(utilisateur: Utilisateur) -> str:
+    code = generer_code_recuperation()
+    utilisateur.code_recuperation_hash = hacher_mot_de_passe(code)
+    return formater_code_recuperation(code)
+
+
 def _stocker_defi(db: Session, defi: bytes, type_defi: str) -> None:
     db.query(DefiWebauthn).filter(DefiWebauthn.type == type_defi).delete()
     db.add(DefiWebauthn(defi=bytes_to_base64url(defi), type=type_defi))
@@ -123,8 +143,9 @@ def configurer_mot_de_passe(entree: MotDePasseEntree, db: Session = Depends(get_
         utilisateur = Utilisateur(id=1)
         db.add(utilisateur)
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(entree.mot_de_passe)
+    code_recuperation = _generer_code_recuperation(utilisateur)
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id))
+    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
 
 
 @router.post("/login", response_model=SessionSortie)
@@ -152,6 +173,27 @@ def se_connecter(entree: MotDePasseEntree, db: Session = Depends(get_db)):
     utilisateur.verrouille_jusqu_a = None
     db.commit()
     return SessionSortie(jeton=creer_jeton_session(utilisateur.id))
+
+
+@router.post("/recuperer", response_model=SessionSortie)
+def recuperer_compte(entree: RecuperationEntree, db: Session = Depends(get_db)):
+    """Réinitialise le mot de passe avec le code de récupération à usage unique affiché
+    au premier réglage. Pas de limitation de débit dédiée : le code a ~80 bits d'entropie,
+    un bruteforce réseau est hors de portée."""
+    utilisateur = _obtenir_utilisateur(db)
+    if not utilisateur or not utilisateur.code_recuperation_hash:
+        raise HTTPException(status_code=401, detail="Code de récupération invalide")
+    if not verifier_mot_de_passe(normaliser_code_recuperation(entree.code), utilisateur.code_recuperation_hash):
+        raise HTTPException(status_code=401, detail="Code de récupération invalide")
+    if len(entree.nouveau_mot_de_passe) < 8:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")
+
+    utilisateur.mot_de_passe_hash = hacher_mot_de_passe(entree.nouveau_mot_de_passe)
+    utilisateur.tentatives_echouees = 0
+    utilisateur.verrouille_jusqu_a = None
+    code_recuperation = _generer_code_recuperation(utilisateur)
+    db.commit()
+    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
 
 
 # --- WebAuthn (Face ID / Touch ID / clé de sécurité) ---
@@ -183,6 +225,7 @@ def verifier_inscription(
     entree: VerifierInscriptionEntree, authorization: Optional[str] = Header(None), db: Session = Depends(get_db)
 ):
     utilisateur = _utilisateur_pour_inscription(authorization, db)
+    premiere_configuration = not _deja_configure(utilisateur)
     defi = _consommer_defi(db, "inscription")
     try:
         verification = webauthn.verify_registration_response(
@@ -203,8 +246,9 @@ def verifier_inscription(
             compteur_signature=verification.sign_count,
         )
     )
+    code_recuperation = _generer_code_recuperation(utilisateur) if premiere_configuration else None
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id))
+    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
 
 
 @router.post("/webauthn/authentification/options")
