@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
+import DomainBadge from "../components/DomainBadge.jsx";
+import { IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
 
 function formatTaille(octets) {
@@ -16,6 +18,7 @@ export default function Notes() {
   const [erreur, setErreur] = useState(null);
   const [info, setInfo] = useState(null);
 
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [lien, setLien] = useState("");
   const [titre, setTitre] = useState("");
   const [apercu, setApercu] = useState("");
@@ -34,7 +37,7 @@ export default function Notes() {
 
   const [modeSelection, setModeSelection] = useState(false);
   const [selection, setSelection] = useState(new Set());
-  const [tagEnMasse, setTagEnMasse] = useState("");
+  const [tagSheetOuvert, setTagSheetOuvert] = useState(false);
 
   useEffect(() => {
     api.getDomaines().then(setDomaines).catch((e) => setErreur(e.message));
@@ -76,6 +79,7 @@ export default function Notes() {
       setContenu("");
       setDomaineImport("");
       setFichiersAJoindre([]);
+      setFormulaireOuvert(false);
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -185,11 +189,10 @@ export default function Notes() {
     }
   }
 
-  async function appliquerTagEnMasse() {
-    if (selection.size === 0 || !tagEnMasse) return;
+  async function appliquerTagEnMasse(domaineId) {
+    if (selection.size === 0) return;
     try {
-      await Promise.all([...selection].map((id) => api.modifierNote(id, { domaine_id: Number(tagEnMasse) })));
-      setTagEnMasse("");
+      await Promise.all([...selection].map((id) => api.modifierNote(id, { domaine_id: domaineId })));
       setSelection(new Set());
       charger();
     } catch (err) {
@@ -224,111 +227,106 @@ export default function Notes() {
     }
   }
 
+  const filtres = [
+    { value: "", label: "Toutes" },
+    { value: "sans_tag", label: "Sans tag" },
+    ...domaines.map((d) => ({ value: String(d.id), label: d.nom })),
+  ];
+
   return (
-    <section>
-      <h2>Notes</h2>
+    <div className="tnv-screen">
+      <div className="tnv-screen-head">
+        <div>
+          <p className="tnv-eyebrow">Toutes vos notes</p>
+          <h1 className="tnv-h1">Notes</h1>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="tnv-btn tnv-btn--secondary" onClick={basculerModeSelection}>
+            {modeSelection ? "Annuler" : "Sélectionner"}
+          </button>
+          <button className="tnv-fab" onClick={() => setFormulaireOuvert((o) => !o)} title="Nouvelle note" aria-label="Nouvelle note">
+            +
+          </button>
+        </div>
+      </div>
 
-      {erreur && <p className="erreur">{erreur}</p>}
-      {info && <p className="info">{info}</p>}
+      {erreur && <p className="tnv-error">{erreur}</p>}
+      {info && <p className="tnv-info">{info}</p>}
 
-      <form className="import-lien" onSubmit={ajouterNote}>
-        <input
-          type="url"
-          placeholder="Coller un lien (optionnel)"
-          value={lien}
-          onChange={(e) => setLien(e.target.value)}
-          onBlur={recupererApercu}
-        />
-        <input type="text" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
-        <textarea placeholder="Aperçu (court résumé)" value={apercu} onChange={(e) => setApercu(e.target.value)} />
-        <MarkdownToolbar value={contenu} onChange={setContenu} placeholder="Écrire une note de texte…" />
-        <select value={domaineImport} onChange={(e) => setDomaineImport(e.target.value)}>
-          <option value="">Sans tag de domaine</option>
-          {domaines.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.nom}
-            </option>
-          ))}
-        </select>
-        <label className="champ-fichier">
-          Pièce(s) jointe(s) :
-          <input type="file" multiple onChange={(e) => setFichiersAJoindre([...e.target.files])} />
-        </label>
-        <button type="submit">Ajouter la note</button>
-      </form>
-
-      <div className="filtre-tag">
-        <label>
-          Filtrer par tag :
-          <select value={filtreDomaine} onChange={(e) => setFiltreDomaine(e.target.value)}>
-            <option value="">Tous</option>
-            <option value="sans_tag">Sans tag</option>
+      {formulaireOuvert && (
+        <form className="tnv-form" onSubmit={ajouterNote}>
+          <input
+            className="tnv-input"
+            type="url"
+            placeholder="Coller un lien (optionnel)"
+            value={lien}
+            onChange={(e) => setLien(e.target.value)}
+            onBlur={recupererApercu}
+          />
+          <input className="tnv-input" type="text" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
+          <textarea
+            className="tnv-textarea"
+            placeholder="Aperçu (court résumé)"
+            value={apercu}
+            onChange={(e) => setApercu(e.target.value)}
+          />
+          <MarkdownToolbar value={contenu} onChange={setContenu} placeholder="Écrire une note de texte…" />
+          <select className="tnv-select" value={domaineImport} onChange={(e) => setDomaineImport(e.target.value)}>
+            <option value="">Sans tag de domaine</option>
             {domaines.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.nom}
               </option>
             ))}
           </select>
-        </label>
-        {modeSelection ? (
-          <button className="bouton-icone" onClick={basculerModeSelection} title="Annuler la sélection" aria-label="Annuler la sélection">
-            ✕
+          <label className="champ-fichier">
+            <IconPaperclip size={16} /> Joindre
+            <input type="file" multiple onChange={(e) => setFichiersAJoindre([...e.target.files])} />
+          </label>
+          <button type="submit" className="tnv-btn tnv-btn--primary">
+            Ajouter la note
           </button>
-        ) : (
-          <button onClick={basculerModeSelection}>☑️ Sélectionner</button>
-        )}
+        </form>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {filtres.map((f) => (
+          <button
+            key={f.value}
+            className={filtreDomaine === f.value ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+            onClick={() => setFiltreDomaine(f.value)}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {modeSelection && (
-        <div className="selection-toolbar">
-          <span>{selection.size} sélectionnée(s)</span>
-          <button onClick={toutSelectionner}>Tout</button>
-          <button onClick={supprimerSelection} disabled={selection.size === 0}>
-            Supprimer
-          </button>
-          <select value={tagEnMasse} onChange={(e) => setTagEnMasse(e.target.value)}>
-            <option value="">Ajouter un tag…</option>
-            {domaines.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nom}
-              </option>
-            ))}
-          </select>
-          <button onClick={appliquerTagEnMasse} disabled={selection.size === 0 || !tagEnMasse}>
-            Appliquer
-          </button>
-          <button onClick={partagerSelection} disabled={selection.size === 0}>
-            Partager
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span className="tnv-meta-text">{selection.size} sélectionnée(s)</span>
+          <button className="tnv-btn tnv-btn--ghost" onClick={toutSelectionner}>
+            Tout sélectionner
           </button>
         </div>
       )}
 
-      {!notes && <p>Chargement…</p>}
-      {notes && notes.length === 0 && <p>Aucune note.</p>}
+      {!notes && <p className="tnv-empty">Chargement…</p>}
+      {notes && notes.length === 0 && <p className="tnv-empty">Aucune note.</p>}
 
-      <ul className="note-list">
+      <div className="tnv-stack" style={{ marginBottom: modeSelection && selection.size > 0 ? 90 : 24 }}>
         {notes &&
           notes.map((n) => (
-            <li key={n.id} className="note-item">
-              {modeSelection && (
-                <input
-                  type="checkbox"
-                  checked={selection.has(n.id)}
-                  onChange={() => basculerSelection(n.id)}
-                  className="note-checkbox"
-                />
-              )}
+            <div
+              key={n.id}
+              className={selection.has(n.id) ? "tnv-card tnv-note-card tnv-note-card--selected" : "tnv-card tnv-note-card"}
+            >
               {enEdition === n.id ? (
-                <div className="note-edit">
-                  <input value={editionTitre} onChange={(e) => setEditionTitre(e.target.value)} placeholder="Titre" />
-                  <input value={editionUrl} onChange={(e) => setEditionUrl(e.target.value)} placeholder="Lien" />
-                  <textarea
-                    value={editionApercu}
-                    onChange={(e) => setEditionApercu(e.target.value)}
-                    placeholder="Aperçu"
-                  />
+                <>
+                  <input className="tnv-input" value={editionTitre} onChange={(e) => setEditionTitre(e.target.value)} placeholder="Titre" />
+                  <input className="tnv-input" value={editionUrl} onChange={(e) => setEditionUrl(e.target.value)} placeholder="Lien" />
+                  <textarea className="tnv-textarea" value={editionApercu} onChange={(e) => setEditionApercu(e.target.value)} placeholder="Aperçu" />
                   <MarkdownToolbar value={editionContenu} onChange={setEditionContenu} placeholder="Contenu…" />
-                  <select value={editionDomaine} onChange={(e) => setEditionDomaine(e.target.value)}>
+                  <select className="tnv-select" value={editionDomaine} onChange={(e) => setEditionDomaine(e.target.value)}>
                     <option value="">Sans tag de domaine</option>
                     {domaines.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -336,64 +334,73 @@ export default function Notes() {
                       </option>
                     ))}
                   </select>
-                  <div className="note-actions">
-                    <button className="bouton-icone" onClick={() => enregistrerEdition(n)} title="Enregistrer" aria-label="Enregistrer">
-                      ✓
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="tnv-btn tnv-btn--primary" onClick={() => enregistrerEdition(n)}>
+                      Enregistrer
                     </button>
-                    <button className="bouton-icone" onClick={() => setEnEdition(null)} title="Annuler" aria-label="Annuler">
-                      ✕
+                    <button className="tnv-btn tnv-btn--ghost" onClick={() => setEnEdition(null)}>
+                      Annuler
                     </button>
                   </div>
-                </div>
+                </>
               ) : (
                 <>
-                  <strong>{n.titre}</strong>
-                  {n.domaine ? (
-                    <span className="badge">{n.domaine.nom}</span>
-                  ) : (
-                    <span className="badge badge-alerte">⚠ Sans tag</span>
-                  )}
-                  {n.url && (
-                    <div>
-                      <a href={n.url} target="_blank" rel="noreferrer">
-                        {n.url}
-                      </a>
+                  <div className="tnv-note-card__head">
+                    {modeSelection && (
+                      <button
+                        type="button"
+                        className={selection.has(n.id) ? "tnv-select-dot tnv-select-dot--checked" : "tnv-select-dot"}
+                        onClick={() => basculerSelection(n.id)}
+                        aria-label="Sélectionner"
+                        style={{ marginTop: 3 }}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span className="tnv-task-card__title">{n.titre}</span>
+                      <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
+                        {n.domaine ? <DomainBadge domaine={n.domaine} /> : <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>}
+                      </div>
                     </div>
+                  </div>
+
+                  {n.url && (
+                    <a href={n.url} target="_blank" rel="noreferrer" style={{ fontSize: "var(--tnv-size-caption)" }}>
+                      {n.url}
+                    </a>
                   )}
-                  {n.apercu && <p>{n.apercu}</p>}
-                  {n.contenu && (
-                    <div className="markdown-apercu" dangerouslySetInnerHTML={{ __html: rendreMarkdown(n.contenu) }} />
-                  )}
+                  {n.apercu && <p className="tnv-meta-text">{n.apercu}</p>}
+                  {n.contenu && <div className="markdown-apercu" dangerouslySetInnerHTML={{ __html: rendreMarkdown(n.contenu) }} />}
 
                   {n.pieces_jointes.length > 0 && (
-                    <ul className="pieces-jointes">
+                    <div className="tnv-stack" style={{ gap: 6, marginBottom: 0 }}>
                       {n.pieces_jointes.map((p) => (
-                        <li key={p.id}>
+                        <div key={p.id} className="tnv-note-card__attachment">
                           {p.type_mime && p.type_mime.startsWith("image/") ? (
-                            <img src={api.urlPieceJointe(p.id)} alt={p.nom_original} className="piece-jointe-image" />
+                            <img src={api.urlPieceJointe(p.id)} alt={p.nom_original} className="tnv-note-card__attachment-image" />
                           ) : null}
-                          <span>
+                          <span className="tnv-meta-text" style={{ flex: 1 }}>
                             {p.nom_original} ({formatTaille(p.taille_octets)})
                           </span>
                           <button
-                            className="bouton-icone"
+                            className="tnv-icon-btn"
                             onClick={() => api.telechargerPieceJointe(p.id, p.nom_original)}
                             title="Télécharger"
                             aria-label="Télécharger"
                           >
-                            ⬇️
+                            <IconDownload size={16} />
                           </button>
-                          <button className="bouton-icone" onClick={() => supprimerPieceJointe(p)} title="Supprimer" aria-label="Supprimer">
-                            🗑
+                          <button className="tnv-icon-btn" onClick={() => supprimerPieceJointe(p)} title="Supprimer" aria-label="Supprimer">
+                            <IconTrash size={16} />
                           </button>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
+
                   <div className="note-actions-ligne">
                     <span className="groupe-actions">
                       <label className="champ-fichier">
-                        📎 Joindre
+                        <IconPaperclip size={16} /> Joindre
                         <input
                           type="file"
                           multiple
@@ -406,40 +413,77 @@ export default function Notes() {
                     </span>
 
                     <span className="groupe-actions">
-                      <button className="bouton-icone" onClick={() => commencerEdition(n)} title="Modifier" aria-label="Modifier">
-                        ✏️
+                      <button className="tnv-icon-btn" onClick={() => commencerEdition(n)} title="Modifier" aria-label="Modifier">
+                        <IconEdit size={16} />
                       </button>
-                      <button className="bouton-icone" onClick={() => supprimer(n)} title="Supprimer" aria-label="Supprimer">
-                        🗑
+                      <button className="tnv-icon-btn" onClick={() => supprimer(n)} title="Supprimer" aria-label="Supprimer">
+                        <IconTrash size={16} />
                       </button>
                       <button
-                        className="bouton-icone"
+                        className="tnv-btn tnv-btn--outline"
                         onClick={() => transformerEnTache(n)}
                         disabled={transformees.includes(n.id)}
-                        title={
-                          transformees.includes(n.id)
-                            ? "Tâche créée"
-                            : !n.domaine_id
-                              ? "Ajoutez un tag de domaine pour transformer cette note en tâche"
-                              : "Transformer en tâche"
-                        }
-                        aria-label="Transformer en tâche"
+                        title={!n.domaine_id ? "Ajoutez un tag de domaine pour transformer cette note en tâche" : undefined}
                       >
-                        {transformees.includes(n.id) ? "✓" : "→✅"}
+                        {transformees.includes(n.id) ? "Tâche créée ✓" : "Transformer en tâche"}
                       </button>
                     </span>
 
                     <span className="groupe-actions">
-                      <button onClick={() => exporter(n, "txt")}>⬇️ txt</button>
-                      <button onClick={() => exporter(n, "md")}>⬇️ md</button>
-                      <button onClick={() => exporter(n, "docx")}>⬇️ docx</button>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "txt")}>
+                        .txt
+                      </button>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "md")}>
+                        .md
+                      </button>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "docx")}>
+                        .docx
+                      </button>
                     </span>
                   </div>
                 </>
               )}
-            </li>
+            </div>
           ))}
-      </ul>
-    </section>
+      </div>
+
+      {modeSelection && selection.size > 0 && (
+        <div className="tnv-bulk-bar">
+          <button className="tnv-btn tnv-btn--ghost" onClick={() => setTagSheetOuvert(true)}>
+            Tag
+          </button>
+          <button className="tnv-btn tnv-btn--ghost" onClick={partagerSelection}>
+            Partager
+          </button>
+          <button className="tnv-btn tnv-btn--danger-ghost" onClick={supprimerSelection}>
+            Supprimer
+          </button>
+        </div>
+      )}
+
+      {tagSheetOuvert && (
+        <div className="tnv-overlay tnv-sheet" onClick={() => setTagSheetOuvert(false)}>
+          <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()}>
+            <div className="tnv-sheet__grabber" />
+            <span className="tnv-sheet__title">Ajouter un tag à {selection.size} note(s)</span>
+            {domaines.map((d) => (
+              <button
+                key={d.id}
+                className="tnv-decision-option tnv-decision-option--secondary"
+                onClick={() => {
+                  appliquerTagEnMasse(d.id);
+                  setTagSheetOuvert(false);
+                }}
+              >
+                {d.nom}
+              </button>
+            ))}
+            <button className="tnv-btn tnv-btn--ghost" onClick={() => setTagSheetOuvert(false)}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

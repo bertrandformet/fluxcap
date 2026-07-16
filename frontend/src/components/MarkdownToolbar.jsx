@@ -49,28 +49,29 @@ export default function MarkdownToolbar({ value, onChange, placeholder, rows = 6
   ];
 
   return (
-    <div className="markdown-editor">
-      <div className="markdown-toolbar">
+    <div className="tnv-md-container">
+      <div className="tnv-md-toolbar">
         {boutons.map((b) => (
-          <button key={b.title} type="button" title={b.title} onClick={b.action} disabled={apercu}>
+          <button key={b.title} type="button" className="tnv-md-toolbar__btn" title={b.title} onClick={b.action} disabled={apercu}>
             {b.label}
           </button>
         ))}
         <button
           type="button"
-          className={apercu ? "active" : ""}
+          className="tnv-md-toolbar__btn"
           onClick={() => setApercu((a) => !a)}
-          style={{ marginLeft: "auto" }}
+          style={{ marginLeft: "auto", color: apercu ? "var(--tnv-accent)" : undefined }}
         >
           {apercu ? "Éditer" : "Aperçu"}
         </button>
       </div>
 
       {apercu ? (
-        <div className="markdown-apercu" dangerouslySetInnerHTML={{ __html: rendreMarkdown(value) }} />
+        <div className="markdown-apercu" style={{ padding: "16px 18px" }} dangerouslySetInnerHTML={{ __html: rendreMarkdown(value) }} />
       ) : (
         <textarea
           ref={ref}
+          className="tnv-md-editor"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

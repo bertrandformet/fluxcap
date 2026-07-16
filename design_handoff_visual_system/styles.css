@@ -1,0 +1,313 @@
+/* ==========================================================================
+   Tâches, Notes & Veille — Système de design (CSS uniquement)
+   Référence retenue : proposition 2a (structure "Repère" + accent bleu de "Clarté")
+   À intégrer dans le CSS existant du frontend React — aucune classe ici ne
+   dépend d'une structure JSX précise ; ajoutez ces classes aux éléments
+   existants, ou adaptez les sélecteurs à vos composants.
+   ========================================================================== */
+
+/* ---- 1. Tokens ---------------------------------------------------------- */
+:root {
+  /* Neutrals — clair */
+  --tnv-bg: #F6F8F6;
+  --tnv-card: #FFFFFF;
+  --tnv-card-2: #EEF4F0;      /* fond secondaire (blocs hors-quota, chips inactives) */
+  --tnv-text: #132019;
+  --tnv-text-muted: #5D6E66;
+  --tnv-hairline: rgba(19, 60, 45, 0.09);
+
+  /* Accent (unique, usage sobre) */
+  --tnv-accent: #0A84FF;
+  --tnv-accent-bg: rgba(10, 132, 255, 0.12);
+  --tnv-success: var(--tnv-accent); /* case "réalisé" = accent, pas de vert festif */
+  --tnv-danger: #D70015;            /* suppression uniquement */
+  --tnv-warning: #C74B1E;           /* badge "sans tag" uniquement */
+
+  /* Typographie */
+  --tnv-font: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --tnv-size-display: 28px;   /* titre d'écran */
+  --tnv-size-title: 15.5px;   /* titre de carte */
+  --tnv-size-body: 14px;
+  --tnv-size-caption: 12.5px;
+  --tnv-size-label: 11.5px;   /* badges/chips */
+  --tnv-weight-bold: 700;
+  --tnv-weight-semibold: 600;
+  --tnv-weight-regular: 400;
+  --tnv-tracking-display: -0.4px;
+
+  /* Espacement (échelle 4px) */
+  --tnv-space-1: 4px;
+  --tnv-space-2: 8px;
+  --tnv-space-3: 12px;
+  --tnv-space-4: 16px;
+  --tnv-space-5: 20px;
+  --tnv-space-6: 28px;
+
+  /* Forme */
+  --tnv-radius-card: 22px;
+  --tnv-radius-control: 999px;   /* pills, chips, boutons, avatars */
+  --tnv-radius-modal: 24px;
+
+  /* Élévation (discrète — pas d'ombres dures) */
+  --tnv-shadow-card: 0 1px 2px rgba(19, 60, 45, 0.05);
+  --tnv-shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.18);
+  --tnv-shadow-tabbar: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  /* Domaines — teinte variable, même luminosité/chroma (voir §7) */
+  --tnv-domain-l: 0.68;
+  --tnv-domain-c: 0.11;
+}
+
+[data-theme="dark"] {
+  --tnv-bg: #0C1512;
+  --tnv-card: #16211D;
+  --tnv-card-2: #1C2723;
+  --tnv-text: #F2F7F4;
+  --tnv-text-muted: rgba(230, 245, 238, 0.62);
+  --tnv-hairline: rgba(230, 245, 238, 0.12);
+  --tnv-accent-bg: rgba(10, 132, 255, 0.2);
+  --tnv-shadow-card: none;
+  --tnv-domain-l: 0.72;
+}
+
+/* Respecte aussi le thème système si l'app ne force pas data-theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tnv-bg: #0C1512;
+    --tnv-card: #16211D;
+    --tnv-card-2: #1C2723;
+    --tnv-text: #F2F7F4;
+    --tnv-text-muted: rgba(230, 245, 238, 0.62);
+    --tnv-hairline: rgba(230, 245, 238, 0.12);
+    --tnv-accent-bg: rgba(10, 132, 255, 0.2);
+    --tnv-shadow-card: none;
+    --tnv-domain-l: 0.72;
+  }
+}
+
+/* ---- 2. Base ------------------------------------------------------------- */
+body {
+  background: var(--tnv-bg);
+  color: var(--tnv-text);
+  font-family: var(--tnv-font);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--tnv-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.tnv-screen { padding: 80px 18px 100px; } /* mobile — dégage la status bar/l'encoche */
+@media (min-width: 900px) {
+  .tnv-screen { padding: 36px 44px 64px; }
+}
+
+.tnv-eyebrow {
+  font-size: 13px; font-weight: 500; color: var(--tnv-text-muted); margin: 0 0 2px;
+}
+.tnv-h1 {
+  font-size: var(--tnv-size-display); font-weight: var(--tnv-weight-bold);
+  letter-spacing: var(--tnv-tracking-display); color: var(--tnv-text); margin: 0;
+}
+.tnv-section-label {
+  font-size: 12px; font-weight: 700; color: var(--tnv-text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ---- 3. Cartes & badges --------------------------------------------------
+   Carte de tâche / veille / note : bloc réutilisé partout.               */
+.tnv-card {
+  background: var(--tnv-card);
+  border: 1px solid var(--tnv-hairline);
+  border-radius: var(--tnv-radius-card);
+  box-shadow: var(--tnv-shadow-card);
+  padding: 16px 18px;
+}
+.tnv-card--dashed {
+  background: var(--tnv-card-2);
+  border: 1px dashed var(--tnv-hairline);
+  box-shadow: none;
+}
+.tnv-card--muted { opacity: 0.45; } /* tâche reportée/abandonnée */
+
+.tnv-task-card { display: flex; align-items: flex-start; gap: 12px; }
+.tnv-task-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.tnv-task-card__title {
+  font-size: var(--tnv-size-title); font-weight: var(--tnv-weight-semibold); color: var(--tnv-text);
+}
+.tnv-task-card__title--done { text-decoration: line-through; text-decoration-color: var(--tnv-text-muted); }
+.tnv-task-card__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tnv-task-card__actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.tnv-meta-text { font-size: var(--tnv-size-caption); color: var(--tnv-text-muted); }
+
+/* Badge générique (statut, "reportée d'hier", etc.) */
+.tnv-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--tnv-size-label); font-weight: 600; padding: 3px 9px; border-radius: var(--tnv-radius-control);
+}
+.tnv-badge--accent { color: var(--tnv-accent); background: var(--tnv-accent-bg); }
+.tnv-badge--warning { color: var(--tnv-warning); background: color-mix(in oklab, var(--tnv-warning) 12%, transparent); }
+
+/* Badge de domaine — la teinte vient de --domain-hue posé inline sur l'élément,
+   ex: <span class="tnv-badge tnv-badge--domain" style="--domain-hue:250">   */
+.tnv-badge--domain {
+  color: oklch(0.42 0.12 var(--domain-hue, 250));
+  background: oklch(0.93 0.055 var(--domain-hue, 250));
+}
+[data-theme="dark"] .tnv-badge--domain {
+  color: oklch(0.90 0.07 var(--domain-hue, 250));
+  background: oklch(0.33 0.07 var(--domain-hue, 250));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tnv-badge--domain {
+    color: oklch(0.90 0.07 var(--domain-hue, 250));
+    background: oklch(0.33 0.07 var(--domain-hue, 250));
+  }
+}
+.tnv-dot {
+  width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0;
+  background: oklch(var(--tnv-domain-l) var(--tnv-domain-c) var(--domain-hue, 250));
+}
+
+/* ---- 4. Boutons & icônes -------------------------------------------------- */
+.tnv-btn {
+  font-family: var(--tnv-font); font-size: 13px; font-weight: 600; cursor: pointer;
+  border-radius: var(--tnv-radius-control); padding: 8px 16px; border: none;
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.tnv-btn--primary { background: var(--tnv-accent); color: #fff; }
+.tnv-btn--secondary { background: var(--tnv-card-2); color: var(--tnv-text); border: 1px solid var(--tnv-hairline); }
+.tnv-btn--outline { background: none; color: var(--tnv-accent); border: 1px solid var(--tnv-accent); }
+.tnv-btn--ghost { background: none; color: var(--tnv-text-muted); }
+.tnv-btn--danger-ghost { background: none; color: var(--tnv-danger); }
+
+.tnv-icon-btn {
+  border: none; background: none; cursor: pointer; padding: 2px;
+  width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--tnv-text-muted);
+}
+.tnv-icon-btn--active { color: var(--tnv-accent); }
+
+.tnv-fab {
+  width: 34px; height: 34px; border-radius: 999px; border: none; background: var(--tnv-accent);
+  color: #fff; font-size: 18px; cursor: pointer;
+}
+
+/* ---- 5. Sélecteur de contexte Pro/Perso & chips filtrantes ---------------- */
+.tnv-segmented {
+  display: inline-flex; background: var(--tnv-card-2); border-radius: var(--tnv-radius-control);
+  padding: 3px; gap: 2px; border: 1px solid var(--tnv-hairline);
+}
+.tnv-segmented__option {
+  border: none; cursor: pointer; border-radius: var(--tnv-radius-control); padding: 7px 14px;
+  font-size: 13px; font-weight: 600; font-family: var(--tnv-font); background: transparent; color: var(--tnv-text-muted);
+  min-height: 32px;
+}
+.tnv-segmented__option--active { background: var(--tnv-accent); color: #fff; }
+
+.tnv-chip {
+  font-size: var(--tnv-size-caption); font-weight: 600; color: var(--tnv-text-muted);
+  background: var(--tnv-card-2); padding: 6px 12px; border-radius: var(--tnv-radius-control);
+  border: 1px solid var(--tnv-hairline); cursor: pointer;
+}
+.tnv-chip--active { color: #fff; background: var(--tnv-accent); border-color: var(--tnv-accent); }
+
+/* ---- 6. Navigation --------------------------------------------------------
+   Mobile : barre d'onglets flottante. Desktop : nav horizontale en haut.   */
+.tnv-tabbar {
+  position: fixed; left: 14px; right: 14px; bottom: 14px;
+  display: flex; justify-content: space-around;
+  background: color-mix(in oklab, var(--tnv-card) 85%, transparent);
+  backdrop-filter: blur(16px); border-radius: 22px; padding: 9px 4px;
+  box-shadow: var(--tnv-shadow-tabbar); border: 0.5px solid var(--tnv-hairline);
+}
+.tnv-tabbar__item {
+  border: none; background: none; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; color: var(--tnv-text-muted); font-family: var(--tnv-font);
+  min-width: 44px; min-height: 44px; justify-content: center;
+}
+.tnv-tabbar__item--active { color: var(--tnv-accent); }
+.tnv-tabbar__dot { width: 6px; height: 6px; border-radius: 999px; background: transparent; }
+.tnv-tabbar__item--active .tnv-tabbar__dot { background: var(--tnv-accent); }
+.tnv-tabbar__label { font-size: 10.5px; font-weight: 600; }
+
+.tnv-nav {
+  display: flex; gap: 6px; padding: 24px 40px 14px; border-bottom: 1px solid var(--tnv-hairline);
+}
+.tnv-nav__item {
+  border: none; cursor: pointer; border-radius: var(--tnv-radius-control); padding: 8px 16px;
+  font-size: 13.5px; font-weight: 600; font-family: var(--tnv-font); background: none; color: var(--tnv-text-muted);
+}
+.tnv-nav__item--active { background: var(--tnv-accent-bg); color: var(--tnv-accent); }
+
+/* ---- 7. Modales : décision de clôture & pomodoro --------------------------- */
+.tnv-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; z-index: 100;
+}
+[data-theme="dark"] .tnv-overlay { background: rgba(0, 0, 0, 0.6); }
+
+.tnv-sheet {
+  align-items: flex-end; justify-content: center;
+}
+.tnv-sheet__panel {
+  background: var(--tnv-card); border-radius: 24px 24px 0 0; padding: 22px 20px 28px;
+  width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px;
+}
+.tnv-sheet__grabber { width: 36px; height: 4px; border-radius: 999px; background: var(--tnv-hairline); align-self: center; margin-bottom: 6px; }
+.tnv-sheet__title { font-size: 16px; font-weight: 700; }
+.tnv-sheet__subtitle { font-size: 13px; color: var(--tnv-text-muted); margin-bottom: 6px; }
+
+/* Options de décision — même geste visuel qu'un bouton de liste, jamais un piège */
+.tnv-decision-option {
+  border: none; border-radius: 14px; padding: 14px; font-size: 14.5px; font-weight: 600;
+  cursor: pointer; text-align: left; font-family: var(--tnv-font); min-height: 44px;
+}
+.tnv-decision-option--primary { background: var(--tnv-accent-bg); color: var(--tnv-accent); }
+.tnv-decision-option--secondary { background: none; border: 1px solid var(--tnv-hairline); color: var(--tnv-text); }
+.tnv-decision-option--tertiary { background: none; border: 1px solid var(--tnv-hairline); color: var(--tnv-text-muted); }
+
+.tnv-modal-center {
+  align-items: center; justify-content: center; padding: 24px;
+}
+.tnv-pomodoro {
+  background: var(--tnv-card); border-radius: var(--tnv-radius-modal); padding: 28px 24px;
+  width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.tnv-pomodoro__task { font-size: 13px; font-weight: 600; color: var(--tnv-text-muted); text-align: center; }
+.tnv-pomodoro__phase { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--tnv-accent); }
+.tnv-pomodoro__phase--pause { color: var(--tnv-success); }
+.tnv-pomodoro__time { font-size: 52px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- 8. Notes : sélection multiple & barre markdown ------------------------ */
+.tnv-select-dot {
+  width: 20px; height: 20px; border-radius: 999px; border: 1.6px solid var(--tnv-text-muted); flex-shrink: 0;
+}
+.tnv-select-dot--checked { background: var(--tnv-accent); border-color: var(--tnv-accent); }
+
+.tnv-bulk-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--tnv-card);
+  border-top: 1px solid var(--tnv-hairline); padding: 12px 18px; display: flex; justify-content: space-around;
+}
+
+.tnv-md-toolbar {
+  display: flex; gap: 14px; padding: 10px 18px; border-bottom: 1px solid var(--tnv-hairline); overflow-x: auto;
+}
+.tnv-md-toolbar__btn {
+  font-size: 14px; font-weight: 600; color: var(--tnv-text-muted); background: none; border: none;
+  cursor: pointer; flex-shrink: 0; min-width: 32px; min-height: 32px;
+}
+.tnv-md-editor {
+  border: none; outline: none; resize: none; padding: 16px 18px; font-size: 15px; line-height: 1.6;
+  color: var(--tnv-text); background: transparent; font-family: var(--tnv-font); width: 100%; box-sizing: border-box;
+}
+
+/* ---- 9. Tableau de bord : barres factuelles -------------------------------- */
+.tnv-bar-row { display: flex; flex-direction: column; gap: 6px; }
+.tnv-bar-row__labels { display: flex; justify-content: space-between; font-size: 13.5px; }
+.tnv-bar-track { height: 8px; border-radius: 999px; background: var(--tnv-card-2); overflow: hidden; }
+.tnv-bar-fill { height: 100%; border-radius: 999px; background: var(--tnv-accent); } /* width en style inline, ex: width:44% */
+
+/* ---- 10. Switch (sources de veille, congés) -------------------------------- */
+.tnv-switch { width: 40px; height: 24px; border-radius: 999px; background: var(--tnv-hairline); position: relative; border: none; cursor: pointer; }
+.tnv-switch--on { background: var(--tnv-accent); }
+.tnv-switch__knob { width: 20px; height: 20px; border-radius: 999px; background: #fff; position: absolute; top: 2px; left: 2px; transition: left 0.15s; }
+.tnv-switch--on .tnv-switch__knob { left: 18px; }

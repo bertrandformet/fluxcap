@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px;font-family:Inter,system-ui,sans-serif">
+  <div style="display:flex;gap:8px;align-items:center;background:{{ toolbarBg }};padding:6px;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.08)">
+    <button onClick="{{ toggleDesktop }}" style="{{ btnModeMobileStyle }}">Mobile</button>
+    <button onClick="{{ toggleDesktop }}" style="{{ btnModeDesktopStyle }}">Desktop</button>
+    <div style="width:1px;height:20px;background:#00000018;margin:0 2px"></div>
+    <button onClick="{{ toggleDark }}" style="{{ btnDarkStyle }}">{{ darkLabel }}</button>
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ dark }}" hint-size="402,874">
+      {{ appBody }}
+    </x-import>
+  </sc-if>
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ desktopFrameStyle }}">
+      {{ appBody }}
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DOMAINS=[
+{id:'form',name:'Cours & préparation',ctx:'pro',hue:250},
+{id:'pilot',name:'Réunions & pilotage',ctx:'pro',hue:200},
+{id:'admin',name:'Administratif',ctx:'pro',hue:80},
+{id:'maison',name:'Maison',ctx:'perso',hue:150},
+{id:'sante',name:'Santé',ctx:'perso',hue:340},
+{id:'veille',name:'Veille tech',ctx:'perso',hue:20},
+];
+const TASKS=[
+{id:1,title:'Préparer le support de formation Excel',domain:'Cours & préparation',priority:'Aujourd’hui',due:'dans 2 jours',pinned:false,recurring:false,admin:false,reported:false,done:false},
+{id:2,title:'Relire le compte-rendu de pilotage',domain:'Réunions & pilotage',priority:'Cette semaine',due:'dans 4 jours',pinned:false,admin:false,reported:false,done:false},
+{id:3,title:'Répondre aux 3 mails en attente',domain:'Administratif',priority:'Aujourd’hui',due:'aujourd’hui',pinned:false,admin:true,reported:true,done:false},
+{id:4,title:'Préparer les questions pour l’entretien',domain:'Cours & préparation',priority:'Cette semaine',due:'dans 5 jours',pinned:true,admin:false,reported:false,done:false},
+{id:6,title:'Prendre rendez-vous chez le dentiste',domain:'Santé',priority:'Cette semaine',due:'dans 6 jours',pinned:false,admin:true,reported:false,done:false},
+{id:7,title:'Ranger le bureau',domain:'Maison',priority:'Un jour',due:'dans 10 jours',pinned:false,admin:false,reported:false,done:false},
+];
+const RECURRING=[
+{id:5,title:'Vérifier les indicateurs qualité',domain:'Réunions & pilotage'},
+{id:8,title:'Faire 20 minutes d’exercice',domain:'Santé'},
+];
+const VEILLE=[
+{id:1,domain:'Veille tech',title:'Nouveau référentiel de compétences publié',source:'DNE',apercu:'Une mise à jour du référentiel numérique, avec un focus sur l’IA en classe.'},
+{id:2,domain:'Veille tech',title:'Retours d’usage sur les outils d’IA générative',source:'DINUM',apercu:'Synthèse de plusieurs académies sur l’adoption des outils d’IA en 2026.'},
+{id:3,domain:'Cours & préparation',title:'Retour d’expérience : formation hybride',source:'Blog pédagogique',apercu:'Un enseignant partage son organisation pour alterner présentiel et distanciel.'},
+{id:4,domain:'Maison',title:'Comparatif des solutions de domotique 2026',source:'Les Numériques',apercu:'Un tour d’horizon des box domotiques compatibles Matter.'},
+];
+const NOTES=[
+{id:1,title:'Idées pour la formation Excel',domain:'Cours & préparation',tag:true,updated:'hier'},
+{id:2,title:'Lien : comparatif domotique',domain:'Maison',tag:true,updated:'il y a 2 jours'},
+{id:3,title:'Notes de la réunion de pilotage',domain:'Réunions & pilotage',tag:true,updated:'il y a 3 jours'},
+{id:4,title:'Sans titre',domain:null,tag:false,updated:'il y a 5 jours'},
+];
+const DASH_DOMAIN=[
+{domain:'Cours & préparation',count:4,total:9},
+{domain:'Réunions & pilotage',count:2,total:9},
+{domain:'Administratif',count:1,total:9},
+{domain:'Maison',count:1,total:9},
+{domain:'Santé',count:1,total:9},
+];
+const DASH_PRIO=[
+{priority:'Aujourd’hui',count:3,total:9},
+{priority:'Cette semaine',count:4,total:9},
+{priority:'Un jour',count:2,total:9},
+];
+
+class Component extends DCLogic {
+  state={
+    view:'mobile', dark:false, tab:'today', context:'pro',
+    tasks:TASKS.map(t=>({...t})),
+    decisionTaskId:null,
+    pomodoro:{open:false,phase:'focus',running:false,seconds:25*60,focusMin:25,breakMin:5,taskTitle:''},
+    notesSelect:false, selectedNotes:[], noteEditorOpen:false,
+    sourcesOpen:false, veilleFilter:[],
+  };
+
+  componentDidMount(){
+    this._timer=setInterval(()=>{
+      const p=this.state.pomodoro;
+      if(p.open&&p.running&&p.seconds>0){
+        this.setState(s=>({pomodoro:{...s.pomodoro,seconds:s.pomodoro.seconds-1}}));
+      } else if(p.open&&p.running&&p.seconds===0){
+        this.setState(s=>({pomodoro:{...s.pomodoro,running:false,phase:s.pomodoro.phase==='focus'?'pause':'focus',seconds:(s.pomodoro.phase==='focus'?s.pomodoro.breakMin:s.pomodoro.focusMin)*60}}));
+      }
+    },1000);
+  }
+  componentWillUnmount(){ clearInterval(this._timer); }
+
+  domainInfo(name){ return DOMAINS.find(d=>d.name===name) || {hue:0,ctx:'pro'}; }
+  fmtTime(s){ const m=Math.floor(s/60), sec=s%60; return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+
+  renderVals(){
+    const s=this.state;
+    const isMobile = s.view==='mobile';
+    const dark = s.dark;
+
+    const todayTasks = s.tasks.filter(t=>this.domainInfo(t.domain).ctx===s.context).slice(0,4);
+    const recurringForCtx = RECURRING.filter(r=>this.domainInfo(r.domain).ctx===s.context);
+    const veillePreview = VEILLE.filter(v=>this.domainInfo(v.domain).ctx===s.context).slice(0,2);
+
+    const veilleDomains = DOMAINS.map(d=>({
+      ...d,
+      items: VEILLE.filter(v=>v.domain===d.name && (s.veilleFilter.length===0 || s.veilleFilter.includes(d.id)))
+    })).filter(d=>d.items.length>0);
+
+    const toggleDone = (id)=> this.setState(st=>({tasks: st.tasks.map(t=>t.id===id?{...t,done:!t.done}:t)}));
+    const togglePin = (id)=> this.setState(st=>({tasks: st.tasks.map(t=>t.id===id?{...t,pinned:!t.pinned}:t)}));
+
+    const openDecision = (id)=> this.setState({decisionTaskId:id});
+    const closeDecision = ()=> this.setState({decisionTaskId:null});
+    const decideReportTomorrow = ()=> { this.setState({decisionTaskId:null}); };
+    const decideAbandon = (id)=> { this.setState(st=>({tasks: st.tasks.map(t=>t.id===id?{...t,abandoned:true}:t), decisionTaskId:null})); };
+
+    const doneCount = todayTasks.filter(t=>t.done).length;
+    const pendingCount = todayTasks.filter(t=>!t.done && !t.abandoned).length;
+
+    const openPomodoro = (title)=> this.setState(st=>({pomodoro:{...st.pomodoro,open:true,running:false,phase:'focus',seconds:st.pomodoro.focusMin*60,taskTitle:title}}));
+    const closePomodoro = ()=> this.setState(st=>({pomodoro:{...st.pomodoro,open:false,running:false}}));
+    const togglePomodoroRun = ()=> this.setState(st=>({pomodoro:{...st.pomodoro,running:!st.pomodoro.running}}));
+
+    const toggleNotesSelect = ()=> this.setState(st=>({notesSelect:!st.notesSelect, selectedNotes:[]}));
+    const toggleNoteSelected = (id)=> this.setState(st=>({selectedNotes: st.selectedNotes.includes(id)? st.selectedNotes.filter(x=>x!==id) : [...st.selectedNotes,id]}));
+    const openNoteEditor = ()=> this.setState({noteEditorOpen:true});
+    const closeNoteEditor = ()=> this.setState({noteEditorOpen:false});
+
+    const toggleVeilleFilter = (id)=> this.setState(st=>({veilleFilter: st.veilleFilter.includes(id)? st.veilleFilter.filter(x=>x!==id): [...st.veilleFilter,id]}));
+    const openSources = ()=> this.setState({sourcesOpen:true});
+    const closeSources = ()=> this.setState({sourcesOpen:false});
+
+    // ---- palette ----
+    const bg = dark ? '#0C1512' : '#F6F8F6';
+    const cardBg = dark ? '#16211D' : '#FFFFFF';
+    const cardBg2 = dark ? '#1C2723' : '#EEF4F0';
+    const textPrimary = dark ? '#F2F7F4' : '#132019';
+    const textSecondary = dark ? 'rgba(230,245,238,0.62)' : '#5D6E66';
+    const hairline = dark ? 'rgba(230,245,238,0.12)' : 'rgba(19,60,45,0.09)';
+    const accent = '#0A84FF';
+    const accentBg = dark ? 'rgba(10,132,255,0.2)' : 'rgba(10,132,255,0.12)';
+    const successColor = accent;
+
+    const domainDot = (name)=>{
+      const info = this.domainInfo(name);
+      return `oklch(0.72 0.14 ${info.hue})`;
+    };
+    const domainChipBg = (name)=>{
+      const info = this.domainInfo(name);
+      return dark ? `oklch(0.33 0.07 ${info.hue})` : `oklch(0.93 0.055 ${info.hue})`;
+    };
+    const domainChipText = (name)=>{
+      const info = this.domainInfo(name);
+      return dark ? `oklch(0.90 0.07 ${info.hue})` : `oklch(0.42 0.12 ${info.hue})`;
+    };
+
+    const screenPad = { padding: isMobile? '80px 20px 104px' : '36px 44px 64px' };
+
+    // ---- shared element builders ----
+    const header = React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}},
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:2}},
+        React.createElement('span',{style:{fontSize:13,color:textSecondary,fontWeight:500}}, s.context==='pro'?'Espace professionnel':'Espace personnel'),
+        React.createElement('span',{style:{fontSize:28,fontWeight:700,color:textPrimary,letterSpacing:-0.4}}, TAB_TITLES[s.tab])
+      ),
+      React.createElement('div',{style:{display:'flex',background:cardBg2,borderRadius:999,padding:3,gap:2,border:`1px solid ${hairline}`}},
+        ['pro','perso'].map(c=> React.createElement('button',{key:c,onClick:()=>this.setState({context:c}),style:{
+          border:'none',cursor:'pointer',borderRadius:999,padding:'7px 14px',fontSize:13,fontWeight:600,fontFamily:'Inter,sans-serif',
+          background: s.context===c? accent : 'transparent', color: s.context===c? '#fff':textSecondary,
+        }}, c==='pro'?'Pro':'Perso'))
+      )
+    );
+
+    const iconCheck = (filled)=> React.createElement('svg',{width:22,height:22,viewBox:'0 0 22 22'},
+      React.createElement('circle',{cx:11,cy:11,r:10,fill: filled? successColor : 'none', stroke: filled? successColor : textSecondary, strokeWidth:1.6}),
+      React.createElement('path',{d:'M6.5 11.2l2.8 2.8 6-6.4', fill:'none', stroke: filled? '#fff' : 'transparent', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round'})
+    );
+    const iconPin = (filled)=> React.createElement('svg',{width:20,height:20,viewBox:'0 0 20 20'},
+      React.createElement('path',{d:'M10 1.6l2.35 5.02 5.53.62-4.1 3.78 1.13 5.46L10 13.75l-4.91 2.73 1.13-5.46-4.1-3.78 5.53-.62L10 1.6z', fill: filled? accent:'none', stroke: filled? accent: textSecondary, strokeWidth:1.4, strokeLinejoin:'round'})
+    );
+    const iconLoop = ()=> React.createElement('svg',{width:18,height:18,viewBox:'0 0 20 20'},
+      React.createElement('path',{d:'M4 8a6 6 0 0110-4.2M16 12a6 6 0 01-10 4.2', fill:'none', stroke:textSecondary, strokeWidth:1.6, strokeLinecap:'round'}),
+      React.createElement('path',{d:'M14 2v3.2h-3.2M6 18v-3.2h3.2', fill:'none', stroke:textSecondary, strokeWidth:1.6, strokeLinecap:'round', strokeLinejoin:'round'})
+    );
+    const iconTomato = ()=> React.createElement('svg',{width:20,height:20,viewBox:'0 0 20 20'},
+      React.createElement('circle',{cx:10,cy:11,r:8,fill:'#FF6B57'}),
+      React.createElement('path',{d:'M10 3c1-1.5 3-2 4-1.4', fill:'none',stroke:successColor,strokeWidth:1.6,strokeLinecap:'round'})
+    );
+
+    const taskCard = (t)=> React.createElement('div',{key:t.id,style:{
+      background:cardBg, borderRadius:22, padding:'16px 18px', display:'flex', alignItems:'flex-start', gap:12,
+      border:`1px solid ${hairline}`, opacity: t.abandoned? 0.45:1,
+    }},
+      React.createElement('button',{onClick:()=>toggleDone(t.id), style:{background:'none',border:'none',cursor:'pointer',padding:0,marginTop:1}}, iconCheck(t.done)),
+      React.createElement('div',{style:{flex:1,display:'flex',flexDirection:'column',gap:6,minWidth:0}},
+        React.createElement('div',{style:{fontSize:15.5,fontWeight:600,color:textPrimary, textDecoration:t.done?'line-through':'none', textDecorationColor:textSecondary}}, t.title),
+        React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}},
+          React.createElement('span',{style:{display:'flex',alignItems:'center',gap:5,fontSize:12,fontWeight:600,color:domainChipText(t.domain),background:domainChipBg(t.domain),padding:'3px 9px',borderRadius:999}},
+            React.createElement('span',{style:{width:6,height:6,borderRadius:999,background:domainDot(t.domain)}}), t.domain
+          ),
+          React.createElement('span',{style:{fontSize:12,color:textSecondary}}, t.priority+' · '+t.due),
+          t.reported && React.createElement('span',{style:{fontSize:11.5,fontWeight:600,color:accent,background:accentBg,padding:'3px 8px',borderRadius:999}}, 'Reportée d’hier')
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',gap:6,flexShrink:0}},
+        t.admin && React.createElement('button',{onClick:()=>openPomodoro(t.title), style:{background:'none',border:'none',cursor:'pointer',padding:2}}, iconTomato()),
+        React.createElement('button',{onClick:()=>togglePin(t.id), style:{background:'none',border:'none',cursor:'pointer',padding:2}}, iconPin(t.pinned))
+      )
+    );
+
+    // ---- TODAY screen ----
+    const todayScreen = React.createElement('div',{style:screenPad},
+      header,
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10,marginBottom:28}}, todayTasks.map(taskCard)),
+      recurringForCtx.length+veillePreview.length>0 && React.createElement('div',{style:{background:cardBg2,borderRadius:22,padding:'14px 16px',border:`1px dashed ${hairline}`,display:'flex',flexDirection:'column',gap:10}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:textSecondary,textTransform:'uppercase',letterSpacing:0.5}}, 'Récurrentes & veille · hors quota'),
+        recurringForCtx.map(r=>React.createElement('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:8}}, iconLoop(), React.createElement('span',{style:{fontSize:14,color:textPrimary}}, r.title))),
+        veillePreview.length>0 && React.createElement('button',{onClick:()=>this.setState({tab:'veille'}), style:{alignSelf:'flex-start',border:'none',background:'none',cursor:'pointer',color:accent,fontSize:13.5,fontWeight:600,padding:0,fontFamily:'Inter,sans-serif'}}, veillePreview.length+' nouveaux articles en veille →')
+      )
+    );
+
+    // ---- CLOSURE screen ----
+    const closureRow = (t)=> React.createElement('div',{key:t.id,style:{background:cardBg,borderRadius:22,padding:'14px 16px',border:`1px solid ${hairline}`,display:'flex',alignItems:'center',gap:12,opacity:t.abandoned?0.4:1}},
+      iconCheck(t.done),
+      React.createElement('div',{style:{flex:1,minWidth:0}},
+        React.createElement('div',{style:{fontSize:15,fontWeight:600,color:textPrimary,textDecoration:t.done?'line-through':'none'}}, t.title),
+        React.createElement('div',{style:{fontSize:12,color:textSecondary,marginTop:2}}, t.done? 'Réalisée' : (t.abandoned? 'Abandonnée' : 'À réaliser'))
+      ),
+      !t.done && !t.abandoned && React.createElement('button',{onClick:()=>openDecision(t.id), style:{border:`1px solid ${accent}`,background:'none',color:accent,borderRadius:999,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, 'Décider')
+    );
+    const closureScreen = React.createElement('div',{style:screenPad},
+      header,
+      React.createElement('div',{style:{display:'flex',gap:16,marginBottom:20}},
+        React.createElement('div',{style:{fontSize:14,color:textSecondary}}, React.createElement('b',{style:{color:textPrimary}},doneCount), ' réalisées'),
+        React.createElement('div',{style:{fontSize:14,color:textSecondary}}, React.createElement('b',{style:{color:textPrimary}},pendingCount), ' à décider')
+      ),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}}, todayTasks.map(closureRow))
+    );
+
+    // ---- NOTES screen ----
+    const noteCard = (n)=> React.createElement('div',{key:n.id,onClick:()=> s.notesSelect && toggleNoteSelected(n.id), style:{background:cardBg,borderRadius:22,padding:'14px 16px',border: s.selectedNotes.includes(n.id)? `1.5px solid ${accent}`:`1px solid ${hairline}`,display:'flex',alignItems:'center',gap:12,cursor:s.notesSelect?'pointer':'default'}},
+      s.notesSelect && React.createElement('div',{style:{width:20,height:20,borderRadius:999,border:`1.6px solid ${s.selectedNotes.includes(n.id)?accent:textSecondary}`,background:s.selectedNotes.includes(n.id)?accent:'none',flexShrink:0}}),
+      React.createElement('div',{style:{flex:1,minWidth:0}},
+        React.createElement('div',{style:{fontSize:15,fontWeight:600,color:textPrimary}}, n.title),
+        React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center',marginTop:6}},
+          n.tag ? React.createElement('span',{style:{fontSize:11.5,fontWeight:600,color:domainChipText(n.domain),background:domainChipBg(n.domain),padding:'3px 9px',borderRadius:999}}, n.domain)
+                : React.createElement('span',{style:{fontSize:11.5,fontWeight:600,color:'#C74B1E',background: dark?'rgba(199,75,30,.2)':'rgba(199,75,30,.1)',padding:'3px 9px',borderRadius:999}}, '⚠ Sans tag'),
+          React.createElement('span',{style:{fontSize:12,color:textSecondary}}, 'Modifiée '+n.updated)
+        )
+      )
+    );
+    const notesScreen = React.createElement('div',{style:screenPad},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}},
+        React.createElement('span',{style:{fontSize:28,fontWeight:700,color:textPrimary,letterSpacing:-0.4}}, 'Notes'),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          React.createElement('button',{onClick:toggleNotesSelect, style:{border:`1px solid ${hairline}`,background:cardBg2,color:textPrimary,borderRadius:999,padding:'8px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, s.notesSelect?'Annuler':'Sélectionner'),
+          React.createElement('button',{onClick:openNoteEditor, style:{border:'none',background:accent,color:'#fff',borderRadius:999,width:34,height:34,fontSize:18,cursor:'pointer'}}, '+')
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}},
+        ['Toutes','Sans tag',...DOMAINS.map(d=>d.name)].map((f,i)=>React.createElement('span',{key:i,style:{fontSize:12.5,fontWeight:600,color: i===0?'#fff':textSecondary,background: i===0?accent:cardBg2,padding:'6px 12px',borderRadius:999,border:`1px solid ${i===0?accent:hairline}`}},f))
+      ),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10,marginBottom: s.notesSelect&&s.selectedNotes.length>0?70:0}}, NOTES.map(noteCard)),
+      s.notesSelect && s.selectedNotes.length>0 && React.createElement('div',{style:{position:'fixed',left:0,right:0,bottom:0,background:cardBg,borderTop:`1px solid ${hairline}`,padding:'12px 18px',display:'flex',justifyContent:'space-around'}},
+        ['Tag','Partager','Supprimer'].map(a=>React.createElement('button',{key:a,style:{border:'none',background:'none',color: a==='Supprimer'?'#D70015':accent,fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}},a))
+      )
+    );
+
+    // ---- VEILLE screen ----
+    const veilleActionIcon = (path)=> React.createElement('svg',{width:18,height:18,viewBox:'0 0 20 20'}, path);
+    const veilleCard = (v)=> React.createElement('div',{key:v.id,style:{background:cardBg,borderRadius:22,padding:'14px 16px',border:`1px solid ${hairline}`,display:'flex',flexDirection:'column',gap:8}},
+      React.createElement('div',{style:{fontSize:15,fontWeight:600,color:textPrimary}}, v.title),
+      React.createElement('div',{style:{fontSize:13,color:textSecondary,lineHeight:1.4}}, v.apercu),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}},
+        React.createElement('span',{style:{fontSize:12,color:textSecondary,fontWeight:500}}, v.source),
+        React.createElement('div',{style:{display:'flex',gap:14}},
+          React.createElement('button',{title:'Ignorer',style:{border:'none',background:'none',cursor:'pointer',color:textSecondary}}, veilleActionIcon(React.createElement('path',{d:'M5 5l10 10M15 5L5 15',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round'}))),
+          React.createElement('button',{title:'Garder pour lecture',style:{border:'none',background:'none',cursor:'pointer',color:accent}}, veilleActionIcon(React.createElement('path',{d:'M6 3h8v14l-4-3-4 3V3z',fill:'none',stroke:'currentColor',strokeWidth:1.6,strokeLinejoin:'round'}))),
+          React.createElement('button',{title:'Transformer en tâche',style:{border:'none',background:'none',cursor:'pointer',color:successColor}}, veilleActionIcon(React.createElement('path',{d:'M4 10h10m0 0l-4-4m4 4l-4 4',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'})))
+        )
+      )
+    );
+    const veilleScreen = React.createElement('div',{style:screenPad},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}},
+        React.createElement('span',{style:{fontSize:28,fontWeight:700,color:textPrimary,letterSpacing:-0.4}}, 'Veille'),
+        React.createElement('button',{onClick:openSources, style:{border:`1px solid ${hairline}`,background:cardBg2,color:textPrimary,borderRadius:999,padding:'8px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, '⚙ Sources')
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8,marginBottom:18,flexWrap:'wrap'}},
+        DOMAINS.map(d=>React.createElement('span',{key:d.id,onClick:()=>toggleVeilleFilter(d.id),style:{cursor:'pointer',fontSize:12.5,fontWeight:600,color: s.veilleFilter.includes(d.id)?'#fff':textSecondary,background: s.veilleFilter.includes(d.id)?accent:cardBg2,padding:'6px 12px',borderRadius:999,border:`1px solid ${s.veilleFilter.includes(d.id)?accent:hairline}`}},d.name))
+      ),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:24}}, veilleDomains.map(d=>
+        React.createElement('div',{key:d.id},
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:10}}, React.createElement('span',{style:{width:8,height:8,borderRadius:999,background:domainDot(d.name)}}), React.createElement('span',{style:{fontSize:13,fontWeight:700,color:textSecondary,textTransform:'uppercase',letterSpacing:0.4}}, d.name)),
+          React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}}, d.items.map(veilleCard))
+        )
+      ))
+    );
+
+    // ---- DOMAINS screen ----
+    const domainRow = (d)=> React.createElement('div',{key:d.id,style:{background:cardBg,borderRadius:22,padding:'12px 16px',border:`1px solid ${hairline}`,display:'flex',alignItems:'center',gap:12}},
+      React.createElement('span',{style:{width:10,height:10,borderRadius:999,background:domainDot(d.name),flexShrink:0}}),
+      React.createElement('span',{style:{flex:1,fontSize:15,fontWeight:600,color:textPrimary}}, d.name),
+      React.createElement('span',{style:{fontSize:11.5,fontWeight:600,color:domainChipText(d.name),background:domainChipBg(d.name),padding:'3px 9px',borderRadius:999}}, d.ctx==='pro'?'Pro':'Perso'),
+      React.createElement('button',{style:{border:'none',background:'none',cursor:'pointer',color:textSecondary,fontSize:15}}, '✎')
+    );
+    const domainsScreen = React.createElement('div',{style:screenPad},
+      React.createElement('div',{style:{fontSize:28,fontWeight:700,color:textPrimary,letterSpacing:-0.4,marginBottom:20}}, 'Domaines'),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10,marginBottom:14}}, DOMAINS.map(domainRow)),
+      React.createElement('button',{style:{border:`1.5px dashed ${hairline}`,background:'none',color:accent,borderRadius:22,padding:'14px',fontSize:14,fontWeight:600,cursor:'pointer',width:'100%',fontFamily:'Inter,sans-serif'}}, '+ Ajouter un domaine')
+    );
+
+    // ---- DASHBOARD screen ----
+    const barRow = (label,count,total,i)=> React.createElement('div',{key:i,style:{display:'flex',flexDirection:'column',gap:6}},
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13.5}}, React.createElement('span',{style:{color:textPrimary,fontWeight:600}},label), React.createElement('span',{style:{color:textSecondary}}, count+' / '+total)),
+      React.createElement('div',{style:{height:8,borderRadius:999,background:cardBg2,overflow:'hidden'}}, React.createElement('div',{style:{height:'100%',width:(count/total*100)+'%',borderRadius:999,background:accent}}))
+    );
+    const dashboardScreen = React.createElement('div',{style:screenPad},
+      React.createElement('div',{style:{fontSize:28,fontWeight:700,color:textPrimary,letterSpacing:-0.4,marginBottom:20}}, 'Tableau de bord'),
+      React.createElement('div',{style:{background:cardBg,borderRadius:22,padding:18,border:`1px solid ${hairline}`,marginBottom:16,display:'flex',flexDirection:'column',gap:14}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:textSecondary,textTransform:'uppercase',letterSpacing:0.5}}, 'Par domaine'),
+        DASH_DOMAIN.map((d,i)=>barRow(d.domain,d.count,d.total,i))
+      ),
+      React.createElement('div',{style:{background:cardBg,borderRadius:22,padding:18,border:`1px solid ${hairline}`,display:'flex',flexDirection:'column',gap:14}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:textSecondary,textTransform:'uppercase',letterSpacing:0.5}}, 'Par priorité'),
+        DASH_PRIO.map((d,i)=>barRow(d.priority,d.count,d.total,i))
+      )
+    );
+
+    const SCREENS = {today:todayScreen, closure:closureScreen, notes:notesScreen, veille:veilleScreen, domains:domainsScreen, dashboard:dashboardScreen};
+
+    const tabBarItems = [
+      {id:'today',label:'Aujourd’hui'},{id:'closure',label:'Clôture'},{id:'notes',label:'Notes'},
+      {id:'veille',label:'Veille'},{id:'domains',label:'Domaines'},{id:'dashboard',label:'Bord'},
+    ];
+
+    const tabBar = isMobile ? React.createElement('div',{style:{position:'absolute',left:14,right:14,bottom:14,display:'flex',justifyContent:'space-around',background: dark?'rgba(40,40,42,0.85)':'rgba(255,255,255,0.85)',backdropFilter:'blur(16px)',borderRadius:22,padding:'9px 4px',boxShadow:'0 8px 24px rgba(0,0,0,0.18)',border:`0.5px solid ${hairline}`}},
+      tabBarItems.map(it=>React.createElement('button',{key:it.id,onClick:()=>this.setState({tab:it.id}),style:{border:'none',background:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,color: s.tab===it.id?accent:textSecondary,fontFamily:'Inter,sans-serif'}},
+        React.createElement('span',{style:{width:6,height:6,borderRadius:999,background: s.tab===it.id?accent:'transparent'}}),
+        React.createElement('span',{style:{fontSize:10.5,fontWeight:600}}, it.label)
+      ))
+    ) : React.createElement('div',{style:{display:'flex',gap:6,padding:'24px 40px 14px',borderBottom:`1px solid ${hairline}`,flexShrink:0}},
+      tabBarItems.map(it=>React.createElement('button',{key:it.id,onClick:()=>this.setState({tab:it.id}),style:{border:'none',background: s.tab===it.id?accentBg:'none',color: s.tab===it.id?accent:textSecondary,borderRadius:999,padding:'8px 16px',fontSize:13.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, it.label))
+    );
+
+    // ---- Pomodoro modal ----
+    const pomodoroModal = s.pomodoro.open && React.createElement('div',{style:{position:'absolute',inset:0,background: dark?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100,padding:24}},
+      React.createElement('div',{style:{background:cardBg,borderRadius:24,padding:'28px 24px',width:'100%',maxWidth:320,display:'flex',flexDirection:'column',alignItems:'center',gap:18}},
+        React.createElement('div',{style:{fontSize:13,fontWeight:600,color:textSecondary,textAlign:'center'}}, s.pomodoro.taskTitle),
+        React.createElement('div',{style:{fontSize:13,fontWeight:700,color: s.pomodoro.phase==='focus'?accent:successColor,textTransform:'uppercase',letterSpacing:0.6}}, s.pomodoro.phase==='focus'?'Focus':'Pause'),
+        React.createElement('div',{style:{fontSize:52,fontWeight:700,color:textPrimary,fontVariantNumeric:'tabular-nums'}}, this.fmtTime(s.pomodoro.seconds)),
+        React.createElement('div',{style:{display:'flex',gap:10}},
+          React.createElement('button',{onClick:togglePomodoroRun, style:{border:'none',background:accent,color:'#fff',borderRadius:999,padding:'11px 26px',fontSize:14.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, s.pomodoro.running?'Mettre en pause':'Démarrer'),
+          React.createElement('button',{onClick:closePomodoro, style:{border:`1px solid ${hairline}`,background:'none',color:textSecondary,borderRadius:999,padding:'11px 20px',fontSize:14.5,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, 'Fermer')
+        )
+      )
+    );
+
+    // ---- Decision modal ----
+    const decisionTask = s.decisionTaskId!=null ? s.tasks.find(t=>t.id===s.decisionTaskId) : null;
+    const decisionModal = decisionTask && React.createElement('div',{style:{position:'absolute',inset:0,background: dark?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.35)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:100}},
+      React.createElement('div',{style:{background:cardBg,borderRadius:'24px 24px 0 0',padding:'22px 20px 28px',width:'100%',maxWidth:420,display:'flex',flexDirection:'column',gap:12}},
+        React.createElement('div',{style:{width:36,height:4,borderRadius:999,background:hairline,alignSelf:'center',marginBottom:6}}),
+        React.createElement('div',{style:{fontSize:16,fontWeight:700,color:textPrimary}}, decisionTask.title),
+        React.createElement('div',{style:{fontSize:13,color:textSecondary,marginBottom:6}}, 'Que fait-on de cette tâche ?'),
+        React.createElement('button',{onClick:decideReportTomorrow, style:{border:'none',background:accentBg,color:accent,borderRadius:14,padding:'14px',fontSize:14.5,fontWeight:600,cursor:'pointer',textAlign:'left',fontFamily:'Inter,sans-serif'}}, 'Reporter à demain'),
+        React.createElement('button',{onClick:decideReportTomorrow, style:{border:`1px solid ${hairline}`,background:'none',color:textPrimary,borderRadius:14,padding:'14px',fontSize:14.5,fontWeight:600,cursor:'pointer',textAlign:'left',fontFamily:'Inter,sans-serif'}}, 'Reporter à une date'),
+        React.createElement('button',{onClick:()=>decideAbandon(decisionTask.id), style:{border:`1px solid ${hairline}`,background:'none',color:textSecondary,borderRadius:14,padding:'14px',fontSize:14.5,fontWeight:600,cursor:'pointer',textAlign:'left',fontFamily:'Inter,sans-serif'}}, 'Ne plus suivre cette tâche'),
+        React.createElement('button',{onClick:closeDecision, style:{border:'none',background:'none',color:textSecondary,fontSize:13.5,fontWeight:600,cursor:'pointer',marginTop:4,fontFamily:'Inter,sans-serif'}}, 'Annuler')
+      )
+    );
+
+    const noteEditorModal = s.noteEditorOpen && React.createElement('div',{style:{position:'absolute',inset:0,background:cardBg,zIndex:100,display:'flex',flexDirection:'column'}},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:isMobile?'54px 18px 12px':'20px 24px',borderBottom:`1px solid ${hairline}`}},
+        React.createElement('button',{onClick:closeNoteEditor, style:{border:'none',background:'none',color:accent,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, 'Annuler'),
+        React.createElement('span',{style:{fontSize:15,fontWeight:700,color:textPrimary}}, 'Nouvelle note'),
+        React.createElement('button',{onClick:closeNoteEditor, style:{border:'none',background:'none',color:accent,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}}, 'Enregistrer')
+      ),
+      React.createElement('div',{style:{display:'flex',gap:14,padding:'10px 18px',borderBottom:`1px solid ${hairline}`,overflowX:'auto'}},
+        ['H','B','I','S','⟨/⟩','• Liste','☑','❝','🔗','—'].map((ic,i)=>React.createElement('span',{key:i,style:{fontSize:14,fontWeight:600,color:textSecondary,flexShrink:0}}, ic))
+      ),
+      React.createElement('textarea',{placeholder:'Écrivez en markdown…', style:{flex:1,border:'none',outline:'none',resize:'none',padding:'16px 18px',fontSize:15,lineHeight:1.6,color:textPrimary,background:'transparent',fontFamily:'Inter,sans-serif'}})
+    );
+
+    const sourcesModal = s.sourcesOpen && React.createElement('div',{style:{position:'absolute',inset:0,background: dark?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.35)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:100}},
+      React.createElement('div',{style:{background:cardBg,borderRadius:'24px 24px 0 0',padding:'22px 20px 28px',width:'100%',maxWidth:420,display:'flex',flexDirection:'column',gap:12,maxHeight:'70%',overflow:'auto'}},
+        React.createElement('div',{style:{fontSize:16,fontWeight:700,color:textPrimary,marginBottom:4}}, 'Sources de veille'),
+        [{n:'DNE — Éduscol',ctx:'Pro',on:true},{n:'DINUM — Blog',ctx:'Pro',on:true},{n:'uneIAparjour',ctx:'Perso',on:true},{n:'Les Numériques',ctx:'Perso',on:false}].map((src,i)=>
+          React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 2px',borderBottom: i<3?`1px solid ${hairline}`:'none'}},
+            React.createElement('div',{},React.createElement('div',{style:{fontSize:14.5,fontWeight:600,color:textPrimary}},src.n),React.createElement('div',{style:{fontSize:12,color:textSecondary}},src.ctx)),
+            React.createElement('div',{style:{width:40,height:24,borderRadius:999,background: src.on?accent:hairline,position:'relative'}}, React.createElement('div',{style:{width:20,height:20,borderRadius:999,background:'#fff',position:'absolute',top:2,left: src.on?18:2,transition:'left .15s'}}))
+          )
+        ),
+        React.createElement('button',{onClick:closeSources, style:{border:'none',background:'none',color:accent,fontSize:14,fontWeight:600,cursor:'pointer',marginTop:8,fontFamily:'Inter,sans-serif'}}, 'Fermer')
+      )
+    );
+
+    const contentArea = React.createElement('div',{style: isMobile? {position:'absolute',inset:0,overflow:'auto'} : {flex:1,overflow:'auto',minHeight:0}}, SCREENS[s.tab]);
+    const appBody = React.createElement('div',{style:{position:'relative',height:'100%',minHeight: isMobile? undefined : 780, background:bg, overflow: isMobile? 'visible':'hidden', borderRadius: isMobile? 0:20, display: isMobile? undefined:'flex', flexDirection: isMobile? undefined:'column'}},
+      !isMobile && tabBar,
+      contentArea,
+      isMobile && tabBar, pomodoroModal, decisionModal, noteEditorModal, sourcesModal
+    );
+
+    return {
+      appBody,
+      isMobile, isDesktop: !isMobile, dark,
+      toggleDesktop: ()=> this.setState(st=>({view: st.view==='mobile'?'desktop':'mobile'})),
+      toggleDark: ()=> this.setState(st=>({dark:!st.dark})),
+      darkLabel: dark? '☀ Clair':'☾ Sombre',
+      toolbarBg: '#ffffffcc',
+      btnModeMobileStyle:{border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif',background:isMobile?'#0A84FF':'transparent',color:isMobile?'#fff':'#444'},
+      btnModeDesktopStyle:{border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif',background:!isMobile?'#0A84FF':'transparent',color:!isMobile?'#fff':'#444'},
+      btnDarkStyle:{border:'none',borderRadius:8,padding:'7px 14px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif',background:'transparent',color:'#444'},
+      desktopFrameStyle:{width:'100%',maxWidth:1040,borderRadius:20,overflow:'hidden',boxShadow:'0 30px 60px rgba(0,0,0,0.18)',background:bg},
+    };
+  }
+}
+const TAB_TITLES={today:'Aujourd’hui',closure:'Clôture',notes:'Notes',veille:'Veille',domains:'Domaines',dashboard:'Tableau de bord'};
+
+</script>
+</body>
+</html>

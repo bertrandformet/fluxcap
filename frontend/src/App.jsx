@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api/client.js";
 import ContextSwitch from "./components/ContextSwitch.jsx";
+import { IconMoon, IconSun } from "./components/Icons.jsx";
 import Aujourdhui from "./screens/Aujourdhui.jsx";
 import Cloture from "./screens/Cloture.jsx";
 import Veille from "./screens/Veille.jsx";
@@ -17,14 +18,31 @@ const ECRANS = [
   { id: "bord", label: "Tableau de bord" },
 ];
 
+function themeSysteme() {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export default function App() {
   const [contexte, setContexte] = useState(() => localStorage.getItem("contexte") || "pro");
   const [ecran, setEcran] = useState("aujourdhui");
   const [congesActif, setCongesActif] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || null);
 
   useEffect(() => {
     api.getParametres().then((p) => setCongesActif(p.conges_actif));
   }, []);
+
+  useEffect(() => {
+    if (theme) document.documentElement.setAttribute("data-theme", theme);
+    else document.documentElement.removeAttribute("data-theme");
+  }, [theme]);
+
+  function basculerTheme() {
+    const effectif = theme || themeSysteme();
+    const suivant = effectif === "dark" ? "light" : "dark";
+    setTheme(suivant);
+    localStorage.setItem("theme", suivant);
+  }
 
   function changerContexte(valeur) {
     setContexte(valeur);
@@ -37,27 +55,30 @@ export default function App() {
     setCongesActif(nouveauteEtat);
   }
 
+  const themeEffectif = theme || themeSysteme();
+
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Tâches, Notes &amp; Veille</h1>
-        <div className="groupe-contexte">
-          <ContextSwitch contexte={contexte} onChange={changerContexte} congesActif={congesActif} />
+    <div className="tnv-app-shell">
+      <header className="tnv-header">
+        <span className="tnv-header__brand">Tâches, Notes &amp; Veille</span>
+        <div className="tnv-header__actions">
+          <ContextSwitch contexte={contexte} onChange={changerContexte} congesActif={congesActif} onToggleConges={basculerConges} />
           <button
-            className={congesActif ? "bouton-conges actif" : "bouton-conges"}
-            onClick={basculerConges}
-            title={congesActif ? "Fin des congés" : "Je suis en congés"}
+            className="tnv-icon-btn"
+            onClick={basculerTheme}
+            title={themeEffectif === "dark" ? "Passer au thème clair" : "Passer au thème sombre"}
+            aria-label="Changer de thème"
           >
-            🏖️ Congés
+            {themeEffectif === "dark" ? <IconMoon /> : <IconSun />}
           </button>
         </div>
       </header>
 
-      <nav className="tabs">
+      <nav className="tnv-nav">
         {ECRANS.map((e) => (
           <button
             key={e.id}
-            className={e.id === ecran ? "tab active" : "tab"}
+            className={e.id === ecran ? "tnv-nav__item tnv-nav__item--active" : "tnv-nav__item"}
             onClick={() => setEcran(e.id)}
           >
             {e.label}
@@ -65,7 +86,7 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="app-main">
+      <main>
         {ecran === "aujourdhui" && (
           <Aujourdhui contexte={contexte} congesActif={congesActif} onNaviguerVeille={() => setEcran("veille")} />
         )}
@@ -75,6 +96,19 @@ export default function App() {
         {ecran === "domaines" && <Domaines />}
         {ecran === "bord" && <TableauDeBord contexte={contexte} />}
       </main>
+
+      <nav className="tnv-tabbar">
+        {ECRANS.map((e) => (
+          <button
+            key={e.id}
+            className={e.id === ecran ? "tnv-tabbar__item tnv-tabbar__item--active" : "tnv-tabbar__item"}
+            onClick={() => setEcran(e.id)}
+          >
+            <span className="tnv-tabbar__dot" />
+            <span className="tnv-tabbar__label">{e.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconPause, IconPlay, IconSkip, IconStop, IconTomato } from "./Icons.jsx";
 
 function creerContexte() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -67,7 +68,7 @@ function notifier(titre, corps) {
   new Notification(titre, { body: corps });
 }
 
-export default function Pomodoro() {
+export default function Pomodoro({ tache, onClose }) {
   const [phase, setPhase] = useState("reglage"); // reglage | focus | repos
   const [dureeFocus, setDureeFocus] = useState(25);
   const [dureeRepos, setDureeRepos] = useState(5);
@@ -123,40 +124,8 @@ export default function Pomodoro() {
     } else if (phase === "repos") {
       sonFinCycle();
       notifier("Pause terminée", "Prêt·e pour un nouveau focus ?");
-      arreter();
+      onClose();
     }
-  }
-
-  function arreter() {
-    setPhase("reglage");
-    setRestant(0);
-    setDureeTotale(0);
-    setEnPause(false);
-    setAlerteJouee(false);
-  }
-
-  if (phase === "reglage") {
-    return (
-      <div className="pomodoro">
-        <input
-          type="number"
-          min="1"
-          max="120"
-          value={dureeFocus}
-          onChange={(e) => setDureeFocus(Number(e.target.value))}
-        />
-        <span>min focus</span>
-        <input
-          type="number"
-          min="1"
-          max="60"
-          value={dureeRepos}
-          onChange={(e) => setDureeRepos(Number(e.target.value))}
-        />
-        <span>min pause</span>
-        <button onClick={demarrer}>🍅 Focus</button>
-      </div>
-    );
   }
 
   const minutes = Math.floor(restant / 60).toString().padStart(2, "0");
@@ -164,26 +133,67 @@ export default function Pomodoro() {
   const pourcentage = dureeTotale > 0 ? Math.round(((dureeTotale - restant) / dureeTotale) * 100) : 0;
 
   return (
-    <div className="pomodoro pomodoro-actif">
-      <div className="pomodoro-info">
-        <span className="pomodoro-phase">{phase === "focus" ? "Focus" : "Pause"}</span>
-        <span>
-          {minutes}:{secondes}
-        </span>
-      </div>
-      <div className="pomodoro-barre">
-        <div className="pomodoro-progression" style={{ width: `${pourcentage}%` }} />
-      </div>
-      <div className="pomodoro-controles">
-        <button onClick={basculerPause} title={enPause ? "Reprendre" : "Pause"} aria-label={enPause ? "Reprendre" : "Pause"}>
-          {enPause ? "▶" : "⏸"}
-        </button>
-        <button onClick={terminerPhase} title="Passer" aria-label="Passer">
-          ⏭
-        </button>
-        <button onClick={arreter} title="Arrêter" aria-label="Arrêter">
-          ⏹
-        </button>
+    <div className="tnv-overlay tnv-modal-center" onClick={onClose}>
+      <div className="tnv-pomodoro" onClick={(e) => e.stopPropagation()}>
+        <span className="tnv-pomodoro__task">{tache?.titre}</span>
+
+        {phase === "reglage" ? (
+          <>
+            <div className="tnv-field-row">
+              <div>
+                <input
+                  type="number"
+                  className="tnv-input"
+                  min="1"
+                  max="120"
+                  value={dureeFocus}
+                  onChange={(e) => setDureeFocus(Number(e.target.value))}
+                />
+                <span className="tnv-meta-text">min focus</span>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  className="tnv-input"
+                  min="1"
+                  max="60"
+                  value={dureeRepos}
+                  onChange={(e) => setDureeRepos(Number(e.target.value))}
+                />
+                <span className="tnv-meta-text">min pause</span>
+              </div>
+            </div>
+            <button className="tnv-btn tnv-btn--primary" onClick={demarrer}>
+              <IconTomato size={16} /> Démarrer
+            </button>
+            <button className="tnv-btn tnv-btn--ghost" onClick={onClose}>
+              Fermer
+            </button>
+          </>
+        ) : (
+          <>
+            <span className={phase === "repos" ? "tnv-pomodoro__phase tnv-pomodoro__phase--pause" : "tnv-pomodoro__phase"}>
+              {phase === "focus" ? "Focus" : "Pause"}
+            </span>
+            <span className="tnv-pomodoro__time">
+              {minutes}:{secondes}
+            </span>
+            <div className="tnv-bar-track" style={{ width: "100%" }}>
+              <div className="tnv-bar-fill" style={{ width: `${pourcentage}%` }} />
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button className="tnv-icon-btn" onClick={basculerPause} title={enPause ? "Reprendre" : "Pause"} aria-label={enPause ? "Reprendre" : "Pause"}>
+                {enPause ? <IconPlay /> : <IconPause />}
+              </button>
+              <button className="tnv-icon-btn" onClick={terminerPhase} title="Passer" aria-label="Passer">
+                <IconSkip />
+              </button>
+              <button className="tnv-icon-btn" onClick={onClose} title="Arrêter" aria-label="Arrêter">
+                <IconStop />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

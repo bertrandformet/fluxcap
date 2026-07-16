@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
+import DomainBadge from "../components/DomainBadge.jsx";
+import Switch from "../components/Switch.jsx";
+import { IconArrowRight, IconBookmark, IconIgnore, IconTrash } from "../components/Icons.jsx";
+import { domainHue } from "../utils/domainHue.js";
 
 function prochaineEcheance() {
   const maintenant = new Date();
@@ -109,8 +113,8 @@ export default function Veille({ contexte }) {
     }
   }
 
-  if (erreur) return <p className="erreur">{erreur}</p>;
-  if (!items) return <p>Chargement…</p>;
+  if (erreur) return <p className="tnv-error">{erreur}</p>;
+  if (!items) return <p className="tnv-empty">Chargement…</p>;
 
   const itemsFiltres =
     domainesFiltre.size === 0 ? items : items.filter((item) => domainesFiltre.has(item.domaine.id));
@@ -123,114 +127,145 @@ export default function Veille({ contexte }) {
   }, {});
 
   return (
-    <section>
-      <div className="entete-ecran">
-        <h2>Veille</h2>
-        <button onClick={() => setPanneauSourcesOuvert((o) => !o)}>{panneauSourcesOuvert ? "✕" : "⚙️ Sources"}</button>
+    <div className="tnv-screen">
+      <div className="tnv-screen-head">
+        <div>
+          <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
+          <h1 className="tnv-h1">Veille</h1>
+        </div>
+        <button className="tnv-btn tnv-btn--secondary" onClick={() => setPanneauSourcesOuvert(true)}>
+          ⚙ Sources
+        </button>
       </div>
 
       {domaines.length > 0 && (
-        <div className="filtre-domaines">
-          <span>Filtrer :</span>
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           {domaines.map((d) => (
-            <label key={d.id} className="filtre-domaine-item">
-              <input
-                type="checkbox"
-                checked={domainesFiltre.has(d.id)}
-                onChange={() => basculerFiltreDomaine(d.id)}
-              />
+            <button
+              key={d.id}
+              className={domainesFiltre.has(d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+              onClick={() => basculerFiltreDomaine(d.id)}
+            >
               {d.nom}
-            </label>
+            </button>
           ))}
-          {domainesFiltre.size > 0 && <button onClick={() => setDomainesFiltre(new Set())}>✕ Filtre</button>}
-        </div>
-      )}
-
-      {panneauSourcesOuvert && (
-        <div className="panneau-sources">
-          <p className="explication">
-            Sources interrogées pour alimenter la veille de ce contexte. La configuration est gérée ici ; la
-            collecte automatisée elle-même (RSS, API, scraping) n'est pas exécutée dans ce POC.
-          </p>
-
-          <form className="import-lien" onSubmit={ajouterSource}>
-            <input type="text" placeholder="Nom de la source" value={nouveauNom} onChange={(e) => setNouveauNom(e.target.value)} />
-            <input type="url" placeholder="URL" value={nouvelleUrl} onChange={(e) => setNouvelleUrl(e.target.value)} />
-            <select value={nouveauContexte} onChange={(e) => setNouveauContexte(e.target.value)}>
-              <option value="pro">Pro</option>
-              <option value="perso">Perso</option>
-            </select>
-            <button type="submit">+ Source</button>
-          </form>
-
-          {!sources && <p>Chargement…</p>}
-          {sources && sources.length === 0 && <p>Aucune source pour ce contexte.</p>}
-          {sources && sources.length > 0 && (
-            <ul className="domaine-list">
-              {sources.map((s) => (
-                <li key={s.id} className="domaine-item">
-                  <span className={s.actif ? "" : "source-inactive"}>
-                    {s.nom} — <a href={s.url} target="_blank" rel="noreferrer">{s.url}</a>
-                  </span>
-                  <button className="bouton-icone" onClick={() => basculerActif(s)} title={s.actif ? "Désactiver" : "Activer"} aria-label={s.actif ? "Désactiver" : "Activer"}>
-                    {s.actif ? "⏸" : "▶"}
-                  </button>
-                  <button className="bouton-icone" onClick={() => supprimerSource(s)} title="Supprimer" aria-label="Supprimer">
-                    🗑
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {domainesFiltre.size > 0 && (
+            <button className="tnv-chip" onClick={() => setDomainesFiltre(new Set())}>
+              ✕ Filtre
+            </button>
           )}
         </div>
       )}
 
-      {Object.keys(parDomaine).length === 0 && <p>Aucun item de veille à traiter.</p>}
+      {Object.keys(parDomaine).length === 0 && <p className="tnv-empty">Aucun item de veille à traiter.</p>}
 
-      {Object.entries(parDomaine).map(([domaine, itemsDomaine]) => (
-        <div key={domaine} className="veille-domaine">
-          <h3>{domaine}</h3>
-          <div className="task-list">
-            {itemsDomaine.map((item) => (
-              <article key={item.id} className="task-card">
-                <div className="task-card-header">
-                  <h3>{item.titre}</h3>
-                </div>
-                <p className="task-meta">
-                  {item.domaine.nom}
-                  {item.source && ` · ${item.source}`}
-                </p>
-                {item.apercu && <p className="task-description">{item.apercu}</p>}
-                <a href={item.url} target="_blank" rel="noreferrer">
-                  {item.url}
-                </a>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        {Object.entries(parDomaine).map(([domaine, itemsDomaine]) => (
+          <div key={domaine}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <span className="tnv-dot" style={{ "--domain-hue": domainHue(domaine) }} />
+              <span className="tnv-section-label">{domaine}</span>
+            </div>
+            <div className="tnv-stack" style={{ marginBottom: 0 }}>
+              {itemsDomaine.map((item) => (
+                <article key={item.id} className="tnv-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span className="tnv-task-card__title">{item.titre}</span>
+                  {item.apercu && <p className="tnv-meta-text">{item.apercu}</p>}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                    <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                      {item.source || item.url}
+                    </a>
+                    <div style={{ display: "flex", gap: 2 }}>
+                      <button className="tnv-icon-btn" onClick={() => agir(item, "ignorer")} title="Ignorer" aria-label="Ignorer">
+                        <IconIgnore size={18} />
+                      </button>
+                      <button
+                        className="tnv-icon-btn tnv-icon-btn--active"
+                        onClick={() => agir(item, "garder_lecture")}
+                        title="Garder pour lecture"
+                        aria-label="Garder pour lecture"
+                      >
+                        <IconBookmark size={18} />
+                      </button>
+                      <button
+                        className="tnv-icon-btn"
+                        style={{ color: "var(--tnv-success)" }}
+                        onClick={() => agir(item, "transformer_tache")}
+                        title="Transformer en tâche"
+                        aria-label="Transformer en tâche"
+                      >
+                        <IconArrowRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
-                <div className="veille-actions">
-                  <button className="bouton-icone" onClick={() => agir(item, "ignorer")} title="Ignorer" aria-label="Ignorer">
-                    🗑
-                  </button>
-                  <button
-                    className="bouton-icone"
-                    onClick={() => agir(item, "garder_lecture")}
-                    title="Garder pour lecture"
-                    aria-label="Garder pour lecture"
-                  >
-                    📖
-                  </button>
-                  <button
-                    className="bouton-icone"
-                    onClick={() => agir(item, "transformer_tache")}
-                    title="Transformer en tâche"
-                    aria-label="Transformer en tâche"
-                  >
-                    →✅
-                  </button>
-                </div>
-              </article>
-            ))}
+      {panneauSourcesOuvert && (
+        <div className="tnv-overlay tnv-sheet" onClick={() => setPanneauSourcesOuvert(false)}>
+          <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "80%", overflow: "auto" }}>
+            <div className="tnv-sheet__grabber" />
+            <span className="tnv-sheet__title">Sources de veille</span>
+            <p className="tnv-sheet__subtitle">
+              Sources interrogées pour alimenter la veille de ce contexte. La configuration est gérée ici ; la
+              collecte automatisée elle-même (RSS, API, scraping) n'est pas exécutée dans ce POC.
+            </p>
+
+            <form className="tnv-form" onSubmit={ajouterSource} style={{ margin: 0 }}>
+              <input
+                className="tnv-input"
+                type="text"
+                placeholder="Nom de la source"
+                value={nouveauNom}
+                onChange={(e) => setNouveauNom(e.target.value)}
+              />
+              <input
+                className="tnv-input"
+                type="url"
+                placeholder="URL"
+                value={nouvelleUrl}
+                onChange={(e) => setNouvelleUrl(e.target.value)}
+              />
+              <select className="tnv-select" value={nouveauContexte} onChange={(e) => setNouveauContexte(e.target.value)}>
+                <option value="pro">Pro</option>
+                <option value="perso">Perso</option>
+              </select>
+              <button type="submit" className="tnv-btn tnv-btn--primary">
+                + Source
+              </button>
+            </form>
+
+            {!sources && <p className="tnv-empty">Chargement…</p>}
+            {sources && sources.length === 0 && <p className="tnv-empty">Aucune source pour ce contexte.</p>}
+            {sources && sources.length > 0 && (
+              <div className="tnv-stack" style={{ marginBottom: 0 }}>
+                {sources.map((s) => (
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--tnv-hairline)" }}>
+                    <div style={{ flex: 1, minWidth: 0, opacity: s.actif ? 1 : 0.5 }}>
+                      <div className="tnv-task-card__title" style={{ fontSize: "var(--tnv-size-body)" }}>{s.nom}</div>
+                      <a href={s.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                        {s.url}
+                      </a>
+                    </div>
+                    <Switch checked={s.actif} onChange={() => basculerActif(s)} label={s.actif ? "Désactiver" : "Activer"} />
+                    <button className="tnv-icon-btn" onClick={() => supprimerSource(s)} title="Supprimer" aria-label="Supprimer">
+                      <IconTrash size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button className="tnv-btn tnv-btn--ghost" onClick={() => setPanneauSourcesOuvert(false)}>
+              Fermer
+            </button>
           </div>
         </div>
-      ))}
-    </section>
+      )}
+    </div>
   );
 }

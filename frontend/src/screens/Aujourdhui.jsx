@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import TaskCard from "../components/TaskCard.jsx";
+import { IconCheck } from "../components/Icons.jsx";
 
 const PRIORITES = [
   { value: "un_jour", label: "Un jour" },
@@ -74,8 +75,8 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     }
   }
 
-  if (erreur) return <p className="erreur">{erreur}</p>;
-  if (!jour) return <p>Chargement…</p>;
+  if (erreur) return <p className="tnv-error">{erreur}</p>;
+  if (!jour) return <p className="tnv-empty">Chargement…</p>;
 
   const enPauseConges = contexte === "pro" && congesActif;
 
@@ -90,59 +91,62 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     : principalesBrutes;
 
   return (
-    <section>
-      <h2>
-        Aujourd'hui — {principales.length} tâche(s)
-        {enPauseConges && " · Pro en pause (congés)"}
-      </h2>
-
-      <button className="bouton-nouvelle-tache" onClick={() => setFormulaireOuvert((o) => !o)}>
-        {formulaireOuvert ? "✕" : "+ Tâche"}
-      </button>
+    <div className="tnv-screen">
+      <div className="tnv-screen-head">
+        <div>
+          <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
+          <h1 className="tnv-h1">Aujourd'hui</h1>
+          <p className="tnv-meta-text">
+            {principales.length} tâche(s){enPauseConges && " · Pro en pause (congés)"}
+          </p>
+        </div>
+        <button className="tnv-btn tnv-btn--secondary" onClick={() => setFormulaireOuvert((o) => !o)}>
+          {formulaireOuvert ? "✕ Fermer" : "+ Tâche"}
+        </button>
+      </div>
 
       {formulaireOuvert && (
-        <form className="import-lien" onSubmit={creerTache}>
-          <input type="text" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
-          <select value={domaineId} onChange={(e) => setDomaineId(e.target.value)}>
-            <option value="">Domaine…</option>
-            {domaines.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nom}
-              </option>
-            ))}
-          </select>
-          <select value={priorite} onChange={(e) => setPriorite(e.target.value)}>
-            {PRIORITES.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-          <label>
-            Échéance :
-            <input type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
-          </label>
-          <label>
+        <form className="tnv-form" onSubmit={creerTache}>
+          <input className="tnv-input" type="text" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
+          <div className="tnv-field-row">
+            <select className="tnv-select" value={domaineId} onChange={(e) => setDomaineId(e.target.value)}>
+              <option value="">Domaine…</option>
+              {domaines.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nom}
+                </option>
+              ))}
+            </select>
+            <select className="tnv-select" value={priorite} onChange={(e) => setPriorite(e.target.value)}>
+              {PRIORITES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <input className="tnv-input" type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+          </div>
+          <label className="tnv-checkbox-row">
             <input type="checkbox" checked={administrative} onChange={(e) => setAdministrative(e.target.checked)} />
             Administrative (active le Pomodoro)
           </label>
-          <label>
+          <label className="tnv-checkbox-row">
             <input type="checkbox" checked={recurrente} onChange={(e) => setRecurrente(e.target.checked)} />
             Récurrente
           </label>
-          <label>
+          <label className="tnv-checkbox-row">
             <input type="checkbox" checked={epinglee} onChange={(e) => setEpinglee(e.target.checked)} />
             Épinglée
           </label>
-          <button type="submit" className="bouton-icone" title="Créer la tâche" aria-label="Créer la tâche">
-            ✓
+          <button type="submit" className="tnv-btn tnv-btn--primary">
+            Créer la tâche
           </button>
         </form>
       )}
 
-      {principales.length === 0 && <p>Rien à traiter aujourd'hui.</p>}
+      {principales.length === 0 && <p className="tnv-empty">Rien à traiter aujourd'hui.</p>}
 
-      <div className={enPauseConges ? "task-list taches-grisees" : "task-list"}>
+      <div className={enPauseConges ? "tnv-stack tnv-grisees" : "tnv-stack"}>
         {principales.map((s) => (
           <TaskCard
             key={s.id}
@@ -156,48 +160,55 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
       </div>
 
       {realisees.length > 0 && (
-        <div className="traitees">
-          <h3>Réalisées aujourd'hui</h3>
-          <ul>
+        <div className="tnv-card" style={{ marginBottom: "var(--tnv-space-6)" }}>
+          <span className="tnv-section-label">Réalisées aujourd'hui</span>
+          <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
             {realisees.map((s) => (
-              <li key={s.id}>{s.tache.titre}</li>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <IconCheck filled size={18} />
+                <span className="tnv-task-card__title tnv-task-card__title--done">{s.tache.titre}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
-      <div className={enPauseConges ? "bloc-recurrentes taches-grisees" : "bloc-recurrentes"}>
-        <h2>Récurrentes</h2>
+      <div className={enPauseConges ? "tnv-card tnv-card--dashed tnv-grisees" : "tnv-card tnv-card--dashed"}>
+        <span className="tnv-section-label">Récurrentes &amp; veille · hors quota</span>
+
         {recurrentes.length === 0 && jour.veille_a_traiter.length === 0 ? (
-          <p>Aucune tâche récurrente.</p>
+          <p className="tnv-empty" style={{ marginTop: 10 }}>
+            Aucune tâche récurrente.
+          </p>
         ) : (
-          <div className="task-list">
-            {jour.veille_a_traiter.length > 0 && (
-              <TaskCard
-                tache={{
-                  titre: "Traiter la veille du jour",
-                  domaine: { nom: `${jour.veille_a_traiter.length} item(s) à traiter` },
-                  priorite: "aujourd_hui",
-                  date_fin: null,
-                  type: "administrative",
-                }}
-                raison="epingle"
-                onRealiser={onNaviguerVeille}
-              />
+          <>
+            {recurrentes.length > 0 && (
+              <div className="tnv-stack" style={{ marginTop: 10, marginBottom: recurrentes.length ? 10 : 0 }}>
+                {recurrentes.map((s) => (
+                  <TaskCard
+                    key={s.id}
+                    dense
+                    tache={s.tache}
+                    raison={s.raison_selection}
+                    onEpingleToggle={basculerEpingle}
+                    onRecurrenteToggle={basculerRecurrente}
+                    onRealiser={() => marquerRealise(s)}
+                  />
+                ))}
+              </div>
             )}
-            {recurrentes.map((s) => (
-              <TaskCard
-                key={s.id}
-                tache={s.tache}
-                raison={s.raison_selection}
-                onEpingleToggle={basculerEpingle}
-                onRecurrenteToggle={basculerRecurrente}
-                onRealiser={() => marquerRealise(s)}
-              />
-            ))}
-          </div>
+            {jour.veille_a_traiter.length > 0 && (
+              <button
+                className="tnv-btn tnv-btn--ghost"
+                style={{ alignSelf: "flex-start", paddingLeft: 0 }}
+                onClick={onNaviguerVeille}
+              >
+                {jour.veille_a_traiter.length} nouveaux articles en veille →
+              </button>
+            )}
+          </>
         )}
       </div>
-    </section>
+    </div>
   );
 }

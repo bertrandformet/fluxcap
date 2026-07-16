@@ -10,16 +10,18 @@ const PRIORITES = [
 function Repartition({ lignes }) {
   const total = Math.max(1, lignes.reduce((somme, l) => somme + l.count, 0));
   return (
-    <div className="repartition">
+    <div className="tnv-stack" style={{ marginBottom: 0 }}>
       {lignes.map((l) => (
-        <div key={l.label} className="repartition-ligne">
-          <span className="repartition-label">{l.label}</span>
-          <div className="repartition-barre">
-            <div className="repartition-remplissage" style={{ width: `${(l.count / total) * 100}%` }} />
+        <div key={l.label} className="tnv-bar-row">
+          <div className="tnv-bar-row__labels">
+            <span style={{ color: "var(--tnv-text)", fontWeight: 600 }}>{l.label}</span>
+            <span style={{ color: "var(--tnv-text-muted)" }}>
+              {l.count} / {total}
+            </span>
           </div>
-          <span className="repartition-valeur">
-            {l.count} / {total}
-          </span>
+          <div className="tnv-bar-track">
+            <div className="tnv-bar-fill" style={{ width: `${(l.count / total) * 100}%` }} />
+          </div>
         </div>
       ))}
     </div>
@@ -41,8 +43,8 @@ export default function TableauDeBord({ contexte }) {
       .catch((e) => setErreur(e.message));
   }, [contexte]);
 
-  if (erreur) return <p className="erreur">{erreur}</p>;
-  if (!taches) return <p>Chargement…</p>;
+  if (erreur) return <p className="tnv-error">{erreur}</p>;
+  if (!taches) return <p className="tnv-empty">Chargement…</p>;
 
   const parDomaine = domaines.map((d) => ({
     label: d.nom,
@@ -55,15 +57,22 @@ export default function TableauDeBord({ contexte }) {
   }));
 
   return (
-    <section>
-      <h2>Tableau de bord</h2>
-      <p className="compteur">{taches.length} tâche(s) active(s) — état à l'instant présent, aucun historique</p>
+    <div className="tnv-screen">
+      <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
+      <h1 className="tnv-h1">Tableau de bord</h1>
+      <p className="tnv-meta-text" style={{ marginBottom: "var(--tnv-space-5)" }}>
+        {taches.length} tâche(s) active(s) — état à l'instant présent, aucun historique
+      </p>
 
-      <h3>Par domaine</h3>
-      {parDomaine.length === 0 ? <p>Aucun domaine.</p> : <Repartition lignes={parDomaine} />}
+      <div className="tnv-card" style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
+        <span className="tnv-section-label">Par domaine</span>
+        {parDomaine.length === 0 ? <p className="tnv-empty">Aucun domaine.</p> : <Repartition lignes={parDomaine} />}
+      </div>
 
-      <h3>Par priorité</h3>
-      <Repartition lignes={parPriorite} />
-    </section>
+      <div className="tnv-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <span className="tnv-section-label">Par priorité</span>
+        <Repartition lignes={parPriorite} />
+      </div>
+    </div>
   );
 }

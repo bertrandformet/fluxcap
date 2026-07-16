@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
-import TaskCard from "../components/TaskCard.jsx";
 import DecisionModal from "../components/DecisionModal.jsx";
+import DomainBadge from "../components/DomainBadge.jsx";
+import { IconCheck } from "../components/Icons.jsx";
+
+const LABELS_STATUT = {
+  realise: "Réalisée",
+  reporte: "Reportée",
+  abandonne: "Abandonnée",
+};
 
 export default function Cloture({ contexte }) {
   const [jour, setJour] = useState(null);
@@ -28,8 +35,8 @@ export default function Cloture({ contexte }) {
     charger();
   }
 
-  if (erreur) return <p className="erreur">{erreur}</p>;
-  if (!jour) return <p>Chargement…</p>;
+  if (erreur) return <p className="tnv-error">{erreur}</p>;
+  if (!jour) return <p className="tnv-empty">Chargement…</p>;
 
   const enAttente = jour.selection.filter((s) => s.statut_jour === "en_attente");
   const traitees = jour.selection.filter((s) => s.statut_jour !== "en_attente");
@@ -37,39 +44,54 @@ export default function Cloture({ contexte }) {
   const nbReporte = jour.selection.filter((s) => s.statut_jour === "reporte").length;
 
   return (
-    <section>
-      <h2>Clôture du jour</h2>
-      <p className="compteur">
+    <div className="tnv-screen">
+      <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
+      <h1 className="tnv-h1">Clôture</h1>
+      <p className="tnv-meta-text" style={{ marginBottom: "var(--tnv-space-5)" }}>
         {nbFait} réalisée(s) · {nbReporte} reportée(s)
       </p>
 
-      {enAttente.length === 0 && <p>Toutes les tâches du jour ont été traitées.</p>}
+      {enAttente.length === 0 && <p className="tnv-empty">Toutes les tâches du jour ont été traitées.</p>}
 
-      <div className="task-list">
+      <div className="tnv-stack">
         {enAttente.map((s) => (
-          <TaskCard key={s.id} tache={s.tache} raison={s.raison_selection}>
-            <div className="cloture-actions">
-              <button className="bouton-icone" onClick={() => marquerRealise(s)} title="Réalisée" aria-label="Réalisée">
-                ✓
-              </button>
-              <button onClick={() => setEnDecision(s)}>
-                {s.raison_selection === "anti_oubli" ? "Décider" : "À réaliser"}
-              </button>
+          <div key={s.id} className="tnv-card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button className="tnv-icon-btn" onClick={() => marquerRealise(s)} title="Réalisée" aria-label="Réalisée">
+              <IconCheck />
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="tnv-task-card__title">{s.tache.titre}</div>
+              <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
+                <DomainBadge domaine={s.tache.domaine} />
+              </div>
             </div>
-          </TaskCard>
+            <button className="tnv-btn tnv-btn--outline" onClick={() => setEnDecision(s)}>
+              {s.raison_selection === "anti_oubli" ? "Décider" : "À réaliser"}
+            </button>
+          </div>
         ))}
       </div>
 
       {traitees.length > 0 && (
-        <div className="traitees">
-          <h3>Déjà traitées</h3>
-          <ul>
+        <div className="tnv-card">
+          <span className="tnv-section-label">Déjà traitées</span>
+          <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
             {traitees.map((s) => (
-              <li key={s.id}>
-                {s.tache.titre} — {s.statut_jour}
-              </li>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <IconCheck filled={s.statut_jour === "realise"} size={18} />
+                <div>
+                  <div
+                    className={
+                      s.statut_jour === "realise" ? "tnv-task-card__title tnv-task-card__title--done" : "tnv-task-card__title"
+                    }
+                  >
+                    {s.tache.titre}
+                  </div>
+                  <span className="tnv-meta-text">{LABELS_STATUT[s.statut_jour]}</span>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
@@ -81,6 +103,6 @@ export default function Cloture({ contexte }) {
           onClose={() => setEnDecision(null)}
         />
       )}
-    </section>
+    </div>
   );
 }
