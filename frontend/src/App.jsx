@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./api/client.js";
 import ContextSwitch from "./components/ContextSwitch.jsx";
-import { IconDeconnexion, IconMoon, IconSun } from "./components/Icons.jsx";
+import { IconCle, IconDeconnexion, IconMoon, IconSun } from "./components/Icons.jsx";
+import PanneauClesAcces from "./components/PanneauClesAcces.jsx";
 import Aujourdhui from "./screens/Aujourdhui.jsx";
 import Cloture from "./screens/Cloture.jsx";
 import Connexion from "./screens/Connexion.jsx";
@@ -29,6 +30,7 @@ export default function App() {
   const [congesActif, setCongesActif] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || null);
   const [connecte, setConnecte] = useState(() => api.estConnecte());
+  const [panneauClesOuvert, setPanneauClesOuvert] = useState(false);
 
   useEffect(() => {
     api.definirGestionnaireSessionExpiree(() => setConnecte(false));
@@ -91,11 +93,21 @@ export default function App() {
           >
             {themeEffectif === "dark" ? <IconMoon /> : <IconSun />}
           </button>
+          <button
+            className="tnv-icon-btn"
+            onClick={() => setPanneauClesOuvert(true)}
+            title="Clés d'accès (Face ID/Touch ID)"
+            aria-label="Clés d'accès"
+          >
+            <IconCle />
+          </button>
           <button className="tnv-icon-btn" onClick={seDeconnecter} title="Se déconnecter" aria-label="Se déconnecter">
             <IconDeconnexion />
           </button>
         </div>
       </header>
+
+      {panneauClesOuvert && <PanneauClesAcces onClose={() => setPanneauClesOuvert(false)} />}
 
       <nav className="tnv-nav">
         {ECRANS.map((e) => (

@@ -88,6 +88,16 @@ export const api = {
   authConnexion: (mot_de_passe) =>
     request(`/auth/login`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
 
+  webauthnOptionsInscription: (nom) =>
+    request(`/auth/webauthn/inscription/options`, { method: "POST", body: JSON.stringify({ nom }) }),
+  webauthnVerifierInscription: (nom, credential) =>
+    request(`/auth/webauthn/inscription/verifier`, { method: "POST", body: JSON.stringify({ nom, credential }) }),
+  webauthnOptionsAuthentification: () => request(`/auth/webauthn/authentification/options`, { method: "POST" }),
+  webauthnVerifierAuthentification: (credential) =>
+    request(`/auth/webauthn/authentification/verifier`, { method: "POST", body: JSON.stringify({ credential }) }),
+  webauthnListerIdentifiants: () => request(`/auth/webauthn/identifiants`),
+  webauthnSupprimerIdentifiant: (id) => request(`/auth/webauthn/identifiants/${id}`, { method: "DELETE" }),
+
   getJour: (contexte) => request(`/jour/${contexte}`),
   cloturerTache: (contexte, selectionId, decision) =>
     request(`/jour/${contexte}/cloture/${selectionId}`, {

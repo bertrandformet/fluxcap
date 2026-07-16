@@ -230,3 +230,19 @@ export function IconDeconnexion({ size = 18 }) {
     </svg>
   );
 }
+
+export function IconCle({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="6" cy="14" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M8.1 11.9L15 5m0 0h3v3m-3-3l-2 2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

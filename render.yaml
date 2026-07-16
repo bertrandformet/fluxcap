@@ -29,3 +29,11 @@ services:
       # renseigner à la main.
       - key: SECRET_KEY
         generateValue: true
+      # WebAuthn (Face ID/Touch ID) : doit correspondre exactement au domaine Vercel
+      # du frontend déployé.
+      - key: WEBAUTHN_RP_ID
+        value: taches-notes-veille.vercel.app
+      - key: WEBAUTHN_RP_NAME
+        value: Tâches, Notes & Veille
+      - key: WEBAUTHN_ORIGIN
+        value: https://taches-notes-veille.vercel.app
