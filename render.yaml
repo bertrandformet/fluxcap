@@ -3,21 +3,25 @@ services:
     name: taches-notes-veille-api
     env: python
     region: frankfurt
-    plan: starter
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.6
+      # Postgres Supabase (Project Settings → Database → Connection string, mode
+      # "Transaction" ou "Session" — copier tel quel, driver psycopg2 déjà installé)
       - key: DATABASE_URL
-        value: sqlite:////data/taches_veille.db
-      - key: UPLOAD_DIR
-        value: /data/uploads
+        sync: false
       - key: CORS_ORIGINS
+        sync: false
+      # Supabase Storage (Project Settings → API) pour les pièces jointes, le
+      # disque de ce service étant éphémère en plan gratuit
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
         sync: false

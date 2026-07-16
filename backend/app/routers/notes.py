@@ -10,13 +10,13 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.config import UPLOAD_DIR
 from app.database import get_db
 from app.models import Note, PieceJointe, Priorite, Tache
 from app.schemas import NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
+from app.services import stockage
 from app.services.export_notes import GENERATEURS
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -116,9 +116,7 @@ def supprimer_note(note_id: int, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
     for piece in obj.pieces_jointes:
-        chemin = UPLOAD_DIR / piece.nom_stocke
-        if chemin.exists():
-            chemin.unlink()
+        stockage.supprimer(piece.nom_stocke)
     db.delete(obj)
     db.commit()
 
@@ -175,7 +173,7 @@ async def ajouter_piece_jointe(note_id: int, fichier: UploadFile = File(...), db
 
     extension = Path(fichier.filename or "").suffix
     nom_stocke = f"{uuid.uuid4().hex}{extension}"
-    (UPLOAD_DIR / nom_stocke).write_bytes(contenu)
+    stockage.sauvegarder(nom_stocke, contenu, fichier.content_type)
 
     piece = PieceJointe(
         note_id=note_id,
@@ -195,10 +193,14 @@ def telecharger_piece_jointe(piece_id: int, db: Session = Depends(get_db)):
     piece = db.get(PieceJointe, piece_id)
     if not piece:
         raise HTTPException(status_code=404, detail="Pièce jointe introuvable")
-    chemin = UPLOAD_DIR / piece.nom_stocke
-    if not chemin.exists():
+    contenu = stockage.lire(piece.nom_stocke)
+    if contenu is None:
         raise HTTPException(status_code=404, detail="Fichier introuvable sur le serveur")
-    return FileResponse(chemin, media_type=piece.type_mime or "application/octet-stream", filename=piece.nom_original)
+    return Response(
+        content=contenu,
+        media_type=piece.type_mime or "application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{piece.nom_original}"'},
+    )
 
 
 @router.delete("/pieces-jointes/{piece_id}", status_code=204)
@@ -206,8 +208,6 @@ def supprimer_piece_jointe(piece_id: int, db: Session = Depends(get_db)):
     piece = db.get(PieceJointe, piece_id)
     if not piece:
         raise HTTPException(status_code=404, detail="Pièce jointe introuvable")
-    chemin = UPLOAD_DIR / piece.nom_stocke
-    if chemin.exists():
-        chemin.unlink()
+    stockage.supprimer(piece.nom_stocke)
     db.delete(piece)
     db.commit()
