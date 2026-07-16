@@ -215,3 +215,18 @@ export function IconMoon({ size = 18 }) {
     </svg>
   );
 }
+
+export function IconDeconnexion({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M8 3H4.5a1 1 0 00-1 1v12a1 1 0 001 1H8M13 14l4-4-4-4M17 10H7.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

@@ -214,3 +214,51 @@ class Parametres(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conges_actif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class Utilisateur(Base):
+    """Ligne unique représentant le propriétaire de l'app (id=1) — pas de multi-utilisateur,
+    juste une porte d'entrée protégée par mot de passe et/ou WebAuthn."""
+
+    __tablename__ = "utilisateurs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mot_de_passe_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Anti-bruteforce sur /auth/login (voir app/routers/auth.py)
+    tentatives_echouees: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    verrouille_jusqu_a: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    identifiants_webauthn: Mapped[list["IdentifiantWebauthn"]] = relationship(
+        back_populates="utilisateur", cascade="all, delete-orphan"
+    )
+
+
+class IdentifiantWebauthn(Base):
+    """Une clé d'accès enregistrée (Face ID, Touch ID, clé de sécurité...) — un utilisateur
+    peut en enregistrer plusieurs (un par appareil)."""
+
+    __tablename__ = "identifiants_webauthn"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    utilisateur_id: Mapped[int] = mapped_column(ForeignKey("utilisateurs.id"), nullable=False)
+    nom: Mapped[str] = mapped_column(String(100), nullable=False)
+    credential_id: Mapped[str] = mapped_column(String(500), unique=True, nullable=False)
+    cle_publique: Mapped[str] = mapped_column(Text, nullable=False)
+    compteur_signature: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    utilisateur: Mapped["Utilisateur"] = relationship(back_populates="identifiants_webauthn")
+
+
+class DefiWebauthn(Base):
+    """Challenge temporaire à usage unique émis pendant une cérémonie WebAuthn
+    (inscription ou authentification), consommé puis supprimé à la vérification."""
+
+    __tablename__ = "defis_webauthn"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    defi: Mapped[str] = mapped_column(String(255), nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)  # "inscription" | "authentification"
+    cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

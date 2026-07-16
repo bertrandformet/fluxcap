@@ -10,7 +10,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Élément de la spec initiale | État |
 |---|---|
 | PWA React + FastAPI, logique et écrans locaux | ✅ |
-| Authentification (mot de passe / WebAuthn) | ⏳ hors périmètre POC |
+| Authentification (mot de passe / WebAuthn) | ⚠️ mot de passe fait (session JWT, toutes les routes protégées) ; WebAuthn/passkey pas encore fait |
 | Déploiement Vercel/Render | 🚧 configuration prête (render.yaml, variables d'env), déploiement effectif à faire côté comptes Render/Vercel |
 | Planning des notifications (horaires Pro/Perso) | ⏳ hors périmètre POC — aucune notification push |
 | Mode congés | ⚠️ bascule visuelle + Pro grisé/dépriorisé implémentés ; pas de changement de planning de notifications (puisqu'aucune notification n'existe encore) |
@@ -34,7 +34,7 @@ Les domaines/sources ne sont plus des listes figées (DGESCO, DNE, DINUM...) : i
 - **Stack** : React + Vite (frontend) + FastAPI + SQLite (backend)
 - **Hébergement** (cible finale, config prête, déploiement à faire) : Vercel (frontend, gratuit) + Render (backend, plan payant Starter ~7$/mois requis pour le disque persistant SQLite/pièces jointes). Repli possible : serveur OVH personnel existant (utilisé pour uneIAparjour.fr)
 - **Repo public** avec données factices/exemples ; vraies données et configuration dans `.env` ignoré par git, jamais commité
-- **Authentification** (pas encore faite) : mot de passe classique ET Face ID/Touch ID (WebAuthn/passkey), les deux disponibles au choix
+- **Authentification** : mot de passe classique fait (premier réglage au premier lancement, session JWT côté client, toutes les routes API protégées sauf /auth et /health). Face ID/Touch ID (WebAuthn/passkey) prévu en méthode alternative, pas encore fait.
 - **Approche de développement** : POC fonctionnel d'abord dans Claude Code (logique et données), habillage visuel ensuite via Claude Design une fois le code existant, avec handoff retour vers Claude Code
 
 ## Deux onglets séparés : Pro / Perso

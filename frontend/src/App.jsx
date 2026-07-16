@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "./api/client.js";
 import ContextSwitch from "./components/ContextSwitch.jsx";
-import { IconMoon, IconSun } from "./components/Icons.jsx";
+import { IconDeconnexion, IconMoon, IconSun } from "./components/Icons.jsx";
 import Aujourdhui from "./screens/Aujourdhui.jsx";
 import Cloture from "./screens/Cloture.jsx";
+import Connexion from "./screens/Connexion.jsx";
 import Veille from "./screens/Veille.jsx";
 import Notes from "./screens/Notes.jsx";
 import Domaines from "./screens/Domaines.jsx";
@@ -27,15 +28,26 @@ export default function App() {
   const [ecran, setEcran] = useState("aujourdhui");
   const [congesActif, setCongesActif] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || null);
+  const [connecte, setConnecte] = useState(() => api.estConnecte());
 
   useEffect(() => {
-    api.getParametres().then((p) => setCongesActif(p.conges_actif));
+    api.definirGestionnaireSessionExpiree(() => setConnecte(false));
   }, []);
+
+  useEffect(() => {
+    if (!connecte) return;
+    api.getParametres().then((p) => setCongesActif(p.conges_actif));
+  }, [connecte]);
 
   useEffect(() => {
     if (theme) document.documentElement.setAttribute("data-theme", theme);
     else document.documentElement.removeAttribute("data-theme");
   }, [theme]);
+
+  function seDeconnecter() {
+    api.definirJeton(null);
+    setConnecte(false);
+  }
 
   function basculerTheme() {
     const effectif = theme || themeSysteme();
@@ -57,6 +69,14 @@ export default function App() {
 
   const themeEffectif = theme || themeSysteme();
 
+  if (!connecte) {
+    return (
+      <div className="tnv-app-shell">
+        <Connexion onConnecte={() => setConnecte(true)} />
+      </div>
+    );
+  }
+
   return (
     <div className="tnv-app-shell">
       <header className="tnv-header">
@@ -70,6 +90,9 @@ export default function App() {
             aria-label="Changer de thème"
           >
             {themeEffectif === "dark" ? <IconMoon /> : <IconSun />}
+          </button>
+          <button className="tnv-icon-btn" onClick={seDeconnecter} title="Se déconnecter" aria-label="Se déconnecter">
+            <IconDeconnexion />
           </button>
         </div>
       </header>

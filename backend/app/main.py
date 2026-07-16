@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import CORS_ORIGINS
 from app.database import Base, engine
-from app.routers import domaines, jour, notes, parametres, sources_veille, taches, veille
+from app.routers import auth, domaines, jour, notes, parametres, sources_veille, taches, veille
+from app.services.securite import exiger_authentification
 
 Base.metadata.create_all(bind=engine)
 
@@ -17,13 +18,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(domaines.router)
-app.include_router(taches.router)
-app.include_router(veille.router)
-app.include_router(notes.router)
-app.include_router(jour.router)
-app.include_router(parametres.router)
-app.include_router(sources_veille.router)
+# /auth reste public (login, premier réglage). Tout le reste exige une session valide.
+app.include_router(auth.router)
+
+_protegee = [Depends(exiger_authentification)]
+app.include_router(domaines.router, dependencies=_protegee)
+app.include_router(taches.router, dependencies=_protegee)
+app.include_router(veille.router, dependencies=_protegee)
+app.include_router(notes.router, dependencies=_protegee)
+app.include_router(jour.router, dependencies=_protegee)
+app.include_router(parametres.router, dependencies=_protegee)
+app.include_router(sources_veille.router, dependencies=_protegee)
 
 
 @app.get("/health")

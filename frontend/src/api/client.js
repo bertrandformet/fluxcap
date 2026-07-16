@@ -1,10 +1,36 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+let jeton = localStorage.getItem("jeton_session") || null;
+let gestionnaireSessionExpiree = null;
+
+function definirJeton(nouveauJeton) {
+  jeton = nouveauJeton;
+  if (nouveauJeton) localStorage.setItem("jeton_session", nouveauJeton);
+  else localStorage.removeItem("jeton_session");
+}
+
+function definirGestionnaireSessionExpiree(fn) {
+  gestionnaireSessionExpiree = fn;
+}
+
+function enTetesAuth(base = {}) {
+  return jeton ? { ...base, Authorization: `Bearer ${jeton}` } : base;
+}
+
+function signalerSessionExpiree() {
+  definirJeton(null);
+  if (gestionnaireSessionExpiree) gestionnaireSessionExpiree();
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: enTetesAuth({ "Content-Type": "application/json", ...(options.headers || {}) }),
   });
+  if (res.status === 401) {
+    signalerSessionExpiree();
+    throw new Error("401 Session expirée");
+  }
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`${res.status} ${res.statusText} — ${detail}`);
@@ -18,12 +44,21 @@ function nomFichierDepuisEntete(contentDisposition) {
   return match ? match[1] : null;
 }
 
-async function telechargerFichier(path, nomParDefaut) {
-  const res = await fetch(`${BASE_URL}${path}`);
+async function recupererBlob(path) {
+  const res = await fetch(`${BASE_URL}${path}`, { headers: enTetesAuth() });
+  if (res.status === 401) {
+    signalerSessionExpiree();
+    throw new Error("401 Session expirée");
+  }
   if (!res.ok) {
     const detail = await res.text();
     throw new Error(`${res.status} ${res.statusText} — ${detail}`);
   }
+  return res;
+}
+
+async function telechargerFichier(path, nomParDefaut) {
+  const res = await recupererBlob(path);
   const blob = await res.blob();
   const nom = nomFichierDepuisEntete(res.headers.get("Content-Disposition")) || nomParDefaut;
   const url = URL.createObjectURL(blob);
@@ -36,7 +71,23 @@ async function telechargerFichier(path, nomParDefaut) {
   URL.revokeObjectURL(url);
 }
 
+async function obtenirUrlObjet(path) {
+  const res = await recupererBlob(path);
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 export const api = {
+  definirJeton,
+  definirGestionnaireSessionExpiree,
+  estConnecte: () => Boolean(jeton),
+
+  authStatut: () => request(`/auth/status`),
+  authConfigurerMotDePasse: (mot_de_passe) =>
+    request(`/auth/setup-mot-de-passe`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
+  authConnexion: (mot_de_passe) =>
+    request(`/auth/login`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
+
   getJour: (contexte) => request(`/jour/${contexte}`),
   cloturerTache: (contexte, selectionId, decision) =>
     request(`/jour/${contexte}/cloture/${selectionId}`, {
@@ -68,7 +119,15 @@ export const api = {
   ajouterPieceJointe: async (noteId, fichier) => {
     const formData = new FormData();
     formData.append("fichier", fichier);
-    const res = await fetch(`${BASE_URL}/notes/${noteId}/pieces-jointes`, { method: "POST", body: formData });
+    const res = await fetch(`${BASE_URL}/notes/${noteId}/pieces-jointes`, {
+      method: "POST",
+      headers: enTetesAuth(),
+      body: formData,
+    });
+    if (res.status === 401) {
+      signalerSessionExpiree();
+      throw new Error("401 Session expirée");
+    }
     if (!res.ok) {
       const detail = await res.text();
       throw new Error(`${res.status} ${res.statusText} — ${detail}`);
@@ -76,7 +135,7 @@ export const api = {
     return res.json();
   },
   supprimerPieceJointe: (id) => request(`/notes/pieces-jointes/${id}`, { method: "DELETE" }),
-  urlPieceJointe: (id) => `${BASE_URL}/notes/pieces-jointes/${id}/fichier`,
+  urlObjetPieceJointe: (id) => obtenirUrlObjet(`/notes/pieces-jointes/${id}/fichier`),
   telechargerPieceJointe: (id, nom) => telechargerFichier(`/notes/pieces-jointes/${id}/fichier`, nom),
   getParametres: () => request(`/parametres`),
   modifierParametres: (patch) => request(`/parametres`, { method: "PUT", body: JSON.stringify(patch) }),

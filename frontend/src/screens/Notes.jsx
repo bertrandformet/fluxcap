@@ -11,6 +11,33 @@ function formatTaille(octets) {
   return `${(octets / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
+// L'endpoint est protégé par authentification (Authorization header), donc on ne peut
+// pas passer son URL directement en <img src> : on récupère le blob et on en fait une
+// URL locale.
+function ApercuPieceJointe({ id, alt, className }) {
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    let urlActuelle = null;
+    let annule = false;
+    api.urlObjetPieceJointe(id).then((u) => {
+      if (annule) {
+        URL.revokeObjectURL(u);
+        return;
+      }
+      urlActuelle = u;
+      setUrl(u);
+    });
+    return () => {
+      annule = true;
+      if (urlActuelle) URL.revokeObjectURL(urlActuelle);
+    };
+  }, [id]);
+
+  if (!url) return null;
+  return <img src={url} alt={alt} className={className} />;
+}
+
 export default function Notes() {
   const [notes, setNotes] = useState(null);
   const [domaines, setDomaines] = useState([]);
@@ -376,7 +403,7 @@ export default function Notes() {
                       {n.pieces_jointes.map((p) => (
                         <div key={p.id} className="tnv-note-card__attachment">
                           {p.type_mime && p.type_mime.startsWith("image/") ? (
-                            <img src={api.urlPieceJointe(p.id)} alt={p.nom_original} className="tnv-note-card__attachment-image" />
+                            <ApercuPieceJointe id={p.id} alt={p.nom_original} className="tnv-note-card__attachment-image" />
                           ) : null}
                           <span className="tnv-meta-text" style={{ flex: 1 }}>
                             {p.nom_original} ({formatTaille(p.taille_octets)})

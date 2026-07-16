@@ -16,3 +16,8 @@ UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", BASE_DIR / "app" / "uploads"))
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "pieces-jointes")
+
+# Signature des sessions JWT. En prod, DOIT être renseignée via l'env (secret long et
+# aléatoire) — le défaut ci-dessous n'est là que pour que le dev local fonctionne sans
+# rien configurer.
+SECRET_KEY = os.getenv("SECRET_KEY", "cle-de-developpement-locale-a-ne-jamais-utiliser-en-prod")

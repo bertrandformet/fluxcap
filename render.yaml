@@ -25,3 +25,7 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         sync: false
+      # Signature des sessions JWT — générée automatiquement par Render, jamais à
+      # renseigner à la main.
+      - key: SECRET_KEY
+        generateValue: true
