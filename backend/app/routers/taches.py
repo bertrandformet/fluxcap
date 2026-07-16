@@ -63,7 +63,7 @@ def modifier_tache(tache_id: int, tache: TacheUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     for champ, valeur in tache.model_dump(exclude_unset=True).items():
         setattr(obj, champ, valeur)
-    obj.derniere_interaction = datetime.utcnow()
+    obj.derniere_interaction = datetime.now()
     db.commit()
     db.refresh(obj)
     return obj

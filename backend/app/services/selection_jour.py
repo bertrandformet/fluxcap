@@ -46,13 +46,15 @@ def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> 
         if t.epinglee:
             retenues[t.id] = RaisonSelection.epingle
 
-    # 2. reportées hier lors de la clôture précédente
-    hier = aujourdhui - timedelta(days=1)
+    # 2. reportées à une échéance désormais atteinte (report d'hier à "demain", ou
+    # report à une date précise dont l'échéance choisie arrive aujourd'hui). On compare
+    # l'échéance choisie, pas la date à laquelle le report a été décidé : un report à
+    # J+21 ne doit pas remonter dès le lendemain.
     for t in taches_eligibles:
         if t.id in retenues or not t.historique_reports:
             continue
         dernier_report = max(t.historique_reports, key=lambda r: r.date_evenement)
-        if dernier_report.date_evenement.date() == hier:
+        if dernier_report.nouvelle_echeance is not None and dernier_report.nouvelle_echeance <= aujourdhui:
             retenues[t.id] = RaisonSelection.report_remonte
 
     # 3. complément par score priorité × urgence
@@ -85,11 +87,16 @@ def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> 
         if candidates_oubli:
             tache_oubliee = candidates_oubli[0]
             if len(retenues) >= MAX_TACHES:
-                candidats_score = [tid for tid, raison in retenues.items() if raison == RaisonSelection.score]
-                if candidats_score:
-                    moins_prioritaire = min(candidats_score, key=lambda tid: score(par_id[tid], aujourdhui))
+                # On n'évince jamais une tâche épinglée manuellement : si le quota est
+                # entièrement occupé par des épingles, on respecte le quota plutôt que
+                # de le dépasser (l'anti-oubli sera retenté les jours suivants).
+                candidats_evictables = [tid for tid, raison in retenues.items() if raison != RaisonSelection.epingle]
+                if candidats_evictables:
+                    moins_prioritaire = min(candidats_evictables, key=lambda tid: score(par_id[tid], aujourdhui))
                     del retenues[moins_prioritaire]
-            retenues[tache_oubliee.id] = RaisonSelection.anti_oubli
+                    retenues[tache_oubliee.id] = RaisonSelection.anti_oubli
+            else:
+                retenues[tache_oubliee.id] = RaisonSelection.anti_oubli
 
     # 5. tâches récurrentes : toutes incluses, hors quota, bloc dédié
     for t in taches_recurrentes:
@@ -145,7 +152,7 @@ def appliquer_decision(db: Session, selection: SelectionJour, decision: Decision
     else:
         raise ValueError(f"action inconnue : {action}")
 
-    tache.derniere_interaction = datetime.utcnow()
+    tache.derniere_interaction = datetime.now()
     db.commit()
 
     if action == "realiser":

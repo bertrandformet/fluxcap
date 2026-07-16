@@ -1,10 +1,13 @@
+import ipaddress
 import re
+import socket
 import urllib.request
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib.error import URLError
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse
@@ -32,12 +35,46 @@ def lister_notes(domaine_id: Optional[int] = None, sans_tag: Optional[bool] = No
     return query.order_by(Note.cree_le.desc()).all()
 
 
+class _SansRedirection(urllib.request.HTTPRedirectHandler):
+    """Bloque les redirections HTTP : une cible autorisée pourrait rediriger vers
+    une adresse interne, ce qui contournerait la vérification faite avant la requête."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def _hote_public(hostname: str) -> bool:
+    """Refuse les hôtes qui résolvent vers une IP privée, loopback, lien-local ou réservée
+    (ex. 169.254.169.254, métadonnées cloud), pour empêcher le serveur d'être utilisé comme proxy SSRF."""
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            return False
+    return True
+
+
+def _url_apercu_autorisee(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+    if not parsed.hostname:
+        return False
+    return _hote_public(parsed.hostname)
+
+
 @router.get("/apercu-lien")
 def apercu_lien(url: str):
     """Récupère titre et description d'une page pour préremplir l'import manuel d'un lien."""
+    if not _url_apercu_autorisee(url):
+        return {"titre": "", "apercu": ""}
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        opener = urllib.request.build_opener(_SansRedirection)
+        with opener.open(req, timeout=5) as resp:
             html = resp.read(200_000).decode("utf-8", errors="ignore")
     except (URLError, ValueError, TimeoutError, OSError):
         return {"titre": "", "apercu": ""}
@@ -100,7 +137,7 @@ def transformer_en_tache(note_id: int, db: Session = Depends(get_db)):
         domaine_id=note.domaine_id,
         description=note.contenu or note.apercu,
         priorite=Priorite.un_jour,
-        derniere_interaction=datetime.utcnow(),
+        derniere_interaction=datetime.now(),
     )
     db.add(tache)
     db.commit()

@@ -63,7 +63,7 @@ def agir_sur_item(item_id: int, action: VeilleAction, db: Session = Depends(get_
             titre=item.titre,
             domaine_id=item.domaine_id,
             priorite=Priorite.un_jour,
-            derniere_interaction=datetime.utcnow(),
+            derniere_interaction=datetime.now(),
         )
         db.add(tache)
         db.flush()

@@ -80,7 +80,9 @@ class Tache(Base):
     statut: Mapped[StatutTache] = mapped_column(Enum(StatutTache), nullable=False, default=StatutTache.a_realiser)
     epinglee: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recurrente: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    derniere_interaction: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    # En heure locale (pas UTC) : comparé à `date.today()` dans le calcul de la sélection
+    # du jour (seuil anti-oubli), qui raisonne lui aussi en date locale.
+    derniere_interaction: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     domaine: Mapped["Domaine"] = relationship(back_populates="taches")
