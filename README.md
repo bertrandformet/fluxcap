@@ -22,12 +22,21 @@ Voir [spec-taches-notes-veille.md](./spec-taches-notes-veille.md) pour la spéci
 
 ## État actuel
 
-POC fonctionnel (logique + écrans), sans authentification, sans notifications, sans déploiement. Données factices pour le développement.
+POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Pas de notifications. Données factices uniquement en développement local — la base de production est vide par défaut.
 
 ## Structure
 
-- `backend/` — API FastAPI + SQLite
+- `backend/` — API FastAPI, SQLite en local / Postgres en production
 - `frontend/` — PWA React (Vite)
+
+## Déploiement
+
+- **Frontend** : [Vercel](https://vercel.com), racine du projet `frontend/`, build Vite standard.
+- **Backend** : [Render](https://render.com), plan gratuit, déployé via le Blueprint [`render.yaml`](./render.yaml) à la racine du repo.
+- **Base de données** : Postgres géré par [Supabase](https://supabase.com) (le plan gratuit de Render n'a pas de disque persistant).
+- **Pièces jointes** : bucket [Supabase Storage](https://supabase.com) (même raison — voir `backend/app/services/stockage.py`, qui retombe sur le disque local si aucune variable Supabase n'est renseignée).
+
+Toutes les variables d'environnement nécessaires (connexion Postgres, clés Supabase, origine CORS, clé de signature des sessions, config WebAuthn) sont listées dans [`.env.example`](./.env.example) et dans `render.yaml`. Aucune valeur réelle n'est commitée ; elles sont saisies directement dans les tableaux de bord Render/Vercel.
 
 ## Démarrage local
 
