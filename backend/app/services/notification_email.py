@@ -18,6 +18,7 @@ LABELS_CONTEXTE = {Contexte.pro: "Pro", Contexte.perso: "Perso"}
 
 def _envoyer(sujet: str, corps: str) -> bool:
     if not RESEND_API_KEY or not NOTIFICATION_EMAIL:
+        print(f"[notification_email] variables manquantes : cle={bool(RESEND_API_KEY)} email={bool(NOTIFICATION_EMAIL)}")
         return False
     charge = json.dumps({"from": RESEND_FROM, "to": [NOTIFICATION_EMAIL], "subject": sujet, "text": corps}).encode(
         "utf-8"
@@ -31,7 +32,9 @@ def _envoyer(sujet: str, corps: str) -> bool:
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             return 200 <= resp.status < 300
-    except URLError:
+    except URLError as e:
+        detail = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
+        print(f"[notification_email] echec envoi Resend : {detail}")
         return False
 
 
