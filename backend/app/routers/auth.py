@@ -80,9 +80,9 @@ def _deja_configure(utilisateur: Optional[Utilisateur]) -> bool:
 def _utilisateur_authentifie(authorization: Optional[str], db: Session) -> Utilisateur:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentification requise")
-    utilisateur_id = lire_jeton_session(authorization[len("Bearer "):])
+    charge = lire_jeton_session(authorization[len("Bearer "):])
     utilisateur = _obtenir_utilisateur(db)
-    if utilisateur_id is None or not utilisateur or utilisateur_id != utilisateur.id:
+    if charge is None or not utilisateur or charge != (utilisateur.id, utilisateur.session_version):
         raise HTTPException(status_code=401, detail="Session invalide ou expirée")
     return utilisateur
 
@@ -145,7 +145,9 @@ def configurer_mot_de_passe(entree: MotDePasseEntree, db: Session = Depends(get_
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(entree.mot_de_passe)
     code_recuperation = _generer_code_recuperation(utilisateur)
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
+    return SessionSortie(
+        jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version), code_recuperation=code_recuperation
+    )
 
 
 @router.post("/login", response_model=SessionSortie)
@@ -172,7 +174,7 @@ def se_connecter(entree: MotDePasseEntree, db: Session = Depends(get_db)):
     utilisateur.tentatives_echouees = 0
     utilisateur.verrouille_jusqu_a = None
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id))
+    return SessionSortie(jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version))
 
 
 @router.post("/recuperer", response_model=SessionSortie)
@@ -191,9 +193,12 @@ def recuperer_compte(entree: RecuperationEntree, db: Session = Depends(get_db)):
     utilisateur.mot_de_passe_hash = hacher_mot_de_passe(entree.nouveau_mot_de_passe)
     utilisateur.tentatives_echouees = 0
     utilisateur.verrouille_jusqu_a = None
+    utilisateur.session_version += 1  # invalide les sessions ouvertes ailleurs
     code_recuperation = _generer_code_recuperation(utilisateur)
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
+    return SessionSortie(
+        jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version), code_recuperation=code_recuperation
+    )
 
 
 # --- WebAuthn (Face ID / Touch ID / clé de sécurité) ---
@@ -248,7 +253,9 @@ def verifier_inscription(
     )
     code_recuperation = _generer_code_recuperation(utilisateur) if premiere_configuration else None
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(utilisateur.id), code_recuperation=code_recuperation)
+    return SessionSortie(
+        jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version), code_recuperation=code_recuperation
+    )
 
 
 @router.post("/webauthn/authentification/options")
@@ -291,7 +298,16 @@ def verifier_authentification(entree: VerifierAuthentificationEntree, db: Sessio
 
     identifiant.compteur_signature = verification.new_sign_count
     db.commit()
-    return SessionSortie(jeton=creer_jeton_session(identifiant.utilisateur_id))
+    return SessionSortie(jeton=creer_jeton_session(identifiant.utilisateur_id, identifiant.utilisateur.session_version))
+
+
+@router.post("/deconnecter-partout", status_code=204)
+def deconnecter_partout(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Invalide tous les jetons de session émis jusqu'ici, y compris celui de cet appel :
+    utile si un jeton a pu fuiter (appareil perdu, etc.). Il faudra se reconnecter partout."""
+    utilisateur = _utilisateur_authentifie(authorization, db)
+    utilisateur.session_version += 1
+    db.commit()
 
 
 @router.get("/webauthn/identifiants", response_model=List[IdentifiantWebauthnSortie])

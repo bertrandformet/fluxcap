@@ -89,6 +89,7 @@ export const api = {
     request(`/auth/login`, { method: "POST", body: JSON.stringify({ mot_de_passe }) }),
   authRecuperer: (code, nouveau_mot_de_passe) =>
     request(`/auth/recuperer`, { method: "POST", body: JSON.stringify({ code, nouveau_mot_de_passe }) }),
+  authDeconnecterPartout: () => request(`/auth/deconnecter-partout`, { method: "POST" }),
 
   webauthnOptionsInscription: (nom) =>
     request(`/auth/webauthn/inscription/options`, { method: "POST", body: JSON.stringify({ nom }) }),

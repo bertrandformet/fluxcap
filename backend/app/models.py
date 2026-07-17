@@ -239,6 +239,11 @@ class Utilisateur(Base):
     # clair une seule fois au client — seul son hash est conservé.
     code_recuperation_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    # Incrémenté pour invalider tous les jetons JWT émis jusque-là (déconnexion partout) —
+    # chaque jeton embarque la version en cours au moment de son émission, comparée à
+    # celle-ci à chaque requête authentifiée.
+    session_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
     identifiants_webauthn: Mapped[list["IdentifiantWebauthn"]] = relationship(
         back_populates="utilisateur", cascade="all, delete-orphan"
     )

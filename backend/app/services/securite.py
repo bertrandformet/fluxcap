@@ -6,12 +6,15 @@ import hashlib
 import hmac
 import secrets
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import jwt
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
+from sqlalchemy.orm import Session
 
 from app.config import SCHEDULER_SECRET, SECRET_KEY
+from app.database import get_db
+from app.models import Utilisateur
 
 ITERATIONS = 600_000
 DUREE_SESSION_SECONDES = 30 * 24 * 3600  # 30 jours
@@ -53,30 +56,38 @@ def normaliser_code_recuperation(code: str) -> str:
     return "".join(c for c in code.upper() if c in ALPHABET_RECUPERATION)
 
 
-def creer_jeton_session(utilisateur_id: int) -> str:
+def creer_jeton_session(utilisateur_id: int, version_session: int) -> str:
     maintenant = int(time.time())
     return jwt.encode(
-        {"sub": str(utilisateur_id), "iat": maintenant, "exp": maintenant + DUREE_SESSION_SECONDES},
+        {"sub": str(utilisateur_id), "ver": version_session, "iat": maintenant, "exp": maintenant + DUREE_SESSION_SECONDES},
         SECRET_KEY,
         algorithm="HS256",
     )
 
 
-def lire_jeton_session(jeton: str) -> Optional[int]:
+def lire_jeton_session(jeton: str) -> Optional[Tuple[int, int]]:
+    """Retourne (utilisateur_id, version_session) porté par le jeton, ou None s'il est
+    invalide/expiré. La version doit ensuite être comparée à celle en base (voir
+    exiger_authentification) pour détecter un jeton révoqué via "déconnecter partout"."""
     try:
         charge = jwt.decode(jeton, SECRET_KEY, algorithms=["HS256"])
-        return int(charge["sub"])
+        return int(charge["sub"]), int(charge["ver"])
     except (jwt.PyJWTError, KeyError, ValueError):
         return None
 
 
-def exiger_authentification(authorization: Optional[str] = Header(None)) -> int:
-    """Dépendance FastAPI : vérifie le Bearer token, appliquée à tous les routers
-    protégés via include_router(..., dependencies=[Depends(exiger_authentification)])."""
+def exiger_authentification(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)) -> int:
+    """Dépendance FastAPI : vérifie le Bearer token et que sa version de session n'a pas
+    été révoquée, appliquée à tous les routers protégés via
+    include_router(..., dependencies=[Depends(exiger_authentification)])."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentification requise")
-    utilisateur_id = lire_jeton_session(authorization[len("Bearer "):])
-    if utilisateur_id is None:
+    charge = lire_jeton_session(authorization[len("Bearer "):])
+    if charge is None:
+        raise HTTPException(status_code=401, detail="Session invalide ou expirée")
+    utilisateur_id, version_jeton = charge
+    utilisateur = db.query(Utilisateur).filter_by(id=utilisateur_id).first()
+    if not utilisateur or utilisateur.session_version != version_jeton:
         raise HTTPException(status_code=401, detail="Session invalide ou expirée")
     return utilisateur_id
 

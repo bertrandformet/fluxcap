@@ -3,11 +3,12 @@ import { api } from "../api/client.js";
 import { IconTrash } from "./Icons.jsx";
 import { estWebauthnDisponible, optionsInscriptionDepuisJson, serialiserCredentialInscription } from "../utils/webauthn.js";
 
-export default function PanneauClesAcces({ onClose }) {
+export default function PanneauClesAcces({ onClose, onDeconnecte }) {
   const [identifiants, setIdentifiants] = useState(null);
   const [nomAppareil, setNomAppareil] = useState("");
   const [erreur, setErreur] = useState(null);
   const [enCours, setEnCours] = useState(false);
+  const [enCoursDeconnexion, setEnCoursDeconnexion] = useState(false);
 
   useEffect(() => {
     charger();
@@ -45,6 +46,18 @@ export default function PanneauClesAcces({ onClose }) {
     }
   }
 
+  async function deconnecterPartout() {
+    if (!window.confirm("Déconnecter tous les appareils ? Il faudra se reconnecter partout, y compris ici.")) return;
+    setEnCoursDeconnexion(true);
+    try {
+      await api.authDeconnecterPartout();
+      onDeconnecte();
+    } catch (err) {
+      setErreur(err.message);
+      setEnCoursDeconnexion(false);
+    }
+  }
+
   return (
     <div className="tnv-overlay tnv-sheet" onClick={onClose}>
       <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()}>
@@ -79,7 +92,7 @@ export default function PanneauClesAcces({ onClose }) {
             <input
               className="tnv-input"
               type="text"
-              placeholder="Nom de cet appareil (ex. iPhone de Bertrand)"
+              placeholder="Nom de cet appareil (ex. iPhone)"
               value={nomAppareil}
               onChange={(e) => setNomAppareil(e.target.value)}
             />
@@ -90,6 +103,16 @@ export default function PanneauClesAcces({ onClose }) {
         ) : (
           <p className="tnv-meta-text">Ce navigateur ne supporte pas les clés d'accès.</p>
         )}
+
+        <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
+          <p className="tnv-meta-text" style={{ marginBottom: 8 }}>
+            Un jeton de connexion aurait fuité (appareil perdu, session oubliée sur un poste partagé...) ? Invalide
+            toutes les sessions ouvertes — il faudra se reconnecter partout, y compris ici.
+          </p>
+          <button className="tnv-btn tnv-btn--outline" onClick={deconnecterPartout} disabled={enCoursDeconnexion}>
+            {enCoursDeconnexion ? "…" : "Déconnecter tous les appareils"}
+          </button>
+        </div>
 
         <button className="tnv-btn tnv-btn--ghost" onClick={onClose}>
           Fermer

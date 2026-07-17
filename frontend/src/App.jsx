@@ -110,7 +110,9 @@ export default function App() {
         </div>
       </header>
 
-      {panneauClesOuvert && <PanneauClesAcces onClose={() => setPanneauClesOuvert(false)} />}
+      {panneauClesOuvert && (
+        <PanneauClesAcces onClose={() => setPanneauClesOuvert(false)} onDeconnecte={seDeconnecter} />
+      )}
 
       <nav className="tnv-nav">
         {ECRANS.map((e) => (
