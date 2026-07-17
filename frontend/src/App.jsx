@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api/client.js";
 import ContextSwitch from "./components/ContextSwitch.jsx";
 import { IconCle, IconDeconnexion, IconMoon, IconSun } from "./components/Icons.jsx";
@@ -31,10 +31,32 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || null);
   const [connecte, setConnecte] = useState(() => api.estConnecte());
   const [panneauClesOuvert, setPanneauClesOuvert] = useState(false);
+  const [capture] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("capture_url");
+    const titre = params.get("capture_titre");
+    return url || titre ? { url, titre } : null;
+  });
+  const [captureStatut, setCaptureStatut] = useState(null);
+  const captureLancee = useRef(false);
 
   useEffect(() => {
     api.definirGestionnaireSessionExpiree(() => setConnecte(false));
   }, []);
+
+  useEffect(() => {
+    if (!connecte || !capture || captureLancee.current) return;
+    captureLancee.current = true;
+    setCaptureStatut("en-cours");
+    api
+      .creerNote({ titre: capture.titre || capture.url, url: capture.url || undefined })
+      .then(() => {
+        setCaptureStatut("ok");
+        if (window.opener) setTimeout(() => window.close(), 1200);
+        else setTimeout(() => window.location.assign(window.location.pathname), 1200);
+      })
+      .catch(() => setCaptureStatut("erreur"));
+  }, [connecte, capture]);
 
   useEffect(() => {
     if (!connecte) return;
@@ -75,6 +97,24 @@ export default function App() {
     return (
       <div className="tnv-app-shell">
         <Connexion onConnecte={() => setConnecte(true)} />
+      </div>
+    );
+  }
+
+  if (capture) {
+    return (
+      <div
+        className="tnv-app-shell"
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: 24, textAlign: "center" }}
+      >
+        <div>
+          <img src="/icon-192.png" alt="" width={48} height={48} style={{ borderRadius: 10, marginBottom: 12 }} />
+          <p className="tnv-h1" style={{ fontSize: 17 }}>
+            {captureStatut === "ok" && "Note ajoutée à FluxCap ✅"}
+            {captureStatut === "erreur" && "Échec de la capture"}
+            {captureStatut === "en-cours" && "Capture en cours…"}
+          </p>
+        </div>
       </div>
     );
   }
