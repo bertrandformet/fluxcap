@@ -61,7 +61,7 @@ Chrome ne supporte pas nativement les raccourcis Apple Shortcuts. Un bookmarklet
 
 ### Résultat
 
-Ouvre une petite fenêtre FluxCap qui capture automatiquement le titre et l'URL de la page courante en note (sans domaine assigné), affiche une confirmation, puis se referme toute seule après ~1 seconde. Ne récupère pas de résumé (`apercu`) — contrairement au raccourci Shortcuts, qui appelle `apercu-lien` explicitement.
+Ouvre une petite fenêtre FluxCap qui appelle `apercu-lien` pour récupérer le vrai titre de la page et son résumé (comme le raccourci Shortcuts), crée la note (sans domaine assigné), affiche une confirmation, puis se referme toute seule après ~1 seconde. Si `apercu-lien` échoue (site protégé, voir limites plus bas), retombe sur le titre d'onglet du navigateur.
 
 ### Installation (Chrome)
 

@@ -48,14 +48,28 @@ export default function App() {
     if (!connecte || !capture || captureLancee.current) return;
     captureLancee.current = true;
     setCaptureStatut("en-cours");
-    api
-      .creerNote({ titre: capture.titre || capture.url, url: capture.url || undefined })
-      .then(() => {
+    (async () => {
+      let titre = capture.titre || capture.url;
+      let apercu;
+      if (capture.url) {
+        try {
+          const infos = await api.apercuLien(capture.url);
+          if (infos.titre) titre = infos.titre;
+          if (infos.apercu) apercu = infos.apercu;
+        } catch {
+          // tant pis, on garde le titre du navigateur et pas d'aperçu
+        }
+      }
+      try {
+        await api.creerNote({ titre, url: capture.url || undefined, apercu });
         setCaptureStatut("ok");
+      } catch {
+        setCaptureStatut("erreur");
+      } finally {
         if (window.opener) setTimeout(() => window.close(), 1200);
         else setTimeout(() => window.location.assign(window.location.pathname), 1200);
-      })
-      .catch(() => setCaptureStatut("erreur"));
+      }
+    })();
   }, [connecte, capture]);
 
   useEffect(() => {
