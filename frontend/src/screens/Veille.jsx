@@ -25,9 +25,11 @@ export default function Veille({ contexte }) {
 
   const [panneauSourcesOuvert, setPanneauSourcesOuvert] = useState(false);
   const [sources, setSources] = useState(null);
+  const [tousDomaines, setTousDomaines] = useState([]);
   const [nouveauNom, setNouveauNom] = useState("");
   const [nouvelleUrl, setNouvelleUrl] = useState("");
   const [nouveauContexte, setNouveauContexte] = useState(contexte);
+  const [nouveauDomaine, setNouveauDomaine] = useState("");
 
   useEffect(() => {
     setDomainesFiltre(new Set());
@@ -35,7 +37,8 @@ export default function Veille({ contexte }) {
     api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
   }, [contexte]);
 
-  // Actualisation automatique à 7h et 20h, tant que l'écran reste ouvert dans le navigateur.
+  // Rafraîchit l'affichage à 7h et 20h (tant que l'écran reste ouvert) pour faire
+  // apparaître les nouveaux items ingérés côté serveur par le workflow planifié.
   useEffect(() => {
     let minuteur;
     function planifier() {
@@ -52,7 +55,10 @@ export default function Veille({ contexte }) {
 
   useEffect(() => {
     setNouveauContexte(contexte);
-    if (panneauSourcesOuvert) chargerSources();
+    if (panneauSourcesOuvert) {
+      chargerSources();
+      api.getDomaines().then(setTousDomaines).catch((e) => setErreur(e.message));
+    }
   }, [contexte, panneauSourcesOuvert]);
 
   function charger() {
@@ -85,9 +91,15 @@ export default function Veille({ contexte }) {
     e.preventDefault();
     if (!nouveauNom.trim() || !nouvelleUrl.trim()) return;
     try {
-      await api.creerSourceVeille({ nom: nouveauNom.trim(), url: nouvelleUrl.trim(), contexte: nouveauContexte });
+      await api.creerSourceVeille({
+        nom: nouveauNom.trim(),
+        url: nouvelleUrl.trim(),
+        contexte: nouveauContexte,
+        domaine_id: nouveauDomaine ? Number(nouveauDomaine) : null,
+      });
       setNouveauNom("");
       setNouvelleUrl("");
+      setNouveauDomaine("");
       chargerSources();
     } catch (err) {
       setErreur(err.message);
@@ -97,6 +109,15 @@ export default function Veille({ contexte }) {
   async function basculerActif(source) {
     try {
       await api.modifierSourceVeille(source.id, { actif: !source.actif });
+      chargerSources();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
+  async function changerDomaineSource(source, domaineId) {
+    try {
+      await api.modifierSourceVeille(source.id, { domaine_id: domaineId ? Number(domaineId) : null });
       chargerSources();
     } catch (err) {
       setErreur(err.message);
@@ -211,8 +232,8 @@ export default function Veille({ contexte }) {
             <div className="tnv-sheet__grabber" />
             <span className="tnv-sheet__title">Sources de veille</span>
             <p className="tnv-sheet__subtitle">
-              Sources interrogées pour alimenter la veille de ce contexte. La configuration est gérée ici ; la
-              collecte automatisée elle-même (RSS, API, scraping) n'est pas exécutée dans ce POC.
+              Flux RSS/Atom interrogés automatiquement pour alimenter la veille de ce contexte. Une source doit
+              avoir un domaine assigné pour être collectée.
             </p>
 
             <form className="tnv-form" onSubmit={ajouterSource} style={{ margin: 0 }}>
@@ -226,13 +247,23 @@ export default function Veille({ contexte }) {
               <input
                 className="tnv-input"
                 type="url"
-                placeholder="URL"
+                placeholder="URL du flux RSS/Atom"
                 value={nouvelleUrl}
                 onChange={(e) => setNouvelleUrl(e.target.value)}
               />
               <select className="tnv-select" value={nouveauContexte} onChange={(e) => setNouveauContexte(e.target.value)}>
                 <option value="pro">Pro</option>
                 <option value="perso">Perso</option>
+              </select>
+              <select className="tnv-select" value={nouveauDomaine} onChange={(e) => setNouveauDomaine(e.target.value)}>
+                <option value="">Sans domaine (ne sera pas collectée)</option>
+                {tousDomaines
+                  .filter((d) => d.contexte === nouveauContexte)
+                  .map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nom}
+                    </option>
+                  ))}
               </select>
               <button type="submit" className="tnv-btn tnv-btn--primary">
                 + Source
@@ -244,13 +275,31 @@ export default function Veille({ contexte }) {
             {sources && sources.length > 0 && (
               <div className="tnv-stack" style={{ marginBottom: 0 }}>
                 {sources.map((s) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--tnv-hairline)" }}>
-                    <div style={{ flex: 1, minWidth: 0, opacity: s.actif ? 1 : 0.5 }}>
+                  <div
+                    key={s.id}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--tnv-hairline)", flexWrap: "wrap" }}
+                  >
+                    <div style={{ flex: 1, minWidth: 140, opacity: s.actif ? 1 : 0.5 }}>
                       <div className="tnv-task-card__title" style={{ fontSize: "var(--tnv-size-body)" }}>{s.nom}</div>
                       <a href={s.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
                         {s.url}
                       </a>
                     </div>
+                    <select
+                      className="tnv-select"
+                      style={{ width: "auto", minHeight: 36, padding: "6px 10px" }}
+                      value={s.domaine_id || ""}
+                      onChange={(e) => changerDomaineSource(s, e.target.value)}
+                    >
+                      <option value="">Sans domaine</option>
+                      {tousDomaines
+                        .filter((d) => d.contexte === s.contexte)
+                        .map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.nom}
+                          </option>
+                        ))}
+                    </select>
                     <Switch checked={s.actif} onChange={() => basculerActif(s)} label={s.actif ? "Désactiver" : "Activer"} />
                     <button className="tnv-icon-btn" onClick={() => supprimerSource(s)} title="Supprimer" aria-label="Supprimer">
                       <IconTrash size={16} />

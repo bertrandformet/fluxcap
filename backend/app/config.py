@@ -26,5 +26,15 @@ SECRET_KEY = os.getenv("SECRET_KEY", "cle-de-developpement-locale-a-ne-jamais-ut
 # schéma ni port), ORIGIN l'origine complète. "localhost" fonctionne en dev même en
 # http ; en prod, ex. RP_ID=taches-notes-veille.vercel.app.
 WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost")
-WEBAUTHN_RP_NAME = os.getenv("WEBAUTHN_RP_NAME", "Tâches, Notes & Veille")
+WEBAUTHN_RP_NAME = os.getenv("WEBAUTHN_RP_NAME", "FluxCap")
 WEBAUTHN_ORIGIN = os.getenv("WEBAUTHN_ORIGIN", "http://localhost:5173")
+
+# Authentifie les appels planifiés (GitHub Actions) vers /veille/ingestion et
+# /notifications/declencher — un secret partagé statique, pas une session utilisateur,
+# puisque ces endpoints sont appelés sans utilisateur connecté.
+SCHEDULER_SECRET = os.getenv("SCHEDULER_SECRET", "")
+
+# Envoi d'email (Resend) pour les notifications d'ouverture/clôture.
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM = os.getenv("RESEND_FROM", "onboarding@resend.dev")
+NOTIFICATION_EMAIL = os.getenv("NOTIFICATION_EMAIL", "")

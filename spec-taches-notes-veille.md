@@ -1,4 +1,4 @@
-# Spécification — Application de gestion des tâches et de la veille
+# Spécification — FluxCap (gestion des tâches et de la veille)
 
 ## Contexte
 Application personnelle et privée destinée à remplacer les outils précédents (Notion, Todoist...) qui n'ont pas tenu dans la durée, faute de rituel quotidien stable et à cause de la friction d'usage. Le design s'appuie sur des résultats de recherche en psychologie cognitive et en neurosciences (intentions d'implémentation, effet Zeigarnik, limite de la mémoire de travail à ~4 éléments, formation des habitudes via les ganglions de la base).
@@ -12,8 +12,8 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | PWA React + FastAPI, logique et écrans locaux | ✅ |
 | Authentification (mot de passe / WebAuthn) | ⚠️ mot de passe fait (session JWT, toutes les routes protégées) ; WebAuthn/passkey pas encore fait |
 | Déploiement Vercel/Render | 🚧 configuration prête (render.yaml, variables d'env), déploiement effectif à faire côté comptes Render/Vercel |
-| Planning des notifications (horaires Pro/Perso) | ⏳ hors périmètre POC — aucune notification push |
-| Mode congés | ⚠️ bascule visuelle + Pro grisé/dépriorisé implémentés ; pas de changement de planning de notifications (puisqu'aucune notification n'existe encore) |
+| Planning des notifications (horaires Pro/Perso) | ⚠️ fait par email (Resend) plutôt que push navigateur — déclenché par un workflow GitHub Actions planifié, respecte le mode congés pour Pro |
+| Mode congés | ⚠️ bascule visuelle + Pro grisé/dépriorisé + notifications Pro coupées (mail) ; **la bascule de Perso sur le rythme weekend pendant la semaine n'est pas implémentée** — Perso garde son planning semaine/weekend habituel même en congés |
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
@@ -22,7 +22,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Jalons intermédiaires | ❌ **oublié** — modèle et API existent (`jalons`), aucune interface |
 | Historique de report | ✅ stocké et utilisé pour la remontée automatique, mais pas affiché comme historique consultable |
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
-| Ingestion automatisée (`fetch_tools.py` en job planifié) | ⏳ hors périmètre POC — voir "Sources de veille" ci-dessous |
+| Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par GitHub Actions, pas un vrai cron serveur |
 | Onglet Notes (unique, filtrable par tag, import lien) | ✅ |
 | Partage externe | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
 | Pomodoro (bouton sur tâches administratives, durée réglable) | ✅ |
@@ -49,7 +49,7 @@ Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel
 ### Mode congés
 Statut activable/désactivable ("🏖️ Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :
 - le contexte Pro reste accessible (pas bloqué) mais ses tâches sont grisées, et les tâches épinglées perdent leur priorité de tête de liste (elles redescendent, triées normalement) — rien n'est modifié en base, tout redevient normal à la désactivation
-- bascule sur le rythme week-end (9h/21h Perso) tous les jours, aucune notification Pro — **pas encore applicable, aucune notification n'existe**
+- bascule sur le rythme week-end (9h/21h Perso) tous les jours, aucune notification Pro — **partiellement fait : notifications Pro bien coupées pendant les congés, mais Perso ne bascule pas sur le rythme weekend en semaine (garde son planning habituel)**
 
 Pas de date de fin à saisir — se désactive manuellement.
 

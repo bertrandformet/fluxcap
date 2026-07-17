@@ -11,7 +11,7 @@ from typing import Optional
 import jwt
 from fastapi import Header, HTTPException
 
-from app.config import SECRET_KEY
+from app.config import SCHEDULER_SECRET, SECRET_KEY
 
 ITERATIONS = 600_000
 DUREE_SESSION_SECONDES = 30 * 24 * 3600  # 30 jours
@@ -79,3 +79,11 @@ def exiger_authentification(authorization: Optional[str] = Header(None)) -> int:
     if utilisateur_id is None:
         raise HTTPException(status_code=401, detail="Session invalide ou expirée")
     return utilisateur_id
+
+
+def exiger_secret_planificateur(x_scheduler_secret: Optional[str] = Header(None)) -> None:
+    """Dépendance pour les endpoints appelés sans utilisateur connecté (GitHub Actions
+    planifié) : un secret partagé statique via l'en-tête X-Scheduler-Secret, distinct
+    des sessions JWT utilisateur."""
+    if not SCHEDULER_SECRET or not x_scheduler_secret or not hmac.compare_digest(x_scheduler_secret, SCHEDULER_SECRET):
+        raise HTTPException(status_code=401, detail="Secret de planification invalide")

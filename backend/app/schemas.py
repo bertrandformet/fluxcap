@@ -182,6 +182,7 @@ class SourceVeilleBase(BaseModel):
     nom: str
     url: str
     contexte: Contexte
+    domaine_id: Optional[int] = None
     actif: bool = True
 
 
@@ -193,6 +194,7 @@ class SourceVeilleUpdate(BaseModel):
     nom: Optional[str] = None
     url: Optional[str] = None
     contexte: Optional[Contexte] = None
+    domaine_id: Optional[int] = None
     actif: Optional[bool] = None
 
 

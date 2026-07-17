@@ -161,10 +161,12 @@ class VeilleItem(Base):
 
 
 class SourceVeille(Base):
-    """Source à interroger pour l'ingestion de veille (RSS, API, page à scraper...).
+    """Source à interroger pour l'ingestion de veille (flux RSS/Atom uniquement).
 
-    Gère uniquement la configuration ; l'exécution réelle de la collecte (requêtes
-    réseau vers ces sources) n'est pas implémentée dans ce POC.
+    domaine_id : nullable pour ne pas casser les sources existantes déjà créées avant
+    l'ajout de ce champ, mais requis en pratique pour que l'ingestion sache où ranger
+    les items — une source sans domaine est ignorée par l'ingestion (voir
+    app/services/ingestion_veille.py).
     """
 
     __tablename__ = "sources_veille"
@@ -173,8 +175,11 @@ class SourceVeille(Base):
     nom: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     contexte: Mapped[Contexte] = mapped_column(Enum(Contexte), nullable=False)
+    domaine_id: Mapped[Optional[int]] = mapped_column(ForeignKey("domaines.id"), nullable=True)
     actif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    domaine: Mapped[Optional["Domaine"]] = relationship()
 
 
 class Note(Base):

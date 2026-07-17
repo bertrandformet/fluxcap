@@ -34,6 +34,20 @@ services:
       - key: WEBAUTHN_RP_ID
         value: taches-notes-veille.vercel.app
       - key: WEBAUTHN_RP_NAME
-        value: Tâches, Notes & Veille
+        value: FluxCap
       - key: WEBAUTHN_ORIGIN
         value: https://taches-notes-veille.vercel.app
+      # Secret partagé avec le workflow GitHub Actions planifié (voir
+      # .github/workflows/planification.yml) — généré automatiquement, à recopier
+      # tel quel dans le secret de repo GitHub SCHEDULER_SECRET.
+      - key: SCHEDULER_SECRET
+        generateValue: true
+      # Notifications email (Resend) — clé API sur resend.com, adresse d'envoi par
+      # défaut du sandbox Resend (fonctionne sans domaine vérifié, tant que
+      # NOTIFICATION_EMAIL est l'adresse de ton propre compte Resend).
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: onboarding@resend.dev
+      - key: NOTIFICATION_EMAIL
+        sync: false
