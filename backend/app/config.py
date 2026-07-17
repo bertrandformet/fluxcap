@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "cle-de-developpement-locale-a-ne-jamais-ut
 
 # WebAuthn (Face ID / Touch ID) : RP_ID doit être le domaine exact du frontend (sans
 # schéma ni port), ORIGIN l'origine complète. "localhost" fonctionne en dev même en
-# http ; en prod, ex. RP_ID=taches-notes-veille.vercel.app.
+# http ; en prod, ex. RP_ID=fluxcap.vercel.app.
 WEBAUTHN_RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost")
 WEBAUTHN_RP_NAME = os.getenv("WEBAUTHN_RP_NAME", "FluxCap")
 WEBAUTHN_ORIGIN = os.getenv("WEBAUTHN_ORIGIN", "http://localhost:5173")

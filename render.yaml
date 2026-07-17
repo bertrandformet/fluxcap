@@ -32,11 +32,11 @@ services:
       # WebAuthn (Face ID/Touch ID) : doit correspondre exactement au domaine Vercel
       # du frontend déployé.
       - key: WEBAUTHN_RP_ID
-        value: taches-notes-veille.vercel.app
+        value: fluxcap.vercel.app
       - key: WEBAUTHN_RP_NAME
         value: FluxCap
       - key: WEBAUTHN_ORIGIN
-        value: https://taches-notes-veille.vercel.app
+        value: https://fluxcap.vercel.app
       # Secret partagé avec le workflow GitHub Actions planifié (voir
       # .github/workflows/planification.yml) — généré automatiquement, à recopier
       # tel quel dans le secret de repo GitHub SCHEDULER_SECRET.
