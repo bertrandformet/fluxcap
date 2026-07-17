@@ -5,6 +5,7 @@ externe, voir app/routers/planification.py et le workflow GitHub Actions."""
 import json
 import urllib.request
 from datetime import date
+from typing import Optional
 from urllib.error import URLError
 
 from sqlalchemy.orm import Session
@@ -49,9 +50,26 @@ def _conges_actif(db: Session) -> bool:
     return bool(parametres and parametres.conges_actif)
 
 
-def notifier_ouverture(db: Session, contexte: Contexte) -> bool:
+def _rythme_weekend_perso(db: Session) -> bool:
+    """Vrai si Perso doit suivre son rythme week-end (9h/21h) aujourd'hui : un vrai
+    samedi/dimanche, ou n'importe quel jour pendant les congés (voir spec, Mode congés)."""
+    return date.today().weekday() >= 5 or _conges_actif(db)
+
+
+def _bon_creneau(db: Session, contexte: Contexte, creneau: Optional[str]) -> bool:
+    """Le workflow planifié appelle chaque créneau ("semaine" ou "weekend") tous les
+    jours désormais ; c'est ici qu'on décide s'il correspond au rythme du jour. Sans
+    créneau précisé (Pro, qui n'a pas de rythme week-end), on ne filtre pas."""
+    if contexte != Contexte.perso or creneau is None:
+        return True
+    return (creneau == "weekend") == _rythme_weekend_perso(db)
+
+
+def notifier_ouverture(db: Session, contexte: Contexte, creneau: Optional[str] = None) -> bool:
     """Pas de notification Pro en mode congés — voir spec, planning des notifications."""
     if contexte == Contexte.pro and _conges_actif(db):
+        return False
+    if not _bon_creneau(db, contexte, creneau):
         return False
 
     label = LABELS_CONTEXTE[contexte]
@@ -67,8 +85,10 @@ def notifier_ouverture(db: Session, contexte: Contexte) -> bool:
     return _envoyer(f"{label} — Aujourd'hui", corps)
 
 
-def notifier_cloture(db: Session, contexte: Contexte) -> bool:
+def notifier_cloture(db: Session, contexte: Contexte, creneau: Optional[str] = None) -> bool:
     if contexte == Contexte.pro and _conges_actif(db):
+        return False
+    if not _bon_creneau(db, contexte, creneau):
         return False
 
     label = LABELS_CONTEXTE[contexte]

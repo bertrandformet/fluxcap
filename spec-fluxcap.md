@@ -13,7 +13,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Authentification (mot de passe / WebAuthn) | ⚠️ mot de passe fait (session JWT, toutes les routes protégées) ; WebAuthn/passkey pas encore fait |
 | Déploiement Vercel/Render | 🚧 configuration prête (render.yaml, variables d'env), déploiement effectif à faire côté comptes Render/Vercel |
 | Planning des notifications (horaires Pro/Perso) | ⚠️ fait par email (Resend) plutôt que push navigateur — déclenché par un workflow GitHub Actions planifié, respecte le mode congés pour Pro |
-| Mode congés | ⚠️ bascule visuelle + Pro grisé/dépriorisé + notifications Pro coupées (mail) ; **la bascule de Perso sur le rythme weekend pendant la semaine n'est pas implémentée** — Perso garde son planning semaine/weekend habituel même en congés |
+| Mode congés | ✅ bascule visuelle + Pro grisé/dépriorisé + notifications Pro coupées (mail) + Perso bascule sur le rythme week-end (9h/21h) tous les jours pendant les congés |
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
@@ -49,7 +49,7 @@ Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel
 ### Mode congés
 Statut activable/désactivable ("🏖️ Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :
 - le contexte Pro reste accessible (pas bloqué) mais ses tâches sont grisées, et les tâches épinglées perdent leur priorité de tête de liste (elles redescendent, triées normalement) — rien n'est modifié en base, tout redevient normal à la désactivation
-- bascule sur le rythme week-end (9h/21h Perso) tous les jours, aucune notification Pro — **partiellement fait : notifications Pro bien coupées pendant les congés, mais Perso ne bascule pas sur le rythme weekend en semaine (garde son planning habituel)**
+- bascule sur le rythme week-end (9h/21h Perso) tous les jours, aucune notification Pro
 
 Pas de date de fin à saisir — se désactive manuellement.
 

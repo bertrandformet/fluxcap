@@ -2,7 +2,7 @@
 connecté) — protégés par un secret partagé, pas une session JWT. Voir
 app/services/securite.py:exiger_secret_planificateur et .github/workflows/."""
 
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -22,7 +22,16 @@ def declencher_ingestion_veille(contexte: Contexte, db: Session = Depends(get_db
 
 
 @router.post("/notification/{contexte}/{evenement}")
-def declencher_notification(contexte: Contexte, evenement: Literal["ouverture", "cloture"], db: Session = Depends(get_db)):
+def declencher_notification(
+    contexte: Contexte,
+    evenement: Literal["ouverture", "cloture"],
+    creneau: Optional[Literal["semaine", "weekend"]] = None,
+    db: Session = Depends(get_db),
+):
+    """`creneau` distingue, pour Perso uniquement, l'appel du rythme semaine (21h/7h) de
+    celui du rythme week-end (9h/21h) — les deux sont désormais déclenchés tous les jours
+    par le workflow planifié, et c'est ici que le bon rythme du jour (vrai week-end, ou
+    n'importe quel jour en congés) est choisi. Voir app/services/notification_email.py."""
     fonction = notifier_ouverture if evenement == "ouverture" else notifier_cloture
-    envoye = fonction(db, contexte)
-    return {"contexte": contexte, "evenement": evenement, "envoye": envoye}
+    envoye = fonction(db, contexte, creneau)
+    return {"contexte": contexte, "evenement": evenement, "creneau": creneau, "envoye": envoye}

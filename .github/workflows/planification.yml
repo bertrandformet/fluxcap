@@ -6,6 +6,13 @@ name: Planification veille et notifications
 # (CET, UTC+1) : ils dérivent d'environ 1h pendant l'heure d'été (CEST), GitHub
 # Actions ne gérant pas les fuseaux horaires nativement.
 #
+# Perso a deux rythmes (semaine 21h/7h, week-end 9h/21h) — les quatre créneaux sont
+# désormais déclenchés tous les jours ; c'est le backend qui décide, selon le vrai jour
+# de la semaine et le mode congés, lequel des deux rythmes s'applique aujourd'hui (voir
+# app/services/notification_email.py::_bon_creneau — no-op silencieux sinon). Ça permet
+# à Perso de basculer sur le rythme week-end pendant la semaine quand les congés sont
+# actifs, sans dépendre d'un cron figé sur lun-ven/sam-dim.
+#
 # Secrets de repo requis (Settings → Secrets and variables → Actions) :
 #   BACKEND_URL       ex. https://taches-notes-veille-api.onrender.com
 #   SCHEDULER_SECRET  même valeur que la variable d'env SCHEDULER_SECRET sur Render
@@ -16,10 +23,10 @@ on:
     - cron: "0 19 * * *"     # veille Perso — 20h Paris, tous les jours
     - cron: "30 6 * * 1-5"   # notif Pro ouverture — 7h30 Paris, lun-ven
     - cron: "30 16 * * 1-5"  # notif Pro clôture — 17h30 Paris, lun-ven
-    - cron: "0 20 * * 1-5"   # notif Perso ouverture (semaine) — 21h Paris, lun-ven
-    - cron: "0 6 * * 1-5"    # notif Perso clôture (semaine) — 7h Paris, lun-ven
-    - cron: "0 8 * * 0,6"    # notif Perso ouverture (weekend) — 9h Paris, sam-dim
-    - cron: "0 20 * * 0,6"   # notif Perso clôture (weekend) — 21h Paris, sam-dim
+    - cron: "0 20 * * *"     # notif Perso ouverture (rythme semaine) — 21h00 Paris, tous les jours
+    - cron: "1 20 * * *"     # notif Perso clôture (rythme weekend) — 21h01 Paris, tous les jours
+    - cron: "0 6 * * *"      # notif Perso clôture (rythme semaine) — 7h Paris, tous les jours
+    - cron: "0 8 * * *"      # notif Perso ouverture (rythme weekend) — 9h Paris, tous les jours
   workflow_dispatch:
     inputs:
       action:
@@ -31,8 +38,10 @@ on:
           - veille_perso
           - notif_pro_ouverture
           - notif_pro_cloture
-          - notif_perso_ouverture
-          - notif_perso_cloture
+          - notif_perso_ouverture_semaine
+          - notif_perso_cloture_semaine
+          - notif_perso_ouverture_weekend
+          - notif_perso_cloture_weekend
 
 jobs:
   declencher:
@@ -55,10 +64,14 @@ jobs:
               ENDPOINT="/planification/notification/pro/ouverture" ;;
             notif_pro_cloture|"30 16 * * 1-5")
               ENDPOINT="/planification/notification/pro/cloture" ;;
-            notif_perso_ouverture|"0 20 * * 1-5"|"0 8 * * 0,6")
-              ENDPOINT="/planification/notification/perso/ouverture" ;;
-            notif_perso_cloture|"0 6 * * 1-5"|"0 20 * * 0,6")
-              ENDPOINT="/planification/notification/perso/cloture" ;;
+            notif_perso_ouverture_semaine|"0 20 * * *")
+              ENDPOINT="/planification/notification/perso/ouverture?creneau=semaine" ;;
+            notif_perso_cloture_weekend|"1 20 * * *")
+              ENDPOINT="/planification/notification/perso/cloture?creneau=weekend" ;;
+            notif_perso_cloture_semaine|"0 6 * * *")
+              ENDPOINT="/planification/notification/perso/cloture?creneau=semaine" ;;
+            notif_perso_ouverture_weekend|"0 8 * * *")
+              ENDPOINT="/planification/notification/perso/ouverture?creneau=weekend" ;;
             *)
               echo "Déclencheur non reconnu : ${ACTION_MANUELLE:-$CRON_DECLENCHEUR}"
               exit 1 ;;
