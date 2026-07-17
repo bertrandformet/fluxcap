@@ -257,7 +257,7 @@ export default function Connexion({ onConnecte }) {
             <input
               className="tnv-input"
               type="text"
-              placeholder="Nom de cet appareil (ex. iPhone de Bertrand)"
+              placeholder="Nom de cet appareil (ex. iPhone)"
               value={nomAppareil}
               onChange={(e) => setNomAppareil(e.target.value)}
             />
