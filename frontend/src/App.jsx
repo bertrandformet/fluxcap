@@ -82,7 +82,10 @@ export default function App() {
   return (
     <div className="tnv-app-shell">
       <header className="tnv-header">
-        <span className="tnv-header__brand">FluxCap</span>
+        <span className="tnv-header__brand" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <img src="/icon-192.png" alt="" width={24} height={24} style={{ borderRadius: 6 }} />
+          FluxCap
+        </span>
         <div className="tnv-header__actions">
           <ContextSwitch contexte={contexte} onChange={changerContexte} congesActif={congesActif} onToggleConges={basculerConges} />
           <button
