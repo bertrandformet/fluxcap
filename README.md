@@ -1,22 +1,21 @@
 # FluxCap
 
-*Le convecteur temporel des idées et des actions.*
+*"Marty, voici le Flux Capacitor des idées et des actions."*
 
 ## L'origine du projet
 
-Chaque jour, un même constat s'impose face au Flux : cette marée numérique ininterrompue faite d'articles de veille à lire, d'idées de projets spontanées, de notes volantes et de tâches urgentes. Ce flux est le carburant de la créativité, mais sans structure, il finit par submerger la concentration.
+Chaque jour, un même constat face au Flux : cette marée faite d'articles de veille à lire, d'idées de projets spontanées, de notes volantes et de tâches urgentes. Ce flux est un carburant, mais sans structure, il finit par submerger.
 
-FluxCap est né d'un besoin simple : ne pas bloquer ce courant, mais lui imposer un Cap.
+FluxCap est né d'un besoin simple : ne pas bloquer ce Flux, mais lui imposer un Cap.
 
 ### La mécanique : trois flux, une mire
 
-À l'image du célèbre convecteur temporel, l'application fonctionne comme un point de collision où convergent trois faisceaux distincts pour n'en former qu'un seul, orienté vers l'avenir :
+À l'image du célèbre convecteur temporel de Retour vers le futur, l'application fonctionne comme un point de convergence de trois faisceaux distincts pour n'en former qu'un seul, orienté vers l'avenir :
 
-1. **Le flux des connaissances** (la Veille) : capturer l'information pertinente sans la laisser se perdre dans les limbes du navigateur.
-2. **Le flux de la pensée** (les Notes) : poser les idées à chaud, dans un espace épuré, pour libérer la charge mentale.
-3. **La ligne de mire** (les Tâches) : le cap, le point de convergence où la veille et les notes se transforment en actions concrètes et planifiées.
+1. **Le flux des connaissances** (la veille) : capturer l'information pertinente sans la laisser se perdre.
+2. **Le flux de la pensée** (les notes) : poser les idées à chaud, dans un espace épuré, pour libérer la charge mentale.
+3. **La ligne de mire** (les tâches) : le cap, le point de convergence où les tâches en cours, la veille et les notes peuvent se transformer en actions concrètes et planifiées.
 
-Lorsque ces trois éléments s'alignent, la sensation de courir après le temps disparaît.
 
 ### La philosophie
 
@@ -30,18 +29,35 @@ Voir [spec-fluxcap.md](./spec-fluxcap.md) pour la spécification complète.
 
 ## Captures
 
-<img width="712" height="610" alt="Capture d’écran 2026-07-16 à 21 38 13" src="https://github.com/user-attachments/assets/247b172f-619c-4461-a5ef-5afdad90075b" />
-<img width="707" height="558" alt="Capture d’écran 2026-07-16 à 21 38 20" src="https://github.com/user-attachments/assets/42308ae8-8f3e-4525-9e3a-5d2f998786e5" />
-<img width="709" height="538" alt="Capture d’écran 2026-07-16 à 21 38 27" src="https://github.com/user-attachments/assets/5e68c407-42a1-4221-82c0-7cccdbc4057f" />
-<img width="707" height="551" alt="Capture d’écran 2026-07-16 à 21 38 33" src="https://github.com/user-attachments/assets/13f1fa05-7bb2-4456-9806-d77dca4885d2" />
-<img width="714" height="593" alt="Capture d’écran 2026-07-16 à 21 38 39" src="https://github.com/user-attachments/assets/32ea0e84-4e15-4f18-bdcc-2fb538a575a1" />
-<img width="700" height="501" alt="Capture d’écran 2026-07-16 à 21 38 46" src="https://github.com/user-attachments/assets/6ee8ba8d-762b-4692-8520-63d58cf1aa40" />
+Onglet "Aujourd'hui"
+<img width="905" height="844" alt="Capture d’écran 2026-07-17 à 14 51 12" src="https://github.com/user-attachments/assets/8fcd2646-7edb-4ac7-b0d6-819ae3caadc4" />
 
-<img width="710" height="326" alt="Capture d’écran 2026-07-16 à 21 39 05" src="https://github.com/user-attachments/assets/56fa12e2-3c03-4934-a0ce-b8c90c4d904d" />
-<img width="709" height="562" alt="Capture d’écran 2026-07-16 à 21 38 57" src="https://github.com/user-attachments/assets/5a973566-5bbe-4118-ab2e-ec4b594a8df5" />
-<img width="672" height="499" alt="Capture d’écran 2026-07-16 à 21 39 15" src="https://github.com/user-attachments/assets/91cee900-887d-4509-85d7-c30229a42297" />
+Onglet "Clôture"
+<img width="900" height="748" alt="Capture d’écran 2026-07-17 à 14 51 19" src="https://github.com/user-attachments/assets/b331ead8-f3e5-46b0-a376-6b54f55a3535" />
 
+Onglet "Notes"
+<img width="889" height="746" alt="Capture d’écran 2026-07-17 à 14 51 31" src="https://github.com/user-attachments/assets/dd721c23-696f-4d5e-9227-ec578f4d84a9" />
 
+Onglet "Veille"
+<img width="897" height="946" alt="Capture d’écran 2026-07-17 à 14 51 42" src="https://github.com/user-attachments/assets/bfdafc35-f727-4f00-9e3c-d6d7f66487e6" />
+
+Onglet "Domaines"
+<img width="903" height="785" alt="Capture d’écran 2026-07-17 à 14 51 49" src="https://github.com/user-attachments/assets/b24ce825-1b35-4139-a285-2865a7567a09" />
+
+Onglet "Tableau de bord"
+<img width="902" height="664" alt="Capture d’écran 2026-07-17 à 14 51 55" src="https://github.com/user-attachments/assets/e0e36dc1-8f06-4c15-aa4d-b5039965c80c" />
+
+Mode "Congés"
+<img width="908" height="842" alt="Capture d’écran 2026-07-17 à 14 52 07" src="https://github.com/user-attachments/assets/beaee11d-c6ea-4188-812f-0a7cb1e0806e" />
+
+Ajout d'une tâche
+<img width="892" height="424" alt="Capture d’écran 2026-07-17 à 14 52 17" src="https://github.com/user-attachments/assets/53c22b2e-ed33-4dc6-a5cf-7a09744de9fc" />
+
+Ajout d'une note
+<img width="888" height="732" alt="Capture d’écran 2026-07-17 à 14 52 28" src="https://github.com/user-attachments/assets/49407ba6-fb0d-4c37-b3c0-6f49d0e5767f" />
+
+Ajout d'une source de veille
+<img width="405" height="569" alt="Capture d’écran 2026-07-17 à 14 52 36" src="https://github.com/user-attachments/assets/abc72995-9822-4264-8e53-2792f69f1314" />
 
 
 ## État actuel
