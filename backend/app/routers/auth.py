@@ -44,6 +44,10 @@ class RecuperationEntree(BaseModel):
     nouveau_mot_de_passe: str
 
 
+class CodeRecuperationSortie(BaseModel):
+    code_recuperation: str
+
+
 class ChangementMotDePasseEntree(BaseModel):
     mot_de_passe_actuel: Optional[str] = None
     nouveau_mot_de_passe: str
@@ -327,6 +331,16 @@ def changer_mot_de_passe(
     utilisateur.session_version += 1
     db.commit()
     return SessionSortie(jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version))
+
+
+@router.post("/regenerer-code-recuperation", response_model=CodeRecuperationSortie)
+def regenerer_code_recuperation(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Régénère le code de récupération à la demande — l'ancien devient invalide. Affiché
+    en clair une seule fois dans la réponse, comme au premier réglage."""
+    utilisateur = _utilisateur_authentifie(authorization, db)
+    code_recuperation = _generer_code_recuperation(utilisateur)
+    db.commit()
+    return CodeRecuperationSortie(code_recuperation=code_recuperation)
 
 
 @router.post("/deconnecter-partout", status_code=204)

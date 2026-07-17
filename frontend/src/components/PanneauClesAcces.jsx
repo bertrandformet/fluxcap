@@ -9,6 +9,8 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
   const [erreur, setErreur] = useState(null);
   const [enCours, setEnCours] = useState(false);
   const [enCoursDeconnexion, setEnCoursDeconnexion] = useState(false);
+  const [codeRecuperation, setCodeRecuperation] = useState(null);
+  const [enCoursCode, setEnCoursCode] = useState(false);
   const [motDePasseActuel, setMotDePasseActuel] = useState("");
   const [nouveauMotDePasse, setNouveauMotDePasse] = useState("");
   const [confirmationMotDePasse, setConfirmationMotDePasse] = useState("");
@@ -77,6 +79,20 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
       });
     } finally {
       setEnCoursMotDePasse(false);
+    }
+  }
+
+  async function regenererCode() {
+    if (!window.confirm("Générer un nouveau code de récupération ? L'ancien ne fonctionnera plus.")) return;
+    setEnCoursCode(true);
+    setErreur(null);
+    try {
+      const reponse = await api.authRegenererCodeRecuperation();
+      setCodeRecuperation(reponse.code_recuperation);
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setEnCoursCode(false);
     }
   }
 
@@ -176,6 +192,33 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
         ) : (
           <p className="tnv-meta-text">Ce navigateur ne supporte pas les clés d'accès.</p>
         )}
+
+        <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
+          <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Code de récupération</p>
+          <p className="tnv-meta-text" style={{ marginBottom: 8 }}>
+            Utilisé pour redéfinir ton mot de passe si tu perds l'accès. Le régénérer ici invalide l'ancien —
+            affiché une seule fois, à noter aussitôt.
+          </p>
+          {codeRecuperation && (
+            <p
+              className="tnv-h1"
+              style={{
+                fontSize: 18,
+                textAlign: "center",
+                letterSpacing: 1,
+                padding: "var(--tnv-space-3)",
+                background: "var(--tnv-card-2)",
+                borderRadius: "var(--tnv-radius-card)",
+                marginBottom: 8,
+              }}
+            >
+              {codeRecuperation}
+            </p>
+          )}
+          <button className="tnv-btn tnv-btn--outline" onClick={regenererCode} disabled={enCoursCode}>
+            {enCoursCode ? "…" : codeRecuperation ? "Générer un autre code" : "Générer un nouveau code"}
+          </button>
+        </div>
 
         <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
           <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Sessions</p>
