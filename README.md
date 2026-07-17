@@ -101,3 +101,7 @@ npm run dev
 ## Configuration
 
 Copier `.env.example` vers `.env` et adapter les valeurs. Le fichier `.env` n'est jamais commité.
+
+## Licence
+
+© Bertrand Formet, codéveloppé avec Claude Code. Ce projet est distribué sous licence [Creative Commons BY 4.0](./LICENSE).
