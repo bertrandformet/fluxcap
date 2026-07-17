@@ -1,7 +1,7 @@
-# Spécification — FluxCap (gestion des tâches et de la veille)
+# Spécification — FluxCap (gestion des tâches, des notes et de la veille)
 
 ## Contexte
-Application personnelle et privée destinée à remplacer les outils précédents (Notion, Todoist...) qui n'ont pas tenu dans la durée, faute de rituel quotidien stable et à cause de la friction d'usage. Le design s'appuie sur des résultats de recherche en psychologie cognitive et en neurosciences (intentions d'implémentation, effet Zeigarnik, limite de la mémoire de travail à ~4 éléments, formation des habitudes via les ganglions de la base).
+Application personnelle et privée destinée à remplacer les outils précédents (Notion, Todoist...) qui n'ont pas tenu dans la durée, faute de rituel quotidien stable et à cause de la friction d'usage. Le design s'appuie sur des articles de recherche en psychologie cognitive et en neurosciences (intentions d'implémentation, effet Zeigarnik, limite de la mémoire de travail à ~4 éléments, mise en place des habitudes).
 
 ## État d'implémentation (POC)
 
@@ -28,7 +28,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Capture externe (entrant) | ✅ raccourci Apple Shortcuts (menu Partager) + favori Chrome/bookmarklet (voir [raccourci-partage.md](./raccourci-partage.md)), crée une note dans FluxCap sans ouvrir l'app |
 | Pomodoro (bouton sur tâches administratives, durée réglable) | ✅ |
 
-Les domaines/sources ne sont plus des listes figées (DGESCO, DNE, DINUM...) : ils sont entièrement libres et gérables depuis l'application (voir "Onglet Domaines").
+Les domaines/sources ne sont plus des listes figées : ils sont entièrement libres et gérables depuis l'application (voir "Onglet Domaines").
 
 ## Architecture générale
 - **PWA multiplateforme** (web, mobile iOS/Android, desktop) — un seul code, navigation responsive (barre d'onglets flottante en bas d'écran sur mobile, nav classique en haut sur desktop)
@@ -48,9 +48,9 @@ Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel
 | Sam–Dim | — | 9h (ouverture) + 21h (clôture) |
 
 ### Mode congés
-Statut activable/désactivable ("🏖️ Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :
+Statut activable/désactivable ("Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :
 - le contexte Pro reste accessible (pas bloqué) mais ses tâches sont grisées, et les tâches épinglées perdent leur priorité de tête de liste (elles redescendent, triées normalement) — rien n'est modifié en base, tout redevient normal à la désactivation
-- bascule sur le rythme week-end (9h/21h Perso) tous les jours, aucune notification Pro
+- bascule sur le rythme week-end (notification 9h/21h Perso) tous les jours, aucune notification Pro
 
 Pas de date de fin à saisir — se désactive manuellement.
 
@@ -86,7 +86,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Historique de report | dates de report successives, utile pour repérer les tâches qui traînent |
 
 ## Onglet Domaines (nouveau)
-Écran de gestion des domaines/tags, nécessaire car les domaines sont entièrement libres (plus de liste figée type DGESCO/DNE/DINUM) :
+Écran de gestion des domaines/tags, nécessaire car les domaines sont entièrement libres (plus de liste figée) :
 - Ajout, renommage, changement de contexte (Pro/Perso), suppression
 - Suppression bloquée si le domaine est encore utilisé par une tâche, un item de veille ou une note
 - Ces mêmes domaines servent de tags pour filtrer les notes
