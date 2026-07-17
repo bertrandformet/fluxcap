@@ -244,6 +244,10 @@ class Utilisateur(Base):
     # celle-ci à chaque requête authentifiée.
     session_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
+    # Clé API longue durée (raccourcis externes, scripts...) — indépendante des sessions
+    # JWT, n'expire jamais, révocable en la régénérant. Voir app/routers/auth.py.
+    cle_api_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
     identifiants_webauthn: Mapped[list["IdentifiantWebauthn"]] = relationship(
         back_populates="utilisateur", cascade="all, delete-orphan"
     )

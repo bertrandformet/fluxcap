@@ -16,10 +16,13 @@ from app.models import DefiWebauthn, IdentifiantWebauthn, Utilisateur
 from app.services.securite import (
     creer_jeton_session,
     formater_code_recuperation,
+    generer_cle_api,
     generer_code_recuperation,
+    hacher_cle_api,
     hacher_mot_de_passe,
     lire_jeton_session,
     normaliser_code_recuperation,
+    verifier_cle_api,
     verifier_mot_de_passe,
 )
 
@@ -46,6 +49,10 @@ class RecuperationEntree(BaseModel):
 
 class CodeRecuperationSortie(BaseModel):
     code_recuperation: str
+
+
+class CleApiSortie(BaseModel):
+    cle_api: str
 
 
 class ChangementMotDePasseEntree(BaseModel):
@@ -89,11 +96,17 @@ def _deja_configure(utilisateur: Optional[Utilisateur]) -> bool:
 def _utilisateur_authentifie(authorization: Optional[str], db: Session) -> Utilisateur:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentification requise")
-    charge = lire_jeton_session(authorization[len("Bearer "):])
+    jeton = authorization[len("Bearer "):]
     utilisateur = _obtenir_utilisateur(db)
-    if charge is None or not utilisateur or charge != (utilisateur.id, utilisateur.session_version):
-        raise HTTPException(status_code=401, detail="Session invalide ou expirée")
-    return utilisateur
+
+    charge = lire_jeton_session(jeton)
+    if charge is not None and utilisateur and charge == (utilisateur.id, utilisateur.session_version):
+        return utilisateur
+
+    if utilisateur and utilisateur.cle_api_hash and verifier_cle_api(jeton, utilisateur.cle_api_hash):
+        return utilisateur
+
+    raise HTTPException(status_code=401, detail="Session invalide ou expirée")
 
 
 def _utilisateur_pour_inscription(authorization: Optional[str], db: Session) -> Utilisateur:
@@ -341,6 +354,25 @@ def regenerer_code_recuperation(authorization: Optional[str] = Header(None), db:
     code_recuperation = _generer_code_recuperation(utilisateur)
     db.commit()
     return CodeRecuperationSortie(code_recuperation=code_recuperation)
+
+
+@router.post("/regenerer-cle-api", response_model=CleApiSortie)
+def regenerer_cle_api(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Génère une nouvelle clé API longue durée (raccourcis externes, scripts...) —
+    indépendante des sessions JWT et du mot de passe, n'expire jamais, révocable en la
+    régénérant ou via /auth/revoquer-cle-api. Affichée en clair une seule fois."""
+    utilisateur = _utilisateur_authentifie(authorization, db)
+    cle = generer_cle_api()
+    utilisateur.cle_api_hash = hacher_cle_api(cle)
+    db.commit()
+    return CleApiSortie(cle_api=cle)
+
+
+@router.post("/revoquer-cle-api", status_code=204)
+def revoquer_cle_api(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    utilisateur = _utilisateur_authentifie(authorization, db)
+    utilisateur.cle_api_hash = None
+    db.commit()
 
 
 @router.post("/deconnecter-partout", status_code=204)

@@ -91,6 +91,8 @@ export const api = {
     request(`/auth/recuperer`, { method: "POST", body: JSON.stringify({ code, nouveau_mot_de_passe }) }),
   authDeconnecterPartout: () => request(`/auth/deconnecter-partout`, { method: "POST" }),
   authRegenererCodeRecuperation: () => request(`/auth/regenerer-code-recuperation`, { method: "POST" }),
+  authRegenererCleApi: () => request(`/auth/regenerer-cle-api`, { method: "POST" }),
+  authRevoquerCleApi: () => request(`/auth/revoquer-cle-api`, { method: "POST" }),
   authChangerMotDePasse: (mot_de_passe_actuel, nouveau_mot_de_passe) =>
     request(`/auth/changer-mot-de-passe`, {
       method: "POST",

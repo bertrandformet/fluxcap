@@ -56,6 +56,21 @@ def normaliser_code_recuperation(code: str) -> str:
     return "".join(c for c in code.upper() if c in ALPHABET_RECUPERATION)
 
 
+def generer_cle_api() -> str:
+    """Clé longue durée pour raccourcis/scripts externes — ~256 bits d'entropie, donc un
+    simple hash rapide suffit à la stocker (pas besoin du ralentissement PBKDF2, réservé
+    aux secrets à entropie faible comme un mot de passe choisi par l'utilisateur)."""
+    return "fxc_" + secrets.token_urlsafe(32)
+
+
+def hacher_cle_api(cle: str) -> str:
+    return hashlib.sha256(cle.encode("utf-8")).hexdigest()
+
+
+def verifier_cle_api(cle: str, hash_stocke: str) -> bool:
+    return hmac.compare_digest(hacher_cle_api(cle), hash_stocke)
+
+
 def creer_jeton_session(utilisateur_id: int, version_session: int) -> str:
     maintenant = int(time.time())
     return jwt.encode(
@@ -77,19 +92,25 @@ def lire_jeton_session(jeton: str) -> Optional[Tuple[int, int]]:
 
 
 def exiger_authentification(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)) -> int:
-    """Dépendance FastAPI : vérifie le Bearer token et que sa version de session n'a pas
-    été révoquée, appliquée à tous les routers protégés via
-    include_router(..., dependencies=[Depends(exiger_authentification)])."""
+    """Dépendance FastAPI : accepte soit un jeton de session JWT valide (version non
+    révoquée), soit la clé API longue durée (raccourcis externes) — appliquée à tous les
+    routers protégés via include_router(..., dependencies=[Depends(exiger_authentification)])."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentification requise")
-    charge = lire_jeton_session(authorization[len("Bearer "):])
-    if charge is None:
-        raise HTTPException(status_code=401, detail="Session invalide ou expirée")
-    utilisateur_id, version_jeton = charge
-    utilisateur = db.query(Utilisateur).filter_by(id=utilisateur_id).first()
-    if not utilisateur or utilisateur.session_version != version_jeton:
-        raise HTTPException(status_code=401, detail="Session invalide ou expirée")
-    return utilisateur_id
+    jeton = authorization[len("Bearer "):]
+
+    charge = lire_jeton_session(jeton)
+    if charge is not None:
+        utilisateur_id, version_jeton = charge
+        utilisateur = db.query(Utilisateur).filter_by(id=utilisateur_id).first()
+        if utilisateur and utilisateur.session_version == version_jeton:
+            return utilisateur_id
+
+    utilisateur = db.query(Utilisateur).filter_by(id=1).first()
+    if utilisateur and utilisateur.cle_api_hash and verifier_cle_api(jeton, utilisateur.cle_api_hash):
+        return utilisateur.id
+
+    raise HTTPException(status_code=401, detail="Session invalide ou expirée")
 
 
 def exiger_secret_planificateur(x_scheduler_secret: Optional[str] = Header(None)) -> None:

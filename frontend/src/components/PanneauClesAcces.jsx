@@ -11,6 +11,9 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
   const [enCoursDeconnexion, setEnCoursDeconnexion] = useState(false);
   const [codeRecuperation, setCodeRecuperation] = useState(null);
   const [enCoursCode, setEnCoursCode] = useState(false);
+  const [cleApi, setCleApi] = useState(null);
+  const [enCoursCleApi, setEnCoursCleApi] = useState(false);
+  const [copieCleApi, setCopieCleApi] = useState(false);
   const [motDePasseActuel, setMotDePasseActuel] = useState("");
   const [nouveauMotDePasse, setNouveauMotDePasse] = useState("");
   const [confirmationMotDePasse, setConfirmationMotDePasse] = useState("");
@@ -94,6 +97,36 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
     } finally {
       setEnCoursCode(false);
     }
+  }
+
+  async function regenererCleApi() {
+    if (cleApi && !window.confirm("Générer une nouvelle clé API ? L'ancienne cessera de fonctionner immédiatement.")) return;
+    setEnCoursCleApi(true);
+    setErreur(null);
+    try {
+      const reponse = await api.authRegenererCleApi();
+      setCleApi(reponse.cle_api);
+      setCopieCleApi(false);
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setEnCoursCleApi(false);
+    }
+  }
+
+  async function revoquerCleApi() {
+    if (!window.confirm("Révoquer la clé API ? Tout raccourci ou script qui l'utilise cessera de fonctionner.")) return;
+    try {
+      await api.authRevoquerCleApi();
+      setCleApi(null);
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
+  function copierCleApi() {
+    navigator.clipboard.writeText(cleApi);
+    setCopieCleApi(true);
   }
 
   async function deconnecterPartout() {
@@ -218,6 +251,41 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
           <button className="tnv-btn tnv-btn--outline" onClick={regenererCode} disabled={enCoursCode}>
             {enCoursCode ? "…" : codeRecuperation ? "Générer un autre code" : "Générer un nouveau code"}
           </button>
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
+          <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Clé API (raccourcis externes)</p>
+          <p className="tnv-meta-text" style={{ marginBottom: 8 }}>
+            À coller dans un raccourci Apple Shortcuts ou un script pour créer des notes depuis l'extérieur —
+            n'expire jamais, contrairement à une session. Affichée en clair une seule fois.
+          </p>
+          {cleApi && (
+            <div style={{ marginBottom: 8 }}>
+              <p
+                className="tnv-meta-text"
+                style={{
+                  wordBreak: "break-all",
+                  padding: "var(--tnv-space-3)",
+                  background: "var(--tnv-card-2)",
+                  borderRadius: "var(--tnv-radius-card)",
+                  marginBottom: 6,
+                }}
+              >
+                {cleApi}
+              </p>
+              <button type="button" className="tnv-btn tnv-btn--ghost" onClick={copierCleApi}>
+                {copieCleApi ? "Copié !" : "Copier"}
+              </button>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="tnv-btn tnv-btn--outline" onClick={regenererCleApi} disabled={enCoursCleApi}>
+              {enCoursCleApi ? "…" : cleApi ? "Générer une autre clé" : "Générer une clé API"}
+            </button>
+            <button type="button" className="tnv-btn tnv-btn--ghost" onClick={revoquerCleApi}>
+              Révoquer
+            </button>
+          </div>
         </div>
 
         <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
