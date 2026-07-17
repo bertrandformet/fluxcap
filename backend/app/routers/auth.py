@@ -44,6 +44,11 @@ class RecuperationEntree(BaseModel):
     nouveau_mot_de_passe: str
 
 
+class ChangementMotDePasseEntree(BaseModel):
+    mot_de_passe_actuel: Optional[str] = None
+    nouveau_mot_de_passe: str
+
+
 class StatutSortie(BaseModel):
     configure: bool
     webauthn_disponible: bool
@@ -299,6 +304,29 @@ def verifier_authentification(entree: VerifierAuthentificationEntree, db: Sessio
     identifiant.compteur_signature = verification.new_sign_count
     db.commit()
     return SessionSortie(jeton=creer_jeton_session(identifiant.utilisateur_id, identifiant.utilisateur.session_version))
+
+
+@router.post("/changer-mot-de-passe", response_model=SessionSortie)
+def changer_mot_de_passe(
+    entree: ChangementMotDePasseEntree, authorization: Optional[str] = Header(None), db: Session = Depends(get_db)
+):
+    """Change le mot de passe depuis une session déjà ouverte, sans passer par le code de
+    récupération. Si un mot de passe est déjà défini, l'actuel doit être fourni et vérifié
+    (même connecté, on ne change pas un secret sans reprouver qu'on le connaît). Invalide
+    les autres sessions ouvertes, comme la récupération par code."""
+    utilisateur = _utilisateur_authentifie(authorization, db)
+    if utilisateur.mot_de_passe_hash:
+        if not entree.mot_de_passe_actuel or not verifier_mot_de_passe(
+            entree.mot_de_passe_actuel, utilisateur.mot_de_passe_hash
+        ):
+            raise HTTPException(status_code=401, detail="Mot de passe actuel incorrect")
+    if len(entree.nouveau_mot_de_passe) < 8:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")
+
+    utilisateur.mot_de_passe_hash = hacher_mot_de_passe(entree.nouveau_mot_de_passe)
+    utilisateur.session_version += 1
+    db.commit()
+    return SessionSortie(jeton=creer_jeton_session(utilisateur.id, utilisateur.session_version))
 
 
 @router.post("/deconnecter-partout", status_code=204)

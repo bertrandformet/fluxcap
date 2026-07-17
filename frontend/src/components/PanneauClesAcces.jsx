@@ -9,6 +9,11 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
   const [erreur, setErreur] = useState(null);
   const [enCours, setEnCours] = useState(false);
   const [enCoursDeconnexion, setEnCoursDeconnexion] = useState(false);
+  const [motDePasseActuel, setMotDePasseActuel] = useState("");
+  const [nouveauMotDePasse, setNouveauMotDePasse] = useState("");
+  const [confirmationMotDePasse, setConfirmationMotDePasse] = useState("");
+  const [messageMotDePasse, setMessageMotDePasse] = useState(null);
+  const [enCoursMotDePasse, setEnCoursMotDePasse] = useState(false);
 
   useEffect(() => {
     charger();
@@ -46,6 +51,35 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
     }
   }
 
+  async function changerMotDePasse(e) {
+    e.preventDefault();
+    setMessageMotDePasse(null);
+    if (nouveauMotDePasse.length < 8) {
+      setMessageMotDePasse({ type: "erreur", texte: "Le nouveau mot de passe doit faire au moins 8 caractères." });
+      return;
+    }
+    if (nouveauMotDePasse !== confirmationMotDePasse) {
+      setMessageMotDePasse({ type: "erreur", texte: "Les deux mots de passe ne correspondent pas." });
+      return;
+    }
+    setEnCoursMotDePasse(true);
+    try {
+      const reponse = await api.authChangerMotDePasse(motDePasseActuel || undefined, nouveauMotDePasse);
+      api.definirJeton(reponse.jeton);
+      setMotDePasseActuel("");
+      setNouveauMotDePasse("");
+      setConfirmationMotDePasse("");
+      setMessageMotDePasse({ type: "succes", texte: "Mot de passe mis à jour. Les autres sessions ont été déconnectées." });
+    } catch (err) {
+      setMessageMotDePasse({
+        type: "erreur",
+        texte: err.message.includes("401") ? "Mot de passe actuel incorrect." : err.message.replace(/^\d+ [^—]+— /, ""),
+      });
+    } finally {
+      setEnCoursMotDePasse(false);
+    }
+  }
+
   async function deconnecterPartout() {
     if (!window.confirm("Déconnecter tous les appareils ? Il faudra se reconnecter partout, y compris ici.")) return;
     setEnCoursDeconnexion(true);
@@ -62,8 +96,47 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
     <div className="tnv-overlay tnv-sheet" onClick={onClose}>
       <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()}>
         <div className="tnv-sheet__grabber" />
-        <span className="tnv-sheet__title">Clés d'accès (Face ID / Touch ID)</span>
-        <p className="tnv-sheet__subtitle">Une clé par appareil — tu peux t'y connecter sans mot de passe depuis chacun.</p>
+        <span className="tnv-sheet__title">Sécurité</span>
+
+        <div>
+          <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Mot de passe</p>
+          <form onSubmit={changerMotDePasse} style={{ display: "flex", flexDirection: "column", gap: "var(--tnv-space-3)" }}>
+            <input
+              className="tnv-input"
+              type="password"
+              placeholder="Mot de passe actuel (laisser vide si aucun)"
+              value={motDePasseActuel}
+              onChange={(e) => setMotDePasseActuel(e.target.value)}
+            />
+            <input
+              className="tnv-input"
+              type="password"
+              placeholder="Nouveau mot de passe"
+              value={nouveauMotDePasse}
+              onChange={(e) => setNouveauMotDePasse(e.target.value)}
+            />
+            <input
+              className="tnv-input"
+              type="password"
+              placeholder="Confirmer le nouveau mot de passe"
+              value={confirmationMotDePasse}
+              onChange={(e) => setConfirmationMotDePasse(e.target.value)}
+            />
+            {messageMotDePasse && (
+              <p className={messageMotDePasse.type === "erreur" ? "tnv-error" : "tnv-meta-text"}>
+                {messageMotDePasse.texte}
+              </p>
+            )}
+            <button type="submit" className="tnv-btn tnv-btn--secondary" disabled={enCoursMotDePasse || !nouveauMotDePasse}>
+              {enCoursMotDePasse ? "…" : "Mettre à jour le mot de passe"}
+            </button>
+          </form>
+        </div>
+
+        <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
+          <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Clés d'accès (Face ID / Touch ID)</p>
+          <p className="tnv-sheet__subtitle">Une clé par appareil — tu peux t'y connecter sans mot de passe depuis chacun.</p>
+        </div>
 
         {erreur && <p className="tnv-error">{erreur}</p>}
         {!identifiants && <p className="tnv-empty">Chargement…</p>}
@@ -105,6 +178,7 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
         )}
 
         <div style={{ borderTop: "1px solid var(--tnv-hairline)", paddingTop: "var(--tnv-space-3)" }}>
+          <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Sessions</p>
           <p className="tnv-meta-text" style={{ marginBottom: 8 }}>
             Un jeton de connexion aurait fuité (appareil perdu, session oubliée sur un poste partagé...) ? Invalide
             toutes les sessions ouvertes — il faudra se reconnecter partout, y compris ici.

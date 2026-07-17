@@ -99,8 +99,8 @@ export default function App() {
           <button
             className="tnv-icon-btn"
             onClick={() => setPanneauClesOuvert(true)}
-            title="Clés d'accès (Face ID/Touch ID)"
-            aria-label="Clés d'accès"
+            title="Sécurité (mot de passe, clés d'accès, sessions)"
+            aria-label="Sécurité"
           >
             <IconCle />
           </button>
