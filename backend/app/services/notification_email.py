@@ -27,7 +27,13 @@ def _envoyer(sujet: str, corps: str) -> bool:
         "https://api.resend.com/emails",
         data=charge,
         method="POST",
-        headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+            # Sans User-Agent explicite, Python envoie "Python-urllib/x.y", une
+            # signature bloquée par la protection Cloudflare devant l'API Resend.
+            "User-Agent": "FluxCap/1.0",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
