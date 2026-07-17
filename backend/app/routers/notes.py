@@ -35,12 +35,16 @@ def lister_notes(domaine_id: Optional[int] = None, sans_tag: Optional[bool] = No
     return query.order_by(Note.cree_le.desc()).all()
 
 
-class _SansRedirection(urllib.request.HTTPRedirectHandler):
-    """Bloque les redirections HTTP : une cible autorisée pourrait rediriger vers
-    une adresse interne, ce qui contournerait la vérification faite avant la requête."""
+class _RedirectionValidee(urllib.request.HTTPRedirectHandler):
+    """Suit les redirections HTTP, mais revalide la nouvelle adresse (schéma + hôte
+    public) à chaque saut avant de la suivre — un hôte autorisé pourrait sinon
+    rediriger vers une adresse interne pour contourner la vérification initiale
+    (SSRF). Très courant en pratique (http -> https, sans-www -> www...)."""
 
-    def redirect_request(self, *args, **kwargs):
-        return None
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _url_apercu_autorisee(newurl):
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def _hote_public(hostname: str) -> bool:
@@ -73,7 +77,7 @@ def apercu_lien(url: str):
         return {"titre": "", "apercu": ""}
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        opener = urllib.request.build_opener(_SansRedirection)
+        opener = urllib.request.build_opener(_RedirectionValidee)
         with opener.open(req, timeout=5) as resp:
             html = resp.read(200_000).decode("utf-8", errors="ignore")
     except (URLError, ValueError, TimeoutError, OSError):
