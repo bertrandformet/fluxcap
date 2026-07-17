@@ -18,7 +18,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
 | Modèle de tâche : titre, domaine, type, priorité, date de fin, date événement + délai | ✅ |
-| Sous-tâches (avec suggestion automatique) | ⚠️ interface faite (disclosure "Détails" sur chaque tâche : cocher/ajouter/supprimer) — suggestion automatique (échéance >5-7 jours ou description longue) toujours pas codée |
+| Sous-tâches (avec suggestion automatique) | ✅ interface faite (disclosure "Détails" sur chaque tâche : cocher/ajouter/supprimer) + suggestion proactive (badge "💡 Échéance lointaine / Description détaillée — découper en sous-tâches ?") si échéance >7 jours ou description >150 caractères et aucune sous-tâche encore créée |
 | Jalons intermédiaires | ✅ interface faite (même disclosure "Détails" : titre, date, cocher/ajouter/supprimer) |
 | Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
@@ -82,7 +82,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Récurrente | booléen (nouveau) — la tâche se régénère chaque jour après réalisation au lieu de rester clôturée |
 | Date de fin | avec jalons intermédiaires optionnels si tâche longue |
 | Date d'événement + délai de préparation | pour tâches liées à un événement fixe (ex. "préparer formation X") — distinct de la date de fin, surface automatiquement selon le délai configuré |
-| Sous-tâches | optionnelles — **suggestion automatique si échéance > 5-7 jours ou texte de description long jamais codée (voir État d'implémentation)**, mais création/gestion manuelle disponible |
+| Sous-tâches | optionnelles, suggérées via un badge si échéance > 7 jours ou description > 150 caractères (et aucune sous-tâche déjà créée) |
 | Historique de report | dates de report successives, utile pour repérer les tâches qui traînent |
 
 ## Onglet Domaines (nouveau)

@@ -19,6 +19,16 @@ const LABELS_RAISON = {
   recurrente: "Récurrente",
 };
 
+const SEUIL_JOURS_ECHEANCE_LOINTAINE = 7;
+const SEUIL_LONGUEUR_DESCRIPTION = 150;
+
+function joursAvantEcheance(dateFin) {
+  const aujourdhui = new Date();
+  aujourdhui.setHours(0, 0, 0, 0);
+  const echeance = new Date(`${dateFin}T00:00:00`);
+  return Math.round((echeance - aujourdhui) / (1000 * 60 * 60 * 24));
+}
+
 function DetailsTache({ tache }) {
   const [sousTaches, setSousTaches] = useState(tache.sous_taches || []);
   const [jalons, setJalons] = useState(tache.jalons || []);
@@ -169,6 +179,10 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
   const nbJalons = tache.jalons ? tache.jalons.length : 0;
   const nbHistorique = tache.historique_reports ? tache.historique_reports.length : 0;
 
+  const echeanceLointaine = tache.date_fin && joursAvantEcheance(tache.date_fin) > SEUIL_JOURS_ECHEANCE_LOINTAINE;
+  const descriptionLongue = tache.description && tache.description.length > SEUIL_LONGUEUR_DESCRIPTION;
+  const suggererDecoupage = nbSousTaches === 0 && (echeanceLointaine || descriptionLongue);
+
   return (
     <article className={dense ? "tnv-task-card tnv-task-card--dense" : "tnv-card tnv-task-card"}>
       {onRealiser && (
@@ -192,6 +206,15 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
 
         {!dense && (
           <>
+            {suggererDecoupage && !detailsOuverts && (
+              <button
+                onClick={() => setDetailsOuverts(true)}
+                className="tnv-badge tnv-badge--accent"
+                style={{ border: "none", cursor: "pointer", font: "inherit", alignSelf: "flex-start" }}
+              >
+                💡 {echeanceLointaine ? "Échéance lointaine" : "Description détaillée"} — découper en sous-tâches ?
+              </button>
+            )}
             <button
               onClick={() => setDetailsOuverts(!detailsOuverts)}
               style={{
