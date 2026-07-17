@@ -1,0 +1,20 @@
+name: Garder le backend éveillé
+
+# Render (plan gratuit) met le service en veille après ~15 min d'inactivité : la
+# requête suivante déclenche un redémarrage lent (voire "Failed to fetch" si le
+# navigateur abandonne avant la fin). Ce ping régulier maintient le service actif
+# pendant la journée pour éviter ce cold start.
+#
+# Horaire en UTC, calé sur l'heure d'hiver (CET, UTC+1) — dérive d'~1h en été (CEST).
+
+on:
+  schedule:
+    - cron: "*/10 6-21 * * *"  # toutes les 10 min, ~7h-22h heure de Paris
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: curl -fsS https://taches-notes-veille-api.onrender.com/health
