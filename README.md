@@ -74,8 +74,6 @@ Pomodoro
 <img width="302" height="339" alt="Capture d’écran 2026-07-17 à 17 59 41" src="https://github.com/user-attachments/assets/cf4017cc-0af3-4e83-943d-f5cb4d437b9e" />
 <img width="302" height="264" alt="Capture d’écran 2026-07-17 à 17 59 49" src="https://github.com/user-attachments/assets/e8cd1d46-4de5-4b68-91bf-bf5ea43f61c3" />
 
-
-
 ## État actuel
 
 POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Veille alimentée automatiquement (flux RSS/Atom) et notifications email d'ouverture/clôture, déclenchées par un workflow GitHub Actions planifié. Données factices uniquement en développement local — la base de production est vide par défaut.
