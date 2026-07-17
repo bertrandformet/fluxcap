@@ -1,6 +1,6 @@
 # FluxCap
 
-*"Marty, voici le Flux Capacitor des idées et des actions."*
+*"Nom de Zeus Marty, c'est le Flux Capacitor des idées et des actions !"*
 
 ## L'origine du projet
 
