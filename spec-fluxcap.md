@@ -24,7 +24,8 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
 | Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par GitHub Actions, pas un vrai cron serveur |
 | Onglet Notes (unique, filtrable par tag, import lien) | ✅ |
-| Partage externe | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
+| Partage externe (sortant) | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
+| Capture externe (entrant) | ✅ raccourci Apple Shortcuts dédié (voir [raccourci-partage.md](./raccourci-partage.md)), apparaît dans le menu Partager de n'importe quelle app (Safari...), crée une note dans FluxCap sans ouvrir l'app |
 | Pomodoro (bouton sur tâches administratives, durée réglable) | ✅ |
 
 Les domaines/sources ne sont plus des listes figées (DGESCO, DNE, DINUM...) : ils sont entièrement libres et gérables depuis l'application (voir "Onglet Domaines").
@@ -109,7 +110,8 @@ Pas de date de fin à saisir — se désactive manuellement.
 - **Export** (nouveau) de chaque note en `.txt`, `.md` ou `.docx`
 - **Sélection multiple** (nouveau) : suppression en masse, ajout de tag en masse, partage groupé
 - Alimentation automatique par l'action "garder pour lecture" de l'onglet Veille (tag de domaine hérité automatiquement)
-- **Partage externe** : ⚠️ implémenté via l'API Web Share native du navigateur (`navigator.share`), qui ouvre le menu de partage natif macOS/iOS — au lieu du raccourci Apple Shortcuts unique synchronisé via iCloud initialement prévu. Repli automatique sur copie presse-papiers si l'API n'est pas disponible
+- **Partage externe sortant** : ⚠️ implémenté via l'API Web Share native du navigateur (`navigator.share`), qui ouvre le menu de partage natif macOS/iOS — au lieu du raccourci Apple Shortcuts unique synchronisé via iCloud initialement prévu. Repli automatique sur copie presse-papiers si l'API n'est pas disponible
+- **Capture externe entrante** : ✅ raccourci Apple Shortcuts (voir [raccourci-partage.md](./raccourci-partage.md)) qui crée une note dans FluxCap depuis le menu Partager de n'importe quelle app, authentifié via une clé API dédiée générée dans le panneau Sécurité
 
 ## Tableau de bord (nouveau)
 Vue factuelle ajoutée en cours de POC, volontairement **sans historique ni tendance** pour rester cohérente avec le refus de toute notion de streak/dette :
