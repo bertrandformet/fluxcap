@@ -10,17 +10,17 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Élément de la spec initiale | État |
 |---|---|
 | PWA React + FastAPI, logique et écrans locaux | ✅ |
-| Authentification (mot de passe / WebAuthn) | ⚠️ mot de passe fait (session JWT, toutes les routes protégées) ; WebAuthn/passkey pas encore fait |
-| Déploiement Vercel/Render | 🚧 configuration prête (render.yaml, variables d'env), déploiement effectif à faire côté comptes Render/Vercel |
+| Authentification (mot de passe / WebAuthn) | ✅ mot de passe + WebAuthn/Face ID/Touch ID, session JWT, toutes les routes protégées. Panneau Sécurité (nouveau) : changer son mot de passe en étant connecté, régénérer le code de récupération à la demande, révoquer toutes les sessions ouvertes, clé API longue durée pour intégrations externes |
+| Déploiement Vercel/Render | ✅ en production (Vercel + Render + Supabase) |
 | Planning des notifications (horaires Pro/Perso) | ⚠️ fait par email (Resend) plutôt que push navigateur — déclenché par un workflow GitHub Actions planifié, respecte le mode congés pour Pro |
 | Mode congés | ✅ bascule visuelle + Pro grisé/dépriorisé + notifications Pro coupées (mail) + Perso bascule sur le rythme week-end (9h/21h) tous les jours pendant les congés |
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
 | Modèle de tâche : titre, domaine, type, priorité, date de fin, date événement + délai | ✅ |
-| Sous-tâches (avec suggestion automatique) | ❌ **oublié** — modèle et API existent (`sous_taches`), aucune interface pour les créer/afficher, suggestion automatique jamais codée |
-| Jalons intermédiaires | ❌ **oublié** — modèle et API existent (`jalons`), aucune interface |
-| Historique de report | ✅ stocké et utilisé pour la remontée automatique, mais pas affiché comme historique consultable |
+| Sous-tâches (avec suggestion automatique) | ⚠️ interface faite (disclosure "Détails" sur chaque tâche : cocher/ajouter/supprimer) — suggestion automatique (échéance >5-7 jours ou description longue) toujours pas codée |
+| Jalons intermédiaires | ✅ interface faite (même disclosure "Détails" : titre, date, cocher/ajouter/supprimer) |
+| Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
 | Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par GitHub Actions, pas un vrai cron serveur |
 | Onglet Notes (unique, filtrable par tag, import lien) | ✅ |
@@ -33,15 +33,15 @@ Les domaines/sources ne sont plus des listes figées (DGESCO, DNE, DINUM...) : i
 ## Architecture générale
 - **PWA multiplateforme** (web, mobile iOS/Android, desktop) — un seul code, navigation responsive (barre d'onglets flottante en bas d'écran sur mobile, nav classique en haut sur desktop)
 - **Stack** : React + Vite (frontend) + FastAPI + SQLite (backend)
-- **Hébergement** (cible finale, config prête, déploiement à faire) : Vercel (frontend, gratuit) + Render (backend, plan payant Starter ~7$/mois requis pour le disque persistant SQLite/pièces jointes). Repli possible : serveur OVH personnel existant (utilisé pour uneIAparjour.fr)
+- **Hébergement** : Vercel (frontend, gratuit) + Render (backend, plan gratuit — pas de disque persistant, pièces jointes et base de données déportées vers Supabase). En production.
 - **Repo public** avec données factices/exemples ; vraies données et configuration dans `.env` ignoré par git, jamais commité
-- **Authentification** : mot de passe classique fait (premier réglage au premier lancement, session JWT côté client, toutes les routes API protégées sauf /auth et /health). Face ID/Touch ID (WebAuthn/passkey) prévu en méthode alternative, pas encore fait.
+- **Authentification** : mot de passe (premier réglage au premier lancement, session JWT côté client, toutes les routes API protégées sauf /auth et /health) et WebAuthn/Face ID/Touch ID, les deux fonctionnels. Panneau Sécurité : changement de mot de passe en session, régénération du code de récupération, révocation de toutes les sessions ouvertes, clé API longue durée pour intégrations externes (raccourcis, scripts).
 - **Approche de développement** : POC fonctionnel d'abord dans Claude Code (logique et données), habillage visuel ensuite via Claude Design une fois le code existant, avec handoff retour vers Claude Code
 
 ## Deux onglets séparés : Pro / Perso
 Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel matin/soir.
 
-### Planning des notifications (pas encore implémenté)
+### Planning des notifications
 | Jour | Pro | Perso |
 |---|---|---|
 | Lun–Ven | 7h30 (ouverture) + 17h30 (clôture) | 21h (ouverture) + 7h (clôture, juste avant Pro) |
@@ -80,9 +80,9 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Priorité | 3 niveaux (un jour / cette semaine / aujourd'hui) |
 | Épinglée | booléen, force l'inclusion dans le quota du jour |
 | Récurrente | booléen (nouveau) — la tâche se régénère chaque jour après réalisation au lieu de rester clôturée |
-| Date de fin | avec jalons intermédiaires optionnels si tâche longue — **jalons non exposés dans l'UI (voir État d'implémentation)** |
+| Date de fin | avec jalons intermédiaires optionnels si tâche longue |
 | Date d'événement + délai de préparation | pour tâches liées à un événement fixe (ex. "préparer formation X") — distinct de la date de fin, surface automatiquement selon le délai configuré |
-| Sous-tâches | optionnelles, suggérées automatiquement si échéance > 5-7 jours ou texte de description long — jamais systématique — **non exposées dans l'UI, suggestion automatique non codée (voir État d'implémentation)** |
+| Sous-tâches | optionnelles — **suggestion automatique si échéance > 5-7 jours ou texte de description long jamais codée (voir État d'implémentation)**, mais création/gestion manuelle disponible |
 | Historique de report | dates de report successives, utile pour repérer les tâches qui traînent |
 
 ## Onglet Domaines (nouveau)
@@ -96,10 +96,10 @@ Pas de date de fin à saisir — se désactive manuellement.
 - 3 actions rapides par item : ignorer / garder pour lecture (→ envoyé automatiquement vers l'onglet Notes) / transformer en tâche
 - **Filtre par domaine** (nouveau), sélection unique ou multiple
 - **Actualisation automatique** de la liste à 7h et 20h (nouveau), tant que l'écran reste ouvert dans le navigateur — ne déclenche pas de vraie collecte, relit simplement les données actuelles
-- **Sources de veille** (nouveau) : panneau "⚙️ Sources" pour ajouter/désactiver/supprimer les sources à interroger, taguées Pro ou Perso. Gère uniquement la configuration — inspiré de `uneIAparjour/veille-agregateurs`, mais la collecte réelle (RSS/API/scraping vers des sites tiers) n'est pas implémentée
-- **Ingestion automatisée** (pas encore fait) : migration de `fetch_tools.py` en job planifié
+- **Sources de veille** (nouveau) : panneau "⚙️ Sources" pour ajouter/désactiver/supprimer les sources à interroger, taguées Pro ou Perso — inspiré de `uneIAparjour/veille-agregateurs`
+- **Ingestion automatisée** : collecte réelle des flux RSS/Atom (feedparser), déclenchée par un workflow GitHub Actions planifié — limitée aux flux RSS/Atom, pas de scraping générique ni d'API tierces (voir État d'implémentation)
   - Veille Pro : tous les matins avant 7h30
-  - Veille Perso (uneIAparjour) : tous les soirs à 20h
+  - Veille Perso : tous les soirs à 20h
 
 ## Onglet Notes
 - **Unique et filtrable par tag** (pas séparé Pro/Perso — les tags de domaine suffisent à s'y retrouver), avec un filtre supplémentaire "Sans tag" (nouveau)

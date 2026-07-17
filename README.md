@@ -78,6 +78,8 @@ POC fonctionnel (logique + écrans), déployé, protégé par authentification (
 
 Toutes les variables d'environnement nécessaires (connexion Postgres, clés Supabase, origine CORS, clé de signature des sessions, config WebAuthn) sont listées dans [`.env.example`](./.env.example) et dans `render.yaml`. Aucune valeur réelle n'est commitée ; elles sont saisies directement dans les tableaux de bord Render/Vercel.
 
+Le plan gratuit de Render met le service en veille après ~15 min d'inactivité (cold start lent au réveil) — un moniteur UptimeRobot ping `/health` toutes les 5 minutes pour l'éviter (un essai précédent avec un workflow GitHub Actions planifié a été abandonné : les crons GitHub Actions ne sont pas fiables sur des intervalles aussi courts, retards observés de 60-95 min).
+
 ## Démarrage local
 
 ### Backend
