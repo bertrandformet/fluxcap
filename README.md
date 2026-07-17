@@ -1,4 +1,28 @@
-# Tâches, Notes & Veille
+# FluxCap
+
+*Le convecteur temporel des idées et des actions.*
+
+## L'origine du projet
+
+Chaque jour, un même constat s'impose face au Flux : cette marée numérique ininterrompue faite d'articles de veille à lire, d'idées de projets spontanées, de notes volantes et de tâches urgentes. Ce flux est le carburant de la créativité, mais sans structure, il finit par submerger la concentration.
+
+FluxCap est né d'un besoin simple : ne pas bloquer ce courant, mais lui imposer un Cap.
+
+### La mécanique : trois flux, une mire
+
+À l'image du célèbre convecteur temporel, l'application fonctionne comme un point de collision où convergent trois faisceaux distincts pour n'en former qu'un seul, orienté vers l'avenir :
+
+1. **Le flux des connaissances** (la Veille) : capturer l'information pertinente sans la laisser se perdre dans les limbes du navigateur.
+2. **Le flux de la pensée** (les Notes) : poser les idées à chaud, dans un espace épuré, pour libérer la charge mentale.
+3. **La ligne de mire** (les Tâches) : le cap, le point de convergence où la veille et les notes se transforment en actions concrètes et planifiées.
+
+Lorsque ces trois éléments s'alignent, la sensation de courir après le temps disparaît.
+
+### La philosophie
+
+FluxCap écarte les usines à gaz et les processus rigides pour se concentrer sur la maîtrise de l'attention. En reliant directement ce qui est appris à ce qui doit être fait, l'application élimine la friction. Libéré des onglets accumulés et des listes de tâches déconnectées de la réalité, chacun peut tracer sa propre trajectoire. Organiser le présent permet de propulser, sereinement, son "moi du futur".
+
+## En pratique
 
 Application personnelle de gestion des tâches et de la veille — deux contextes séparés (Pro / Perso), sélection quotidienne limitée à 3-4 tâches, clôture avec décision obligatoire, veille par domaine, notes filtrables par tag.
 
@@ -22,7 +46,7 @@ Voir [spec-taches-notes-veille.md](./spec-taches-notes-veille.md) pour la spéci
 
 ## État actuel
 
-POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Pas de notifications. Données factices uniquement en développement local — la base de production est vide par défaut.
+POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Veille alimentée automatiquement (flux RSS/Atom) et notifications email d'ouverture/clôture, déclenchées par un workflow GitHub Actions planifié. Données factices uniquement en développement local — la base de production est vide par défaut.
 
 ## Structure
 

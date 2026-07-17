@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Tâches, Notes & Veille",
-        short_name: "Taches",
+        name: "FluxCap",
+        short_name: "FluxCap",
         lang: "fr",
         start_url: "/",
         display: "standalone",

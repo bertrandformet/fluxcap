@@ -162,7 +162,7 @@ export default function Connexion({ onConnecte }) {
       <div className="tnv-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
         <form onSubmit={soumettreRecuperation} className="tnv-form" style={{ width: "100%", maxWidth: 360 }}>
           <div>
-            <p className="tnv-eyebrow">Tâches, Notes &amp; Veille</p>
+            <p className="tnv-eyebrow">FluxCap</p>
             <h1 className="tnv-h1" style={{ fontSize: 24 }}>
               Récupération
             </h1>
@@ -199,7 +199,7 @@ export default function Connexion({ onConnecte }) {
     <div className="tnv-screen" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
       <div className="tnv-form" style={{ width: "100%", maxWidth: 360 }}>
         <div>
-          <p className="tnv-eyebrow">Tâches, Notes &amp; Veille</p>
+          <p className="tnv-eyebrow">FluxCap</p>
           <h1 className="tnv-h1" style={{ fontSize: 24 }}>
             {configure ? "Connexion" : "Premier réglage"}
           </h1>

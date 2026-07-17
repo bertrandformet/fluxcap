@@ -82,7 +82,7 @@ export default function App() {
   return (
     <div className="tnv-app-shell">
       <header className="tnv-header">
-        <span className="tnv-header__brand">Tâches, Notes &amp; Veille</span>
+        <span className="tnv-header__brand">FluxCap</span>
         <div className="tnv-header__actions">
           <ContextSwitch contexte={contexte} onChange={changerContexte} congesActif={congesActif} onToggleConges={basculerConges} />
           <button
