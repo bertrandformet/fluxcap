@@ -47,17 +47,33 @@ Onglet "Domaines"
 Onglet "Tableau de bord"
 <img width="902" height="664" alt="Capture d’écran 2026-07-17 à 14 51 55" src="https://github.com/user-attachments/assets/e0e36dc1-8f06-4c15-aa4d-b5039965c80c" />
 
-Mode "Congés"
-<img width="908" height="842" alt="Capture d’écran 2026-07-17 à 14 52 07" src="https://github.com/user-attachments/assets/beaee11d-c6ea-4188-812f-0a7cb1e0806e" />
+Première ouverture de l'application
+<img width="348" height="539" alt="Capture d’écran 2026-07-17 à 17 31 01" src="https://github.com/user-attachments/assets/e69c835f-244a-426b-94a3-6c99c39c6e8d" />
+<img width="350" height="333" alt="Capture d’écran 2026-07-17 à 17 31 08" src="https://github.com/user-attachments/assets/5df53ea0-383e-4268-88b3-623bbe087e54" />
+
+Sécurité
+<img width="430" height="598" alt="Capture d’écran 2026-07-17 à 18 08 48" src="https://github.com/user-attachments/assets/4edb8185-508a-41df-9624-da593f4a00c2" />
+<img width="421" height="598" alt="Capture d’écran 2026-07-17 à 18 08 58" src="https://github.com/user-attachments/assets/f76fb62f-876f-454c-8522-ce6d4d200c11" />
 
 Ajout d'une tâche
 <img width="892" height="424" alt="Capture d’écran 2026-07-17 à 14 52 17" src="https://github.com/user-attachments/assets/53c22b2e-ed33-4dc6-a5cf-7a09744de9fc" />
+
+Ajout d'une sous-tâche
+<img width="517" height="390" alt="Capture d’écran 2026-07-17 à 17 44 59" src="https://github.com/user-attachments/assets/2c7c3b51-0253-4986-b26b-e5078a861c09" />
 
 Ajout d'une note
 <img width="888" height="732" alt="Capture d’écran 2026-07-17 à 14 52 28" src="https://github.com/user-attachments/assets/49407ba6-fb0d-4c37-b3c0-6f49d0e5767f" />
 
 Ajout d'une source de veille
 <img width="405" height="569" alt="Capture d’écran 2026-07-17 à 14 52 36" src="https://github.com/user-attachments/assets/abc72995-9822-4264-8e53-2792f69f1314" />
+
+Mode "Congés"
+<img width="908" height="842" alt="Capture d’écran 2026-07-17 à 14 52 07" src="https://github.com/user-attachments/assets/beaee11d-c6ea-4188-812f-0a7cb1e0806e" />
+
+Pomodoro
+<img width="302" height="339" alt="Capture d’écran 2026-07-17 à 17 59 41" src="https://github.com/user-attachments/assets/cf4017cc-0af3-4e83-943d-f5cb4d437b9e" />
+<img width="302" height="264" alt="Capture d’écran 2026-07-17 à 17 59 49" src="https://github.com/user-attachments/assets/e8cd1d46-4de5-4b68-91bf-bf5ea43f61c3" />
+
 
 
 ## État actuel
@@ -106,4 +122,4 @@ Copier `.env.example` vers `.env` et adapter les valeurs. Le fichier `.env` n'es
 
 ## Licence
 
-© Bertrand Formet, codéveloppé avec Claude Code. Ce projet est distribué sous licence [Creative Commons BY 4.0](./LICENSE).
+Bertrand Formet, codéveloppé avec Claude Code. Ce projet est distribué sous licence [Creative Commons BY 4.0](./LICENSE).
