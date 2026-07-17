@@ -142,9 +142,12 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
   }
 
   return (
-    <div className="tnv-overlay tnv-sheet" onClick={onClose}>
-      <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()}>
-        <div className="tnv-sheet__grabber" />
+    <div className="tnv-overlay tnv-modal-center" onClick={onClose}>
+      <div
+        className="tnv-sheet__panel tnv-sheet__panel--floating"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxHeight: "85vh", overflow: "auto" }}
+      >
         <span className="tnv-sheet__title">Sécurité</span>
 
         <div>
