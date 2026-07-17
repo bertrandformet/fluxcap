@@ -87,6 +87,11 @@ def apercu_lien(url: str):
     desc_match = re.search(
         r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE
     )
+    if not desc_match:
+        # Repli Open Graph : beaucoup de sites n'ont que og:description, pas la balise classique.
+        desc_match = re.search(
+            r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE
+        )
     return {
         "titre": titre_match.group(1).strip() if titre_match else "",
         "apercu": desc_match.group(1).strip() if desc_match else "",
