@@ -227,9 +227,8 @@ export default function Veille({ contexte }) {
       </div>
 
       {panneauSourcesOuvert && (
-        <div className="tnv-overlay tnv-sheet" onClick={() => setPanneauSourcesOuvert(false)}>
-          <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "80%", overflow: "auto" }}>
-            <div className="tnv-sheet__grabber" />
+        <div className="tnv-overlay tnv-modal-center" onClick={() => setPanneauSourcesOuvert(false)}>
+          <div className="tnv-sheet__panel tnv-sheet__panel--floating" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "80%", overflow: "auto" }}>
             <span className="tnv-sheet__title">Sources de veille</span>
             <p className="tnv-sheet__subtitle">
               Flux RSS/Atom interrogés automatiquement pour alimenter la veille de ce contexte. Une source doit
