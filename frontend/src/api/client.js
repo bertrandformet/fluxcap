@@ -116,6 +116,13 @@ export const api = {
   creerTache: (tache) => request(`/taches`, { method: "POST", body: JSON.stringify(tache) }),
   getTaches: (contexte) => request(`/taches${contexte ? `?contexte=${contexte}` : ""}`),
   updateTache: (id, patch) => request(`/taches/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  creerSousTache: (tacheId, sousTache) =>
+    request(`/taches/${tacheId}/sous-taches`, { method: "POST", body: JSON.stringify(sousTache) }),
+  basculerSousTache: (id, fait) => request(`/taches/sous-taches/${id}?fait=${fait}`, { method: "PUT" }),
+  supprimerSousTache: (id) => request(`/taches/sous-taches/${id}`, { method: "DELETE" }),
+  creerJalon: (tacheId, jalon) => request(`/taches/${tacheId}/jalons`, { method: "POST", body: JSON.stringify(jalon) }),
+  basculerJalon: (id, fait) => request(`/taches/jalons/${id}?fait=${fait}`, { method: "PUT" }),
+  supprimerJalon: (id) => request(`/taches/jalons/${id}`, { method: "DELETE" }),
   getDomaines: (contexte) => request(`/domaines${contexte ? `?contexte=${contexte}` : ""}`),
   creerDomaine: (domaine) => request(`/domaines`, { method: "POST", body: JSON.stringify(domaine) }),
   modifierDomaine: (id, patch) => request(`/domaines/${id}`, { method: "PUT", body: JSON.stringify(patch) }),

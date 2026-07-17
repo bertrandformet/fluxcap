@@ -100,6 +100,15 @@ def basculer_sous_tache(sous_tache_id: int, fait: bool, db: Session = Depends(ge
     return obj
 
 
+@router.delete("/sous-taches/{sous_tache_id}", status_code=204)
+def supprimer_sous_tache(sous_tache_id: int, db: Session = Depends(get_db)):
+    obj = db.get(SousTache, sous_tache_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Sous-tâche introuvable")
+    db.delete(obj)
+    db.commit()
+
+
 @router.post("/{tache_id}/jalons", response_model=JalonOut, status_code=201)
 def ajouter_jalon(tache_id: int, jalon: JalonCreate, db: Session = Depends(get_db)):
     if not db.get(Tache, tache_id):
@@ -120,3 +129,12 @@ def basculer_jalon(jalon_id: int, fait: bool, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@router.delete("/jalons/{jalon_id}", status_code=204)
+def supprimer_jalon(jalon_id: int, db: Session = Depends(get_db)):
+    obj = db.get(Jalon, jalon_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Jalon introuvable")
+    db.delete(obj)
+    db.commit()

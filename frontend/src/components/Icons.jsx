@@ -231,6 +231,21 @@ export function IconDeconnexion({ size = 18 }) {
   );
 }
 
+export function IconChevronDown({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M5 8l5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconCle({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
