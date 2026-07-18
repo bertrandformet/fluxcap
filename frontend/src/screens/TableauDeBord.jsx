@@ -48,7 +48,7 @@ export default function TableauDeBord({ contexte }) {
 
   const parDomaine = domaines.map((d) => ({
     label: d.nom,
-    count: taches.filter((t) => t.domaine_id === d.id).length,
+    count: taches.filter((t) => t.domaines.some((td) => td.id === d.id)).length,
   }));
 
   const parPriorite = PRIORITES.map((p) => ({

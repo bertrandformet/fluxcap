@@ -16,7 +16,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [titre, setTitre] = useState("");
-  const [domaineId, setDomaineId] = useState("");
+  const [domaineIds, setDomaineIds] = useState(new Set());
   const [priorite, setPriorite] = useState("un_jour");
   const [dateFin, setDateFin] = useState("");
   const [administrative, setAdministrative] = useState(false);
@@ -53,13 +53,22 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     charger();
   }
 
+  function basculerDomaineFormulaire(id) {
+    setDomaineIds((s) => {
+      const nouveau = new Set(s);
+      if (nouveau.has(id)) nouveau.delete(id);
+      else nouveau.add(id);
+      return nouveau;
+    });
+  }
+
   async function creerTache(e) {
     e.preventDefault();
-    if (!titre.trim() || !domaineId) return;
+    if (!titre.trim() || domaineIds.size === 0) return;
     try {
       await api.creerTache({
         titre,
-        domaine_id: Number(domaineId),
+        domaine_ids: [...domaineIds],
         priorite,
         date_fin: dateFin || null,
         type: administrative ? "administrative" : "standard",
@@ -67,7 +76,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
         epinglee,
       });
       setTitre("");
-      setDomaineId("");
+      setDomaineIds(new Set());
       setPriorite("un_jour");
       setDateFin("");
       setAdministrative(false);
@@ -113,15 +122,19 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
       {formulaireOuvert && (
         <form className="tnv-form" onSubmit={creerTache}>
           <input className="tnv-input" type="text" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {domaines.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                className={domaineIds.has(d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                onClick={() => basculerDomaineFormulaire(d.id)}
+              >
+                {d.nom}
+              </button>
+            ))}
+          </div>
           <div className="tnv-field-row">
-            <select className="tnv-select" value={domaineId} onChange={(e) => setDomaineId(e.target.value)}>
-              <option value="">Domaine…</option>
-              {domaines.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.nom}
-                </option>
-              ))}
-            </select>
             <select className="tnv-select" value={priorite} onChange={(e) => setPriorite(e.target.value)}>
               {PRIORITES.map((p) => (
                 <option key={p.value} value={p.value}>

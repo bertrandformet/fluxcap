@@ -16,6 +16,7 @@ from app.schemas import (
     TacheOut,
     TacheUpdate,
 )
+from app.services.domaines_utils import resoudre_domaines
 
 router = APIRouter(prefix="/taches", tags=["taches"])
 
@@ -27,14 +28,14 @@ def lister_taches(
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Tache).join(Domaine)
+    query = db.query(Tache)
     if contexte:
-        query = query.filter(Domaine.contexte == contexte)
+        query = query.join(Tache.domaines).filter(Domaine.contexte == contexte)
     if statut:
         query = query.filter(Tache.statut == statut)
     if domaine_id:
-        query = query.filter(Tache.domaine_id == domaine_id)
-    return query.order_by(Tache.cree_le.desc()).all()
+        query = query.filter(Tache.domaines.any(Domaine.id == domaine_id))
+    return query.distinct().order_by(Tache.cree_le.desc()).all()
 
 
 @router.get("/{tache_id}", response_model=TacheOut)
@@ -47,9 +48,14 @@ def obtenir_tache(tache_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=TacheOut, status_code=201)
 def creer_tache(tache: TacheCreate, db: Session = Depends(get_db)):
-    if not db.get(Domaine, tache.domaine_id):
-        raise HTTPException(status_code=400, detail="Domaine inconnu")
-    obj = Tache(**tache.model_dump())
+    if not tache.domaine_ids:
+        raise HTTPException(status_code=400, detail="Au moins un domaine est requis")
+    try:
+        domaines = resoudre_domaines(db, tache.domaine_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    obj = Tache(**tache.model_dump(exclude={"domaine_ids"}))
+    obj.domaines = domaines
     db.add(obj)
     db.commit()
     db.refresh(obj)
@@ -61,7 +67,16 @@ def modifier_tache(tache_id: int, tache: TacheUpdate, db: Session = Depends(get_
     obj = db.get(Tache, tache_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
-    for champ, valeur in tache.model_dump(exclude_unset=True).items():
+    donnees = tache.model_dump(exclude_unset=True)
+    if "domaine_ids" in donnees:
+        domaine_ids = donnees.pop("domaine_ids")
+        if not domaine_ids:
+            raise HTTPException(status_code=400, detail="Au moins un domaine est requis")
+        try:
+            obj.domaines = resoudre_domaines(db, domaine_ids)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    for champ, valeur in donnees.items():
         setattr(obj, champ, valeur)
     obj.derniere_interaction = datetime.now()
     db.commit()

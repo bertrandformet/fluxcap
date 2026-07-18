@@ -10,3 +10,14 @@ export default function DomainBadge({ domaine }) {
     </span>
   );
 }
+
+export function DomainBadges({ domaines }) {
+  if (!domaines || domaines.length === 0) return null;
+  return (
+    <>
+      {domaines.map((d) => (
+        <DomainBadge key={d.id} domaine={d} />
+      ))}
+    </>
+  );
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import DecisionModal from "../components/DecisionModal.jsx";
-import DomainBadge from "../components/DomainBadge.jsx";
+import { DomainBadges } from "../components/DomainBadge.jsx";
 import { IconCheck } from "../components/Icons.jsx";
 
 const LABELS_STATUT = {
@@ -62,7 +62,7 @@ export default function Cloture({ contexte }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="tnv-task-card__title">{s.tache.titre}</div>
               <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
-                <DomainBadge domaine={s.tache.domaine} />
+                <DomainBadges domaines={s.tache.domaines} />
               </div>
             </div>
             <button className="tnv-btn tnv-btn--outline" onClick={() => setEnDecision(s)}>

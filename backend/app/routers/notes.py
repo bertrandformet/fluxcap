@@ -18,6 +18,7 @@ from app.database import get_db
 from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, Tache
 from app.schemas import NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
 from app.services import stockage
+from app.services.domaines_utils import resoudre_domaines
 from app.services.export_notes import GENERATEURS
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -37,13 +38,11 @@ def lister_notes(
     if contexte:
         # Une note sans domaine n'a pas de contexte déterminable — toujours visible,
         # plutôt que masquée arbitrairement d'un côté (voir spec, Onglet Notes).
-        query = query.outerjoin(Domaine, Note.domaine_id == Domaine.id).filter(
-            or_(Note.domaine_id.is_(None), Domaine.contexte == contexte)
-        )
+        query = query.filter(or_(~Note.domaines.any(), Note.domaines.any(Domaine.contexte == contexte)))
     if sans_tag:
-        query = query.filter(Note.domaine_id.is_(None))
+        query = query.filter(~Note.domaines.any())
     elif domaine_id:
-        query = query.filter(Note.domaine_id == domaine_id)
+        query = query.filter(Note.domaines.any(Domaine.id == domaine_id))
     return query.order_by(Note.cree_le.desc()).all()
 
 
@@ -112,7 +111,12 @@ def apercu_lien(url: str):
 
 @router.post("", response_model=NoteOut, status_code=201)
 def creer_note(note: NoteCreate, db: Session = Depends(get_db)):
-    obj = Note(**note.model_dump())
+    try:
+        domaines = resoudre_domaines(db, note.domaine_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    obj = Note(**note.model_dump(exclude={"domaine_ids"}))
+    obj.domaines = domaines
     db.add(obj)
     db.commit()
     db.refresh(obj)
@@ -124,7 +128,13 @@ def modifier_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db))
     obj = db.get(Note, note_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
-    for champ, valeur in note.model_dump(exclude_unset=True).items():
+    donnees = note.model_dump(exclude_unset=True)
+    if "domaine_ids" in donnees:
+        try:
+            obj.domaines = resoudre_domaines(db, donnees.pop("domaine_ids"))
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    for champ, valeur in donnees.items():
         setattr(obj, champ, valeur)
     db.commit()
     db.refresh(obj)
@@ -147,17 +157,17 @@ def transformer_en_tache(note_id: int, db: Session = Depends(get_db)):
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note introuvable")
-    if not note.domaine_id:
+    if not note.domaines:
         raise HTTPException(
             status_code=400, detail="La note doit avoir un tag de domaine pour être transformée en tâche"
         )
     tache = Tache(
         titre=note.titre,
-        domaine_id=note.domaine_id,
         description=note.contenu or note.apercu,
         priorite=Priorite.un_jour,
         derniere_interaction=datetime.now(),
     )
+    tache.domaines = list(note.domaines)
     db.add(tache)
     db.commit()
     db.refresh(tache)

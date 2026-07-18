@@ -59,9 +59,9 @@ def supprimer_domaine(domaine_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Domaine introuvable")
 
     utilise = (
-        db.query(Tache).filter(Tache.domaine_id == domaine_id).first()
-        or db.query(VeilleItem).filter(VeilleItem.domaine_id == domaine_id).first()
-        or db.query(Note).filter(Note.domaine_id == domaine_id).first()
+        db.query(Tache).filter(Tache.domaines.any(Domaine.id == domaine_id)).first()
+        or db.query(VeilleItem).filter(VeilleItem.domaines.any(Domaine.id == domaine_id)).first()
+        or db.query(Note).filter(Note.domaines.any(Domaine.id == domaine_id)).first()
     )
     if utilise:
         raise HTTPException(

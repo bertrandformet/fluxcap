@@ -29,8 +29,9 @@ def obtenir_ou_construire_selection(db: Session, contexte: Contexte, aujourdhui:
 def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> list[SelectionJour]:
     toutes_eligibles = (
         db.query(Tache)
-        .join(Domaine)
+        .join(Tache.domaines)
         .filter(Domaine.contexte == contexte, Tache.statut == StatutTache.a_realiser)
+        .distinct()
         .all()
     )
     # Les tâches récurrentes forment leur propre bloc (comme la veille) : elles ne
@@ -174,12 +175,12 @@ def _completer_selection(db: Session, contexte: Contexte, jour: date) -> None:
     if places_libres <= 0:
         return
 
-    query = db.query(Tache).join(Domaine).filter(
+    query = db.query(Tache).join(Tache.domaines).filter(
         Domaine.contexte == contexte, Tache.statut == StatutTache.a_realiser, Tache.recurrente.is_(False)
     )
     if deja_ids:
         query = query.filter(~Tache.id.in_(deja_ids))
-    candidates = sorted(query.all(), key=lambda t: score(t, date.today()), reverse=True)
+    candidates = sorted(query.distinct().all(), key=lambda t: score(t, date.today()), reverse=True)
 
     for tache_suivante in candidates[:places_libres]:
         db.add(

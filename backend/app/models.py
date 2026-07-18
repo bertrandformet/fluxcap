@@ -2,10 +2,33 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+# Tables d'association many-to-many : une tâche/note/item de veille peut porter plusieurs
+# domaines (contrainte : tous du même contexte Pro/Perso, imposée côté routers, pas en base).
+tache_domaines = Table(
+    "tache_domaines",
+    Base.metadata,
+    Column("tache_id", ForeignKey("taches.id", ondelete="CASCADE"), primary_key=True),
+    Column("domaine_id", ForeignKey("domaines.id", ondelete="CASCADE"), primary_key=True),
+)
+
+note_domaines = Table(
+    "note_domaines",
+    Base.metadata,
+    Column("note_id", ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True),
+    Column("domaine_id", ForeignKey("domaines.id", ondelete="CASCADE"), primary_key=True),
+)
+
+veille_item_domaines = Table(
+    "veille_item_domaines",
+    Base.metadata,
+    Column("veille_item_id", ForeignKey("veille_items.id", ondelete="CASCADE"), primary_key=True),
+    Column("domaine_id", ForeignKey("domaines.id", ondelete="CASCADE"), primary_key=True),
+)
 
 
 class Contexte(str, enum.Enum):
@@ -66,9 +89,9 @@ class Domaine(Base):
     utilise_pour_taches: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     utilise_pour_veille: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    taches: Mapped[list["Tache"]] = relationship(back_populates="domaine")
-    veille_items: Mapped[list["VeilleItem"]] = relationship(back_populates="domaine")
-    notes: Mapped[list["Note"]] = relationship(back_populates="domaine")
+    taches: Mapped[list["Tache"]] = relationship(secondary=tache_domaines, back_populates="domaines")
+    veille_items: Mapped[list["VeilleItem"]] = relationship(secondary=veille_item_domaines, back_populates="domaines")
+    notes: Mapped[list["Note"]] = relationship(secondary=note_domaines, back_populates="domaines")
 
 
 class Tache(Base):
@@ -76,7 +99,6 @@ class Tache(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     titre: Mapped[str] = mapped_column(String(255), nullable=False)
-    domaine_id: Mapped[int] = mapped_column(ForeignKey("domaines.id"), nullable=False)
     type: Mapped[str] = mapped_column(String(50), nullable=False, default="standard")
     priorite: Mapped[Priorite] = mapped_column(Enum(Priorite), nullable=False, default=Priorite.un_jour)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -91,7 +113,7 @@ class Tache(Base):
     derniere_interaction: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
-    domaine: Mapped["Domaine"] = relationship(back_populates="taches")
+    domaines: Mapped[list["Domaine"]] = relationship(secondary=tache_domaines, back_populates="taches")
     sous_taches: Mapped[list["SousTache"]] = relationship(back_populates="tache", cascade="all, delete-orphan")
     jalons: Mapped[list["Jalon"]] = relationship(back_populates="tache", cascade="all, delete-orphan")
     historique_reports: Mapped[list["HistoriqueReport"]] = relationship(
@@ -156,14 +178,13 @@ class VeilleItem(Base):
     titre: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     apercu: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    domaine_id: Mapped[int] = mapped_column(ForeignKey("domaines.id"), nullable=False)
     source: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     date_ingestion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     statut: Mapped[StatutVeille] = mapped_column(Enum(StatutVeille), nullable=False, default=StatutVeille.nouveau)
     tache_generee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("taches.id"), nullable=True)
     note_generee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("notes.id"), nullable=True)
 
-    domaine: Mapped["Domaine"] = relationship(back_populates="veille_items")
+    domaines: Mapped[list["Domaine"]] = relationship(secondary=veille_item_domaines, back_populates="veille_items")
 
 
 class SourceVeille(Base):
@@ -196,11 +217,10 @@ class Note(Base):
     url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     apercu: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     contenu: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    domaine_id: Mapped[Optional[int]] = mapped_column(ForeignKey("domaines.id"), nullable=True)
     source: Mapped[SourceNote] = mapped_column(Enum(SourceNote), nullable=False, default=SourceNote.manuel)
     cree_le: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
-    domaine: Mapped[Optional["Domaine"]] = relationship(back_populates="notes")
+    domaines: Mapped[list["Domaine"]] = relationship(secondary=note_domaines, back_populates="notes")
     pieces_jointes: Mapped[list["PieceJointe"]] = relationship(back_populates="note", cascade="all, delete-orphan")
 
 

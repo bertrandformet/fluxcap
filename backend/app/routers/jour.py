@@ -17,8 +17,9 @@ def obtenir_jour(contexte: Contexte, db: Session = Depends(get_db)):
     selection = obtenir_ou_construire_selection(db, contexte, aujourdhui)
     veille = (
         db.query(VeilleItem)
-        .join(Domaine)
+        .join(VeilleItem.domaines)
         .filter(Domaine.contexte == contexte, VeilleItem.statut == StatutVeille.nouveau)
+        .distinct()
         .order_by(VeilleItem.date_ingestion.desc())
         .all()
     )

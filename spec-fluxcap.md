@@ -17,7 +17,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
-| Modèle de tâche : titre, domaine, type, priorité, date de fin, date événement + délai | ✅ |
+| Modèle de tâche : titre, domaine(s), type, priorité, date de fin, date événement + délai | ✅ multi-domaines (une tâche/note/item de veille peut porter plusieurs domaines, tous du même contexte) |
 | Sous-tâches (avec suggestion automatique) | ✅ interface faite (disclosure "Détails" sur chaque tâche : cocher/ajouter/supprimer) + suggestion proactive (badge "💡 Échéance lointaine / Description détaillée — découper en sous-tâches ?") si échéance >7 jours ou description >150 caractères et aucune sous-tâche encore créée |
 | Jalons intermédiaires | ✅ interface faite (même disclosure "Détails" : titre, date, cocher/ajouter/supprimer) |
 | Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
@@ -76,7 +76,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Champ | Détail |
 |---|---|
 | Titre | texte libre |
-| Domaine/source | libre, géré depuis l'onglet Domaines, tagué Pro ou Perso |
+| Domaines | **multi-domaines** (nouveau) : une tâche peut porter plusieurs domaines à la fois, tous obligatoirement du même contexte (Pro ou Perso) — géré depuis l'onglet Domaines |
 | Type | manuel — valeur "administrative" active le bouton Pomodoro |
 | Priorité | 3 niveaux (un jour / cette semaine / aujourd'hui) |
 | Épinglée | booléen, force l'inclusion dans le quota du jour |
@@ -92,9 +92,10 @@ Pas de date de fin à saisir — se désactive manuellement.
 - Suppression bloquée si le domaine est encore utilisé par une tâche, un item de veille ou une note
 - Ces mêmes domaines servent de tags pour filtrer les notes
 - **Usage par domaine** (nouveau) : chaque domaine peut être retiré du sélecteur de tâches et/ou du sélecteur de veille indépendamment (badges "Tâches"/"Veille" cliquables), pour les domaines qui n'ont de sens que d'un côté (ex. un sujet de veille large comme "Éducation généraliste" n'est pas une catégorie de tâche actionnable). Les deux activés par défaut à la création ; les notes voient tous les domaines quel que soit leur usage.
+- **Multi-domaines** (nouveau) : une tâche, une note ou un item de veille peut être tagué de plusieurs domaines à la fois (sélecteur à chips dans les formulaires, plusieurs badges affichés). Contrainte : tous les domaines d'un même item doivent partager le même contexte Pro/Perso, puisque le contexte effectif d'un item reste entièrement déterminé par ses domaines — pas de mélange Pro/Perso sur un même item.
 
 ## Onglet Veille (séparé, par domaine)
-- Items groupés par domaine, affichés en cartes (même style visuel que les tâches d'Aujourd'hui), avec un résumé du lien (nouveau champ `apercu`)
+- Items groupés par domaine, affichés en cartes (même style visuel que les tâches d'Aujourd'hui), avec un résumé du lien (nouveau champ `apercu`) — un item multi-domaines apparaît dans chacun des groupes concernés
 - 3 actions rapides par item : ignorer / garder pour lecture (→ envoyé automatiquement vers l'onglet Notes) / transformer en tâche
 - **Filtre par domaine** (nouveau), sélection unique ou multiple
 - **Actualisation automatique** de la liste à 7h et 20h (nouveau), tant que l'écran reste ouvert dans le navigateur — ne déclenche pas de vraie collecte, relit simplement les données actuelles
@@ -106,14 +107,14 @@ Pas de date de fin à saisir — se désactive manuellement.
 ## Onglet Notes
 - **Vue à deux volets façon Notes d'Apple** (nouveau) : colonne de gauche compacte avec uniquement le titre de chaque note pour défiler vite, volet de droite avec le détail complet de la note sélectionnée. Sur mobile, un seul volet visible à la fois (liste, puis détail en plein écran au clic, avec bouton "← Retour") ; sur desktop (≥900px) les deux volets restent côte à côte par défaut, avec deux boutons dans l'en-tête pour masquer la colonne (détail plein écran) ou au contraire n'afficher que la colonne (liste plein écran) — sélectionner une note dans ce dernier mode revient automatiquement à la vue partagée
 - **Unique et filtrable par tag**, avec un filtre supplémentaire "Sans tag" (nouveau)
-- **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via le domaine associé à chaque note. Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
+- **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via les domaines associés à chaque note (au moins un domaine du bon contexte suffit). Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
 - **Badge d'alerte visuel** ("⚠ Sans tag", nouveau) sur toute note sans domaine, pour éviter qu'elle passe inaperçue
 - Import manuel : champ "coller un lien" avec récupération auto du titre/aperçu
 - **Éditeur de texte markdown** (nouveau) avec barre d'outils (titres, gras, italique, barré, code, listes, case à cocher, citation, lien, ligne horizontale) et bascule aperçu/édition, pour rédiger des notes de texte libres et pas seulement importer des liens
 - **Pièces jointes** (nouveau) : upload de fichier ou image par note (10 Mo max), miniature pour les images, téléchargement, suppression
 - **Export** (nouveau) de chaque note en `.txt`, `.md` ou `.docx`
-- **Sélection multiple** (nouveau) : suppression en masse, ajout de tag en masse, partage groupé
-- Alimentation automatique par l'action "garder pour lecture" de l'onglet Veille (tag de domaine hérité automatiquement)
+- **Sélection multiple** (nouveau) : suppression en masse, ajout de tag en masse (s'ajoute aux domaines déjà présents sur chaque note plutôt que de les remplacer), partage groupé
+- Alimentation automatique par l'action "garder pour lecture" de l'onglet Veille (tous les domaines de l'item de veille sont hérités automatiquement, idem pour "transformer en tâche")
 - **Partage externe sortant** : ⚠️ implémenté via l'API Web Share native du navigateur (`navigator.share`), qui ouvre le menu de partage natif macOS/iOS — au lieu du raccourci Apple Shortcuts unique synchronisé via iCloud initialement prévu. Repli automatique sur copie presse-papiers si l'API n'est pas disponible
 - **Capture externe entrante** : ✅ raccourci Apple Shortcuts (menu Partager, authentifié via une clé API dédiée) et favori Chrome/bookmarklet (authentifié via la session déjà connectée, sans clé exposée) — voir [raccourci-partage.md](./raccourci-partage.md)
 

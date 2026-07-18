@@ -2,7 +2,8 @@
 
 Aucun nom de domaine réel n'est utilisé ici : les domaines sont entièrement
 gérables depuis l'application, ce script sert uniquement à illustrer le
-fonctionnement (score, épinglage, report remonté, anti-oubli, veille, notes).
+fonctionnement (score, épinglage, report remonté, anti-oubli, veille, notes,
+multi-domaines).
 """
 
 from datetime import date, datetime, timedelta
@@ -39,19 +40,16 @@ def seed() -> None:
         taches = [
             Tache(
                 titre="Préparer le comité de pilotage",
-                domaine_id=domaine_a.id,
                 priorite=Priorite.aujourd_hui,
                 date_fin=aujourdhui + timedelta(days=1),
             ),
             Tache(
                 titre="Relire le rapport trimestriel",
-                domaine_id=domaine_a.id,
                 priorite=Priorite.cette_semaine,
                 date_fin=aujourdhui + timedelta(days=3),
             ),
             Tache(
                 titre="Répondre aux mels en attente",
-                domaine_id=domaine_b.id,
                 type="administrative",
                 priorite=Priorite.aujourd_hui,
                 recurrente=True,
@@ -59,66 +57,70 @@ def seed() -> None:
             ),
             Tache(
                 titre="Mettre à jour le tableau de suivi budgétaire",
-                domaine_id=domaine_b.id,
                 type="administrative",
                 priorite=Priorite.un_jour,
                 date_fin=aujourdhui + timedelta(days=10),
             ),
             Tache(
+                # Exemple multi-domaines : concerne à la fois le Domaine Pro C et le Domaine Pro A.
                 titre="Organiser un point d'équipe",
-                domaine_id=domaine_c.id,
                 priorite=Priorite.cette_semaine,
                 date_fin=aujourdhui + timedelta(days=5),
                 epinglee=True,
             ),
             Tache(
                 titre="Préparer la formation X",
-                domaine_id=domaine_c.id,
                 priorite=Priorite.cette_semaine,
                 date_evenement=aujourdhui + timedelta(days=4),
                 delai_preparation_jours=5,
             ),
             Tache(
                 titre="Nettoyer les archives partagées",
-                domaine_id=domaine_a.id,
                 priorite=Priorite.un_jour,
                 derniere_interaction=datetime.utcnow() - timedelta(days=20),
             ),
             Tache(
                 titre="Ranger le bureau",
-                domaine_id=domaine_perso.id,
                 priorite=Priorite.un_jour,
                 date_fin=aujourdhui + timedelta(days=2),
             ),
             Tache(
                 titre="Planifier les vacances d'été",
-                domaine_id=domaine_perso.id,
                 priorite=Priorite.cette_semaine,
                 date_fin=aujourdhui + timedelta(days=14),
             ),
             Tache(
                 titre="Trier la bibliothèque de livres",
-                domaine_id=domaine_perso.id,
                 priorite=Priorite.un_jour,
                 derniere_interaction=datetime.utcnow() - timedelta(days=15),
             ),
             Tache(
                 titre="Payer la facture d'électricité",
-                domaine_id=domaine_perso.id,
                 priorite=Priorite.aujourd_hui,
                 date_fin=aujourdhui,
             ),
         ]
+        taches[0].domaines = [domaine_a]
+        taches[1].domaines = [domaine_a]
+        taches[2].domaines = [domaine_b]
+        taches[3].domaines = [domaine_b]
+        taches[4].domaines = [domaine_c, domaine_a]
+        taches[5].domaines = [domaine_c]
+        taches[6].domaines = [domaine_a]
+        taches[7].domaines = [domaine_perso]
+        taches[8].domaines = [domaine_perso]
+        taches[9].domaines = [domaine_perso]
+        taches[10].domaines = [domaine_perso]
         db.add_all(taches)
         db.flush()
 
         # Tâche reportée hier lors de la clôture : doit remonter en premier aujourd'hui
         tache_reportee = Tache(
             titre="Finaliser la note de cadrage",
-            domaine_id=domaine_b.id,
             priorite=Priorite.cette_semaine,
             date_fin=aujourdhui,
         )
+        tache_reportee.domaines = [domaine_b]
         db.add(tache_reportee)
         db.flush()
         db.add(
@@ -137,7 +139,6 @@ def seed() -> None:
                 url="https://example.org/veille/agile-distribue",
                 apercu="Retour sur une expérimentation menée dans trois équipes réparties sur plusieurs sites : "
                 "rituels adaptés au distanciel, cadence de synchronisation réduite et outils partagés.",
-                domaine_id=domaine_a.id,
                 source="Flux Pro",
             ),
             VeilleItem(
@@ -145,15 +146,14 @@ def seed() -> None:
                 url="https://example.org/veille/retex-projet",
                 apercu="Bilan à froid d'un projet mené sur six mois : ce qui a bien fonctionné, les points de "
                 "friction avec les parties prenantes et les ajustements recommandés pour la suite.",
-                domaine_id=domaine_b.id,
                 source="Flux Pro",
             ),
             VeilleItem(
+                # Exemple multi-domaines : pertinent pour deux domaines Pro à la fois.
                 titre="Publication sur l'IA générative en administration",
                 url="https://example.org/veille/ia-generative-admin",
                 apercu="Panorama des usages émergents de l'IA générative dans les services publics, avec un focus "
                 "sur les enjeux de cadrage juridique et d'acceptabilité par les agents.",
-                domaine_id=domaine_c.id,
                 source="Flux Pro",
             ),
             VeilleItem(
@@ -161,10 +161,13 @@ def seed() -> None:
                 url="https://example.org/veille/gestion-du-temps",
                 apercu="Synthèse de plusieurs études sur les techniques de blocage de temps et leurs limites, "
                 "avec des pistes concrètes pour réduire la fragmentation de l'attention.",
-                domaine_id=domaine_perso.id,
                 source="Flux Perso",
             ),
         ]
+        veille_items[0].domaines = [domaine_a]
+        veille_items[1].domaines = [domaine_b]
+        veille_items[2].domaines = [domaine_c, domaine_b]
+        veille_items[3].domaines = [domaine_perso]
         db.add_all(veille_items)
 
         # Pas de sources de veille pré-configurées : ajoutées à la main depuis l'écran Veille.
@@ -173,17 +176,18 @@ def seed() -> None:
             Note(
                 titre="Idée d'article de blog",
                 apercu="Explorer le sujet des rituels quotidiens et de la charge mentale.",
-                domaine_id=domaine_perso.id,
                 source=SourceNote.manuel,
             ),
             Note(
+                # Exemple multi-domaines.
                 titre="Comparatif d'outils de productivité",
                 url="https://example.org/notes/comparatif-outils",
                 apercu="Comparatif de plusieurs outils testés l'an dernier.",
-                domaine_id=domaine_a.id,
                 source=SourceNote.veille,
             ),
         ]
+        notes[0].domaines = [domaine_perso]
+        notes[1].domaines = [domaine_a, domaine_b]
         db.add_all(notes)
 
         db.commit()

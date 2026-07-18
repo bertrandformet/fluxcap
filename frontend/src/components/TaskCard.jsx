@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../api/client.js";
 import Pomodoro from "./Pomodoro.jsx";
-import DomainBadge from "./DomainBadge.jsx";
+import { DomainBadges } from "./DomainBadge.jsx";
 import { IconCheck, IconChevronDown, IconLoop, IconPin, IconTomato, IconTrash } from "./Icons.jsx";
 
 const LABELS_PRIORITE = {
@@ -194,7 +194,7 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
       <div className="tnv-task-card__body">
         <span className="tnv-task-card__title">{tache.titre}</span>
         <div className="tnv-task-card__meta">
-          <DomainBadge domaine={tache.domaine} />
+          <DomainBadges domaines={tache.domaines} />
           <span className="tnv-meta-text">
             {LABELS_PRIORITE[tache.priorite]}
             {tache.date_fin && ` · échéance ${tache.date_fin}`}

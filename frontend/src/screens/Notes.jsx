@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
-import DomainBadge from "../components/DomainBadge.jsx";
+import { DomainBadges } from "../components/DomainBadge.jsx";
 import { IconColonneMasquer, IconColonneSeule, IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
 
@@ -52,7 +52,7 @@ export default function Notes({ contexte }) {
   const [titre, setTitre] = useState("");
   const [apercu, setApercu] = useState("");
   const [contenu, setContenu] = useState("");
-  const [domaineImport, setDomaineImport] = useState("");
+  const [domaineImportIds, setDomaineImportIds] = useState(new Set());
   const [fichiersAJoindre, setFichiersAJoindre] = useState([]);
 
   const [enEdition, setEnEdition] = useState(null);
@@ -60,7 +60,7 @@ export default function Notes({ contexte }) {
   const [editionUrl, setEditionUrl] = useState("");
   const [editionApercu, setEditionApercu] = useState("");
   const [editionContenu, setEditionContenu] = useState("");
-  const [editionDomaine, setEditionDomaine] = useState("");
+  const [editionDomaineIds, setEditionDomaineIds] = useState(new Set());
 
   const [transformees, setTransformees] = useState([]);
 
@@ -103,7 +103,7 @@ export default function Notes({ contexte }) {
         url: lien || null,
         apercu: apercu || null,
         contenu: contenu || null,
-        domaine_id: domaineImport ? Number(domaineImport) : null,
+        domaine_ids: [...domaineImportIds],
       });
       for (const fichier of fichiersAJoindre) {
         await api.ajouterPieceJointe(note.id, fichier);
@@ -112,7 +112,7 @@ export default function Notes({ contexte }) {
       setTitre("");
       setApercu("");
       setContenu("");
-      setDomaineImport("");
+      setDomaineImportIds(new Set());
       setFichiersAJoindre([]);
       setFormulaireOuvert(false);
       setNoteSelectionneeId(note.id);
@@ -128,7 +128,16 @@ export default function Notes({ contexte }) {
     setEditionUrl(note.url || "");
     setEditionApercu(note.apercu || "");
     setEditionContenu(note.contenu || "");
-    setEditionDomaine(note.domaine_id || "");
+    setEditionDomaineIds(new Set(note.domaines.map((d) => d.id)));
+  }
+
+  function basculerDomaineEdition(id) {
+    setEditionDomaineIds((s) => {
+      const nouveau = new Set(s);
+      if (nouveau.has(id)) nouveau.delete(id);
+      else nouveau.add(id);
+      return nouveau;
+    });
   }
 
   async function enregistrerEdition(note) {
@@ -138,7 +147,7 @@ export default function Notes({ contexte }) {
         url: editionUrl || null,
         apercu: editionApercu || null,
         contenu: editionContenu || null,
-        domaine_id: editionDomaine ? Number(editionDomaine) : null,
+        domaine_ids: [...editionDomaineIds],
       });
       setEnEdition(null);
       charger();
@@ -240,7 +249,16 @@ export default function Notes({ contexte }) {
   async function appliquerTagEnMasse(domaineId) {
     if (selection.size === 0) return;
     try {
-      await Promise.all([...selection].map((id) => api.modifierNote(id, { domaine_id: domaineId })));
+      // Ajoute le tag aux domaines déjà présents sur chaque note, plutôt que de les remplacer.
+      await Promise.all(
+        (notes || [])
+          .filter((n) => selection.has(n.id))
+          .map((n) => {
+            const domaineIds = new Set(n.domaines.map((d) => d.id));
+            domaineIds.add(domaineId);
+            return api.modifierNote(n.id, { domaine_ids: [...domaineIds] });
+          })
+      );
       setSelection(new Set());
       charger();
     } catch (err) {
@@ -341,14 +359,26 @@ export default function Notes({ contexte }) {
             onChange={(e) => setApercu(e.target.value)}
           />
           <MarkdownToolbar value={contenu} onChange={setContenu} placeholder="Écrire une note de texte…" />
-          <select className="tnv-select" value={domaineImport} onChange={(e) => setDomaineImport(e.target.value)}>
-            <option value="">Sans tag de domaine</option>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {domaines.length === 0 && <span className="tnv-meta-text">Sans tag de domaine</span>}
             {domaines.map((d) => (
-              <option key={d.id} value={d.id}>
+              <button
+                key={d.id}
+                type="button"
+                className={domaineImportIds.has(d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                onClick={() =>
+                  setDomaineImportIds((s) => {
+                    const nouveau = new Set(s);
+                    if (nouveau.has(d.id)) nouveau.delete(d.id);
+                    else nouveau.add(d.id);
+                    return nouveau;
+                  })
+                }
+              >
                 {d.nom}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
           <label className="champ-fichier">
             <IconPaperclip size={16} /> Joindre
             <input type="file" multiple onChange={(e) => setFichiersAJoindre([...e.target.files])} />
@@ -457,14 +487,19 @@ export default function Notes({ contexte }) {
                     placeholder="Aperçu"
                   />
                   <MarkdownToolbar value={editionContenu} onChange={setEditionContenu} placeholder="Contenu…" />
-                  <select className="tnv-select" value={editionDomaine} onChange={(e) => setEditionDomaine(e.target.value)}>
-                    <option value="">Sans tag de domaine</option>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {domaines.length === 0 && <span className="tnv-meta-text">Sans tag de domaine</span>}
                     {domaines.map((d) => (
-                      <option key={d.id} value={d.id}>
+                      <button
+                        key={d.id}
+                        type="button"
+                        className={editionDomaineIds.has(d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                        onClick={() => basculerDomaineEdition(d.id)}
+                      >
                         {d.nom}
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button className="tnv-btn tnv-btn--primary" onClick={() => enregistrerEdition(noteSelectionnee)}>
                       Enregistrer
@@ -480,8 +515,8 @@ export default function Notes({ contexte }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span className="tnv-task-card__title">{noteSelectionnee.titre}</span>
                       <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
-                        {noteSelectionnee.domaine ? (
-                          <DomainBadge domaine={noteSelectionnee.domaine} />
+                        {noteSelectionnee.domaines.length > 0 ? (
+                          <DomainBadges domaines={noteSelectionnee.domaines} />
                         ) : (
                           <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>
                         )}
@@ -551,7 +586,7 @@ export default function Notes({ contexte }) {
                         className="tnv-btn tnv-btn--outline"
                         onClick={() => transformerEnTache(noteSelectionnee)}
                         disabled={transformees.includes(noteSelectionnee.id)}
-                        title={!noteSelectionnee.domaine_id ? "Ajoutez un tag de domaine pour transformer cette note en tâche" : undefined}
+                        title={noteSelectionnee.domaines.length === 0 ? "Ajoutez un tag de domaine pour transformer cette note en tâche" : undefined}
                       >
                         {transformees.includes(noteSelectionnee.id) ? "Tâche créée ✓" : "Transformer en tâche"}
                       </button>

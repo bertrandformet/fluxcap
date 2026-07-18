@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Contexte, Domaine, Note, Priorite, SourceNote, StatutVeille, Tache, VeilleItem
 from app.schemas import VeilleAction, VeilleItemCreate, VeilleItemOut
+from app.services.domaines_utils import resoudre_domaines
 
 router = APIRouter(prefix="/veille", tags=["veille"])
 
@@ -19,21 +20,26 @@ def lister_veille(
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(VeilleItem).join(Domaine)
+    query = db.query(VeilleItem)
     if contexte:
-        query = query.filter(Domaine.contexte == contexte)
+        query = query.join(VeilleItem.domaines).filter(Domaine.contexte == contexte)
     if statut:
         query = query.filter(VeilleItem.statut == statut)
     if domaine_id:
-        query = query.filter(VeilleItem.domaine_id == domaine_id)
-    return query.order_by(VeilleItem.date_ingestion.desc()).all()
+        query = query.filter(VeilleItem.domaines.any(Domaine.id == domaine_id))
+    return query.distinct().order_by(VeilleItem.date_ingestion.desc()).all()
 
 
 @router.post("", response_model=VeilleItemOut, status_code=201)
 def creer_item_veille(item: VeilleItemCreate, db: Session = Depends(get_db)):
-    if not db.get(Domaine, item.domaine_id):
-        raise HTTPException(status_code=400, detail="Domaine inconnu")
-    obj = VeilleItem(**item.model_dump())
+    if not item.domaine_ids:
+        raise HTTPException(status_code=400, detail="Au moins un domaine est requis")
+    try:
+        domaines = resoudre_domaines(db, item.domaine_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    obj = VeilleItem(**item.model_dump(exclude={"domaine_ids"}))
+    obj.domaines = domaines
     db.add(obj)
     db.commit()
     db.refresh(obj)
@@ -52,7 +58,8 @@ def agir_sur_item(item_id: int, action: VeilleAction, db: Session = Depends(get_
         item.statut = StatutVeille.ignore
 
     elif action.action == "garder_lecture":
-        note = Note(titre=item.titre, url=item.url, domaine_id=item.domaine_id, source=SourceNote.veille)
+        note = Note(titre=item.titre, url=item.url, source=SourceNote.veille)
+        note.domaines = list(item.domaines)
         db.add(note)
         db.flush()
         item.statut = StatutVeille.garde_lecture
@@ -61,10 +68,10 @@ def agir_sur_item(item_id: int, action: VeilleAction, db: Session = Depends(get_
     elif action.action == "transformer_tache":
         tache = Tache(
             titre=item.titre,
-            domaine_id=item.domaine_id,
             priorite=Priorite.un_jour,
             derniere_interaction=datetime.now(),
         )
+        tache.domaines = list(item.domaines)
         db.add(tache)
         db.flush()
         item.statut = StatutVeille.transforme_tache

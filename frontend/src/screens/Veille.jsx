@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
-import DomainBadge from "../components/DomainBadge.jsx";
+import { DomainBadges } from "../components/DomainBadge.jsx";
 import Switch from "../components/Switch.jsx";
 import { IconArrowRight, IconBookmark, IconIgnore, IconTrash } from "../components/Icons.jsx";
 import { domainHue } from "../utils/domainHue.js";
@@ -138,12 +138,14 @@ export default function Veille({ contexte }) {
   if (!items) return <p className="tnv-empty">Chargement…</p>;
 
   const itemsFiltres =
-    domainesFiltre.size === 0 ? items : items.filter((item) => domainesFiltre.has(item.domaine.id));
+    domainesFiltre.size === 0 ? items : items.filter((item) => item.domaines.some((d) => domainesFiltre.has(d.id)));
 
+  // Un item peut porter plusieurs domaines : il apparaît dans chacun des groupes correspondants.
   const parDomaine = itemsFiltres.reduce((acc, item) => {
-    const nom = item.domaine.nom;
-    acc[nom] = acc[nom] || [];
-    acc[nom].push(item);
+    for (const d of item.domaines) {
+      acc[d.nom] = acc[d.nom] || [];
+      acc[d.nom].push(item);
+    }
     return acc;
   }, {});
 
@@ -191,6 +193,11 @@ export default function Veille({ contexte }) {
               {itemsDomaine.map((item) => (
                 <article key={item.id} className="tnv-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <span className="tnv-task-card__title">{item.titre}</span>
+                  {item.domaines.length > 1 && (
+                    <div className="tnv-task-card__meta">
+                      <DomainBadges domaines={item.domaines} />
+                    </div>
+                  )}
                   {item.apercu && <p className="tnv-meta-text">{item.apercu}</p>}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                     <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">

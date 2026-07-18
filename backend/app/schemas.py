@@ -93,7 +93,6 @@ class HistoriqueReportOut(BaseModel):
 
 class TacheBase(BaseModel):
     titre: str
-    domaine_id: int
     type: str = "standard"
     priorite: Priorite = Priorite.un_jour
     description: Optional[str] = None
@@ -105,12 +104,12 @@ class TacheBase(BaseModel):
 
 
 class TacheCreate(TacheBase):
-    pass
+    domaine_ids: list[int]
 
 
 class TacheUpdate(BaseModel):
     titre: Optional[str] = None
-    domaine_id: Optional[int] = None
+    domaine_ids: Optional[list[int]] = None
     type: Optional[str] = None
     priorite: Optional[Priorite] = None
     description: Optional[str] = None
@@ -128,7 +127,7 @@ class TacheOut(TacheBase):
     statut: StatutTache
     derniere_interaction: datetime
     cree_le: datetime
-    domaine: DomaineOut
+    domaines: list[DomaineOut]
     sous_taches: list[SousTacheOut] = []
     jalons: list[JalonOut] = []
     historique_reports: list[HistoriqueReportOut] = []
@@ -160,12 +159,11 @@ class VeilleItemBase(BaseModel):
     titre: str
     url: str
     apercu: Optional[str] = None
-    domaine_id: int
     source: Optional[str] = None
 
 
 class VeilleItemCreate(VeilleItemBase):
-    pass
+    domaine_ids: list[int]
 
 
 class VeilleItemOut(VeilleItemBase):
@@ -175,7 +173,7 @@ class VeilleItemOut(VeilleItemBase):
     statut: StatutVeille
     tache_generee_id: Optional[int]
     note_generee_id: Optional[int]
-    domaine: DomaineOut
+    domaines: list[DomaineOut]
 
 
 class VeilleAction(BaseModel):
@@ -216,11 +214,10 @@ class NoteBase(BaseModel):
     url: Optional[str] = None
     apercu: Optional[str] = None
     contenu: Optional[str] = None
-    domaine_id: Optional[int] = None
 
 
 class NoteCreate(NoteBase):
-    pass
+    domaine_ids: list[int] = []
 
 
 class NoteUpdate(BaseModel):
@@ -228,7 +225,7 @@ class NoteUpdate(BaseModel):
     url: Optional[str] = None
     apercu: Optional[str] = None
     contenu: Optional[str] = None
-    domaine_id: Optional[int] = None
+    domaine_ids: Optional[list[int]] = None
 
 
 class PieceJointeOut(BaseModel):
@@ -245,7 +242,7 @@ class NoteOut(NoteBase):
     id: int
     source: SourceNote
     cree_le: datetime
-    domaine: Optional[DomaineOut]
+    domaines: list[DomaineOut]
     pieces_jointes: list[PieceJointeOut] = []
 
 

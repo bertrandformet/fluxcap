@@ -27,6 +27,7 @@ def ingerer_source(db: Session, source: SourceVeille) -> int:
     URL). Une source sans domaine assigné est ignorée. Retourne le nombre d'items créés."""
     if not source.domaine_id:
         return 0
+    domaine = source.domaine
 
     ancien_delai = socket.getdefaulttimeout()
     socket.setdefaulttimeout(DELAI_MAX_SECONDES)
@@ -43,16 +44,15 @@ def ingerer_source(db: Session, source: SourceVeille) -> int:
             continue
         if db.query(VeilleItem).filter(VeilleItem.url == lien).first():
             continue
-        db.add(
-            VeilleItem(
-                titre=titre.strip(),
-                url=lien,
-                apercu=_texte_brut(entree.get("summary", "")),
-                domaine_id=source.domaine_id,
-                source=source.nom,
-                statut=StatutVeille.nouveau,
-            )
+        nouvel_item = VeilleItem(
+            titre=titre.strip(),
+            url=lien,
+            apercu=_texte_brut(entree.get("summary", "")),
+            source=source.nom,
+            statut=StatutVeille.nouveau,
         )
+        nouvel_item.domaines = [domaine]
+        db.add(nouvel_item)
         nouveaux += 1
     if nouveaux:
         db.commit()
