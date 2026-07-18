@@ -10,11 +10,12 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.config import UPLOAD_DIR
 from app.database import get_db
-from app.models import Note, PieceJointe, Priorite, Tache
+from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, Tache
 from app.schemas import NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
 from app.services import stockage
 from app.services.export_notes import GENERATEURS
@@ -26,8 +27,19 @@ MAX_TAILLE_OCTETS = 10 * 1024 * 1024  # 10 Mo
 
 
 @router.get("", response_model=list[NoteOut])
-def lister_notes(domaine_id: Optional[int] = None, sans_tag: Optional[bool] = None, db: Session = Depends(get_db)):
+def lister_notes(
+    contexte: Optional[Contexte] = None,
+    domaine_id: Optional[int] = None,
+    sans_tag: Optional[bool] = None,
+    db: Session = Depends(get_db),
+):
     query = db.query(Note)
+    if contexte:
+        # Une note sans domaine n'a pas de contexte déterminable — toujours visible,
+        # plutôt que masquée arbitrairement d'un côté (voir spec, Onglet Notes).
+        query = query.outerjoin(Domaine, Note.domaine_id == Domaine.id).filter(
+            or_(Note.domaine_id.is_(None), Domaine.contexte == contexte)
+        )
     if sans_tag:
         query = query.filter(Note.domaine_id.is_(None))
     elif domaine_id:

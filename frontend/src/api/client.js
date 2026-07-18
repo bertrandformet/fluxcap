@@ -118,6 +118,7 @@ export const api = {
   creerTache: (tache) => request(`/taches`, { method: "POST", body: JSON.stringify(tache) }),
   getTaches: (contexte) => request(`/taches${contexte ? `?contexte=${contexte}` : ""}`),
   updateTache: (id, patch) => request(`/taches/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  supprimerTache: (id) => request(`/taches/${id}`, { method: "DELETE" }),
   creerSousTache: (tacheId, sousTache) =>
     request(`/taches/${tacheId}/sous-taches`, { method: "POST", body: JSON.stringify(sousTache) }),
   basculerSousTache: (id, fait) => request(`/taches/sous-taches/${id}?fait=${fait}`, { method: "PUT" }),
@@ -137,8 +138,9 @@ export const api = {
   supprimerDomaine: (id) => request(`/domaines/${id}`, { method: "DELETE" }),
   getVeille: (params = {}) => request(`/veille?${new URLSearchParams(params)}`),
   agirVeille: (id, action) => request(`/veille/${id}/action`, { method: "POST", body: JSON.stringify({ action }) }),
-  getNotes: (filtre) => {
+  getNotes: (filtre, contexte) => {
     const params = new URLSearchParams();
+    if (contexte) params.set("contexte", contexte);
     if (filtre === "sans_tag") params.set("sans_tag", "true");
     else if (filtre) params.set("domaine_id", filtre);
     const qs = params.toString();

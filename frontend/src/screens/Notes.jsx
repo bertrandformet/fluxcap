@@ -38,7 +38,7 @@ function ApercuPieceJointe({ id, alt, className }) {
   return <img src={url} alt={alt} className={className} />;
 }
 
-export default function Notes() {
+export default function Notes({ contexte }) {
   const [notes, setNotes] = useState(null);
   const [domaines, setDomaines] = useState([]);
   const [filtreDomaine, setFiltreDomaine] = useState("");
@@ -67,16 +67,16 @@ export default function Notes() {
   const [tagSheetOuvert, setTagSheetOuvert] = useState(false);
 
   useEffect(() => {
-    api.getDomaines().then(setDomaines).catch((e) => setErreur(e.message));
-  }, []);
+    api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
+  }, [contexte]);
 
   useEffect(() => {
     charger();
-  }, [filtreDomaine]);
+  }, [filtreDomaine, contexte]);
 
   function charger() {
     setNotes(null);
-    api.getNotes(filtreDomaine || undefined).then(setNotes).catch((e) => setErreur(e.message));
+    api.getNotes(filtreDomaine || undefined, contexte).then(setNotes).catch((e) => setErreur(e.message));
   }
 
   async function recupererApercu() {
@@ -264,7 +264,7 @@ export default function Notes() {
     <div className="tnv-screen">
       <div className="tnv-screen-head">
         <div>
-          <p className="tnv-eyebrow">Toutes vos notes</p>
+          <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
           <h1 className="tnv-h1">Notes</h1>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

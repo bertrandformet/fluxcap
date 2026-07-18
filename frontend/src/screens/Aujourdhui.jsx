@@ -48,6 +48,11 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     charger();
   }
 
+  async function supprimerTache(tache) {
+    await api.supprimerTache(tache.id);
+    charger();
+  }
+
   async function creerTache(e) {
     e.preventDefault();
     if (!titre.trim() || !domaineId) return;
@@ -155,6 +160,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
             onEpingleToggle={basculerEpingle}
             onRecurrenteToggle={basculerRecurrente}
             onRealiser={() => marquerRealise(s)}
+            onSupprimer={supprimerTache}
           />
         ))}
       </div>
@@ -193,6 +199,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
                     onEpingleToggle={basculerEpingle}
                     onRecurrenteToggle={basculerRecurrente}
                     onRealiser={() => marquerRealise(s)}
+                    onSupprimer={supprimerTache}
                   />
                 ))}
               </div>

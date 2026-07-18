@@ -171,7 +171,7 @@ function DetailsTache({ tache }) {
   );
 }
 
-export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteToggle, onRealiser, dense, children }) {
+export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteToggle, onRealiser, onSupprimer, dense, children }) {
   const [pomodoroOuvert, setPomodoroOuvert] = useState(false);
   const [detailsOuverts, setDetailsOuverts] = useState(false);
   const badgeClass = raison === "anti_oubli" ? "tnv-badge tnv-badge--warning" : "tnv-badge tnv-badge--accent";
@@ -258,6 +258,18 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
             aria-label={tache.epinglee ? "Désépingler" : "Épingler"}
           >
             <IconPin filled={tache.epinglee} />
+          </button>
+        )}
+        {onSupprimer && (
+          <button
+            className="tnv-icon-btn"
+            onClick={() => {
+              if (window.confirm(`Supprimer la tâche « ${tache.titre} » ?`)) onSupprimer(tache);
+            }}
+            title="Supprimer"
+            aria-label="Supprimer"
+          >
+            <IconTrash size={16} />
           </button>
         )}
       </div>

@@ -186,7 +186,7 @@ export default function App() {
         )}
         {ecran === "cloture" && <Cloture contexte={contexte} />}
         {ecran === "veille" && <Veille contexte={contexte} />}
-        {ecran === "notes" && <Notes />}
+        {ecran === "notes" && <Notes contexte={contexte} />}
         {ecran === "domaines" && <Domaines />}
         {ecran === "bord" && <TableauDeBord contexte={contexte} />}
       </main>
