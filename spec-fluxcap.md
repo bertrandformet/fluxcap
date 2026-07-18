@@ -45,8 +45,11 @@ Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel
 ### Planning des notifications
 | Jour | Pro | Perso |
 |---|---|---|
-| Lun–Ven | 7h30 (ouverture) + 17h30 (clôture) | 21h (ouverture) + 7h (clôture, juste avant Pro) |
+| Lun–Jeu | 7h30 (ouverture) + 17h30 (clôture) | 21h (ouverture) + 7h (clôture, juste avant Pro) |
+| Vendredi | 7h30 (ouverture) + 13h (clôture) | 21h (ouverture) + 7h (clôture, juste avant Pro) |
 | Sam–Dim | — | 9h (ouverture) + 21h (clôture) |
+
+Ces horaires sont modifiables sans toucher au code backend (voir README, section "Horaires de notification") — ils sont définis par des expressions cron dans `.github/workflows/planification.yml`, y compris pour donner un horaire différent à un jour précis plutôt qu'à toute la semaine, comme pour la clôture Pro du vendredi ci-dessus.
 
 ### Mode congés
 Statut activable/désactivable ("Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :

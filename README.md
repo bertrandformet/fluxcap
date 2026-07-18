@@ -105,6 +105,16 @@ Ordre à respecter pour un changement qui ajoute des tables/colonnes dont le nou
 
 Si l'éditeur SQL de Supabase affiche un avertissement Row Level Security (RLS) lors d'une création de table : répondre **"Run without RLS"**. Le backend n'utilise jamais le SDK client Supabase ni les clés anon/authenticated (seulement `SUPABASE_SERVICE_KEY` pour le storage et une connexion Postgres directe pour l'ORM), donc RLS n'a aucun effet protecteur ici — le frontend ne parle jamais à Supabase directement, toujours via l'API FastAPI.
 
+### Horaires de notification
+
+Les horaires d'ouverture/clôture Pro/Perso (et de collecte de veille) sont définis par les expressions cron dans [`.github/workflows/planification.yml`](./.github/workflows/planification.yml) — pas dans le code Python. Pour changer une heure, il suffit de modifier l'expression cron correspondante et de pousser le fichier ; le nouveau planning s'applique dès le déclenchement suivant, sans redéploiement Render.
+
+Points à garder en tête :
+- Les horaires du fichier sont en UTC, calés sur l'heure d'hiver (CET, UTC+1) — ils dérivent d'environ 1h pendant l'heure d'été (CEST), GitHub Actions ne gérant pas les fuseaux horaires nativement.
+- Rien n'empêche de découper un horaire par jour de la semaine (`* * 1-4` vs `* * 5`, par exemple) pour donner un horaire différent à un jour précis plutôt qu'à toute la semaine — c'est ce qui a été fait pour la clôture Pro du vendredi (13h au lieu de 17h30).
+- Pour Perso, qui a deux rythmes selon le jour (semaine 21h/7h, week-end 9h/21h — voir `app/services/notification_email.py::_bon_creneau`), c'est le backend qui décide du bon rythme à appliquer, pas le cron : les deux créneaux sont déclenchés tous les jours, un seul aboutit réellement selon le vrai jour de la semaine (et le mode congés). Pro n'a pas cette logique de créneau — chaque appel du workflow envoie simplement le récap de ce qui est en attente au moment de l'appel, donc changer son horaire (y compris juste pour un jour) ne touche que le cron, jamais le code backend.
+- Chaque entrée `cron:` a une option de déclenchement manuel correspondante dans `workflow_dispatch` (menu **Actions → Planification veille et notifications → Run workflow** sur GitHub) — pratique pour tester un changement d'horaire sans attendre l'heure ou le jour réel.
+
 ## Démarrage local
 
 ### Backend
