@@ -50,15 +50,19 @@ def ingerer_source(db: Session, source: SourceVeille) -> int:
         socket.setdefaulttimeout(ancien_delai)
 
     nouveaux = 0
+    urls_vues: set[str] = set()
     for entree in flux.entries:
         lien = entree.get("link")
         titre = entree.get("title")
         if not lien or not titre:
             continue
-        if db.query(VeilleItem).filter(VeilleItem.url == lien).first():
+        if len(lien) > 1000:
             continue
+        if lien in urls_vues or db.query(VeilleItem).filter(VeilleItem.url == lien).first():
+            continue
+        urls_vues.add(lien)
         nouvel_item = VeilleItem(
-            titre=titre.strip(),
+            titre=titre.strip()[:255],
             url=lien,
             apercu=_texte_brut(entree.get("summary", "")),
             source=source.nom,
@@ -84,5 +88,6 @@ def ingerer_contexte(db: Session, contexte: Contexte) -> int:
         try:
             total += ingerer_source(db, source)
         except Exception:
-            continue  # une source en erreur ne doit pas bloquer les autres
+            db.rollback()  # une source en erreur ne doit pas empoisonner la session pour les suivantes
+            continue
     return total

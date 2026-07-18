@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.config import UPLOAD_DIR
 from app.database import get_db
-from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, SourceNote, Tache
+from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, SourceNote, Tache, VeilleItem
 from app.schemas import FusionNotesPayload, NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
 from app.services import stockage
 from app.services.domaines_utils import resoudre_domaines
@@ -154,6 +154,7 @@ def supprimer_note(note_id: int, db: Session = Depends(get_db)):
     obj = db.get(Note, note_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
+    db.query(VeilleItem).filter(VeilleItem.note_generee_id == note_id).update({"note_generee_id": None})
     for piece in obj.pieces_jointes:
         stockage.supprimer(piece.nom_stocke)
     db.delete(obj)

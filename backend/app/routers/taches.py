@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Contexte, Domaine, Jalon, SousTache, StatutTache, Tache
+from app.models import Contexte, Domaine, Jalon, SelectionJour, SousTache, StatutTache, Tache, VeilleItem
 from app.schemas import (
     JalonCreate,
     JalonOut,
@@ -89,6 +89,8 @@ def supprimer_tache(tache_id: int, db: Session = Depends(get_db)):
     obj = db.get(Tache, tache_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
+    db.query(SelectionJour).filter(SelectionJour.tache_id == tache_id).delete()
+    db.query(VeilleItem).filter(VeilleItem.tache_generee_id == tache_id).update({"tache_generee_id": None})
     db.delete(obj)
     db.commit()
 

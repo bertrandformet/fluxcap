@@ -4,7 +4,7 @@ externe, voir app/routers/planification.py et le workflow GitHub Actions."""
 
 import json
 import urllib.request
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 from urllib.error import URLError
 
@@ -50,26 +50,30 @@ def _conges_actif(db: Session) -> bool:
     return bool(parametres and parametres.conges_actif)
 
 
-def _rythme_weekend_perso(db: Session) -> bool:
-    """Vrai si Perso doit suivre son rythme week-end (9h/21h) aujourd'hui : un vrai
+def _rythme_weekend_perso(db: Session, jour: date) -> bool:
+    """Vrai si Perso doit suivre son rythme week-end (9h/21h) le jour donné : un vrai
     samedi/dimanche, ou n'importe quel jour pendant les congés (voir spec, Mode congés)."""
-    return date.today().weekday() >= 5 or _conges_actif(db)
+    return jour.weekday() >= 5 or _conges_actif(db)
 
 
-def _bon_creneau(db: Session, contexte: Contexte, creneau: Optional[str]) -> bool:
+def _bon_creneau(db: Session, contexte: Contexte, creneau: Optional[str], jour_reference: date) -> bool:
     """Le workflow planifié appelle chaque créneau ("semaine" ou "weekend") tous les
     jours désormais ; c'est ici qu'on décide s'il correspond au rythme du jour. Sans
-    créneau précisé (Pro, qui n'a pas de rythme week-end), on ne filtre pas."""
+    créneau précisé (Pro, qui n'a pas de rythme week-end), on ne filtre pas.
+    `jour_reference` est le jour dont on évalue le rythme — le jour courant pour une
+    ouverture, mais le jour d'ouverture de la session (la veille en rythme semaine,
+    qui va de 21h à 7h le lendemain) pour une clôture, sans quoi le rythme du jour de
+    clôture peut différer de celui sous lequel la session a été ouverte."""
     if contexte != Contexte.perso or creneau is None:
         return True
-    return (creneau == "weekend") == _rythme_weekend_perso(db)
+    return (creneau == "weekend") == _rythme_weekend_perso(db, jour_reference)
 
 
 def notifier_ouverture(db: Session, contexte: Contexte, creneau: Optional[str] = None) -> bool:
     """Pas de notification Pro en mode congés — voir spec, planning des notifications."""
     if contexte == Contexte.pro and _conges_actif(db):
         return False
-    if not _bon_creneau(db, contexte, creneau):
+    if not _bon_creneau(db, contexte, creneau, date.today()):
         return False
 
     label = LABELS_CONTEXTE[contexte]
@@ -86,16 +90,22 @@ def notifier_ouverture(db: Session, contexte: Contexte, creneau: Optional[str] =
 
 
 def notifier_cloture(db: Session, contexte: Contexte, creneau: Optional[str] = None) -> bool:
+    """Le rythme semaine va de 21h à 7h le lendemain : la session à clôturer à 7h a
+    été ouverte la veille, pas le jour courant — `date_session` et `_bon_creneau`
+    doivent donc raisonner sur la veille dans ce cas (sinon la clôture d'une session
+    ouverte un vendredi soir, sous rythme semaine, se voit rejetée le samedi matin où
+    le jour courant bascule en rythme week-end)."""
+    date_session = date.today() - timedelta(days=1) if creneau == "semaine" else date.today()
     if contexte == Contexte.pro and _conges_actif(db):
         return False
-    if not _bon_creneau(db, contexte, creneau):
+    if not _bon_creneau(db, contexte, creneau, date_session):
         return False
 
     label = LABELS_CONTEXTE[contexte]
     en_attente = (
         db.query(SelectionJour)
         .filter(
-            SelectionJour.date == date.today(),
+            SelectionJour.date == date_session,
             SelectionJour.contexte == contexte,
             SelectionJour.statut_jour == StatutJour.en_attente,
             SelectionJour.raison_selection != RaisonSelection.recurrente,

@@ -4,10 +4,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Contexte, Domaine, Note, Tache, VeilleItem
+from app.models import Contexte, Domaine, Note, SourceVeille, Tache, VeilleItem
 from app.schemas import DomaineCreate, DomaineOut, DomaineUpdate
 
 router = APIRouter(prefix="/domaines", tags=["domaines"])
+
+
+def _domaine_utilise(db: Session, domaine_id: int) -> bool:
+    return bool(
+        db.query(Tache).filter(Tache.domaines.any(Domaine.id == domaine_id)).first()
+        or db.query(VeilleItem).filter(VeilleItem.domaines.any(Domaine.id == domaine_id)).first()
+        or db.query(Note).filter(Note.domaines.any(Domaine.id == domaine_id)).first()
+        or db.query(SourceVeille).filter(SourceVeille.domaine_id == domaine_id).first()
+    )
 
 
 @router.get("", response_model=list[DomaineOut])
@@ -45,6 +54,11 @@ def modifier_domaine(domaine_id: int, domaine: DomaineUpdate, db: Session = Depe
     if domaine.nom and domaine.nom != obj.nom:
         if db.query(Domaine).filter(Domaine.nom == domaine.nom).first():
             raise HTTPException(status_code=409, detail="Un domaine avec ce nom existe déjà")
+    if domaine.contexte is not None and domaine.contexte != obj.contexte and _domaine_utilise(db, domaine_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Impossible de changer le contexte d'un domaine encore utilisé par une tâche, une note, un item de veille ou une source",
+        )
     for champ, valeur in domaine.model_dump(exclude_unset=True).items():
         setattr(obj, champ, valeur)
     db.commit()
@@ -58,15 +72,10 @@ def supprimer_domaine(domaine_id: int, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="Domaine introuvable")
 
-    utilise = (
-        db.query(Tache).filter(Tache.domaines.any(Domaine.id == domaine_id)).first()
-        or db.query(VeilleItem).filter(VeilleItem.domaines.any(Domaine.id == domaine_id)).first()
-        or db.query(Note).filter(Note.domaines.any(Domaine.id == domaine_id)).first()
-    )
-    if utilise:
+    if _domaine_utilise(db, domaine_id):
         raise HTTPException(
             status_code=409,
-            detail="Ce domaine est encore utilisé par au moins une tâche, un item de veille ou une note",
+            detail="Ce domaine est encore utilisé par au moins une tâche, un item de veille, une note ou une source",
         )
 
     db.delete(obj)
