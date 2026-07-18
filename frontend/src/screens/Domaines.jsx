@@ -12,6 +12,8 @@ export default function Domaines() {
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [nouveauNom, setNouveauNom] = useState("");
   const [nouveauContexte, setNouveauContexte] = useState("pro");
+  const [nouveauUtiliseTaches, setNouveauUtiliseTaches] = useState(true);
+  const [nouveauUtiliseVeille, setNouveauUtiliseVeille] = useState(true);
 
   useEffect(() => {
     charger();
@@ -26,9 +28,25 @@ export default function Domaines() {
     e.preventDefault();
     if (!nouveauNom.trim()) return;
     try {
-      await api.creerDomaine({ nom: nouveauNom.trim(), contexte: nouveauContexte });
+      await api.creerDomaine({
+        nom: nouveauNom.trim(),
+        contexte: nouveauContexte,
+        utilise_pour_taches: nouveauUtiliseTaches,
+        utilise_pour_veille: nouveauUtiliseVeille,
+      });
       setNouveauNom("");
+      setNouveauUtiliseTaches(true);
+      setNouveauUtiliseVeille(true);
       setFormulaireOuvert(false);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
+  async function basculerUsage(domaine, champ) {
+    try {
+      await api.modifierDomaine(domaine.id, { [champ]: !domaine[champ] });
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -81,6 +99,8 @@ export default function Domaines() {
       </div>
       <p className="tnv-meta-text" style={{ marginBottom: "var(--tnv-space-5)" }}>
         Ces domaines servent à classer les tâches et la veille par contexte, et de tags pour filtrer les notes.
+        Utilise les badges "Tâches"/"Veille" pour retirer un domaine des sélecteurs où il n'a pas sa place
+        (ex. un sujet de veille large n'est pas une catégorie de tâche actionnable).
       </p>
 
       {erreur && <p className="tnv-error">{erreur}</p>}
@@ -93,7 +113,7 @@ export default function Domaines() {
             <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
               {groupe.length === 0 && <p className="tnv-empty">Aucun domaine.</p>}
               {groupe.map((d) => (
-                <div key={d.id} className="tnv-card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div key={d.id} className="tnv-card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span className="tnv-dot" style={{ "--domain-hue": domainHue(d.nom), width: 10, height: 10 }} />
                   {enEdition === d.id ? (
                     <>
@@ -124,6 +144,24 @@ export default function Domaines() {
                         <option value="pro">Pro</option>
                         <option value="perso">Perso</option>
                       </select>
+                      <button
+                        type="button"
+                        className={d.utilise_pour_taches ? "tnv-badge tnv-badge--accent" : "tnv-badge"}
+                        style={{ border: "none", cursor: "pointer", opacity: d.utilise_pour_taches ? 1 : 0.45, font: "inherit" }}
+                        onClick={() => basculerUsage(d, "utilise_pour_taches")}
+                        title={d.utilise_pour_taches ? "Utilisé pour les tâches — cliquer pour retirer" : "Non utilisé pour les tâches — cliquer pour ajouter"}
+                      >
+                        Tâches
+                      </button>
+                      <button
+                        type="button"
+                        className={d.utilise_pour_veille ? "tnv-badge tnv-badge--accent" : "tnv-badge"}
+                        style={{ border: "none", cursor: "pointer", opacity: d.utilise_pour_veille ? 1 : 0.45, font: "inherit" }}
+                        onClick={() => basculerUsage(d, "utilise_pour_veille")}
+                        title={d.utilise_pour_veille ? "Utilisé pour la veille — cliquer pour retirer" : "Non utilisé pour la veille — cliquer pour ajouter"}
+                      >
+                        Veille
+                      </button>
                       <button className="tnv-icon-btn" onClick={() => commencerEdition(d)} title="Renommer" aria-label="Renommer">
                         <IconEdit size={16} />
                       </button>
@@ -152,6 +190,14 @@ export default function Domaines() {
             <option value="pro">Pro</option>
             <option value="perso">Perso</option>
           </select>
+          <label className="tnv-checkbox-row">
+            <input type="checkbox" checked={nouveauUtiliseTaches} onChange={(e) => setNouveauUtiliseTaches(e.target.checked)} />
+            Utilisable pour les tâches
+          </label>
+          <label className="tnv-checkbox-row">
+            <input type="checkbox" checked={nouveauUtiliseVeille} onChange={(e) => setNouveauUtiliseVeille(e.target.checked)} />
+            Utilisable pour la veille
+          </label>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="submit" className="tnv-btn tnv-btn--primary">
               Ajouter le domaine

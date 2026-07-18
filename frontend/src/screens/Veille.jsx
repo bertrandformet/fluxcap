@@ -34,7 +34,7 @@ export default function Veille({ contexte }) {
   useEffect(() => {
     setDomainesFiltre(new Set());
     charger();
-    api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
+    api.getDomaines(contexte, "veille").then(setDomaines).catch((e) => setErreur(e.message));
   }, [contexte]);
 
   // Rafraîchit l'affichage à 7h et 20h (tant que l'écran reste ouvert) pour faire
@@ -57,7 +57,7 @@ export default function Veille({ contexte }) {
     setNouveauContexte(contexte);
     if (panneauSourcesOuvert) {
       chargerSources();
-      api.getDomaines().then(setTousDomaines).catch((e) => setErreur(e.message));
+      api.getDomaines(undefined, "veille").then(setTousDomaines).catch((e) => setErreur(e.message));
     }
   }, [contexte, panneauSourcesOuvert]);
 

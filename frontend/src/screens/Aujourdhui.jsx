@@ -25,7 +25,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
 
   useEffect(() => {
     charger();
-    api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
+    api.getDomaines(contexte, "taches").then(setDomaines).catch((e) => setErreur(e.message));
   }, [contexte]);
 
   function charger() {

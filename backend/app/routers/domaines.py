@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -11,10 +11,18 @@ router = APIRouter(prefix="/domaines", tags=["domaines"])
 
 
 @router.get("", response_model=list[DomaineOut])
-def lister_domaines(contexte: Optional[Contexte] = None, db: Session = Depends(get_db)):
+def lister_domaines(
+    contexte: Optional[Contexte] = None,
+    usage: Optional[Literal["taches", "veille"]] = None,
+    db: Session = Depends(get_db),
+):
     query = db.query(Domaine)
     if contexte:
         query = query.filter(Domaine.contexte == contexte)
+    if usage == "taches":
+        query = query.filter(Domaine.utilise_pour_taches.is_(True))
+    elif usage == "veille":
+        query = query.filter(Domaine.utilise_pour_veille.is_(True))
     return query.order_by(Domaine.nom).all()
 
 

@@ -35,7 +35,7 @@ export default function TableauDeBord({ contexte }) {
 
   useEffect(() => {
     setTaches(null);
-    Promise.all([api.getTaches(contexte), api.getDomaines(contexte)])
+    Promise.all([api.getTaches(contexte), api.getDomaines(contexte, "taches")])
       .then(([t, d]) => {
         setTaches(t.filter((tache) => tache.statut === "a_realiser"));
         setDomaines(d);

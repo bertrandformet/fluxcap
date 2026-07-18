@@ -125,7 +125,13 @@ export const api = {
   creerJalon: (tacheId, jalon) => request(`/taches/${tacheId}/jalons`, { method: "POST", body: JSON.stringify(jalon) }),
   basculerJalon: (id, fait) => request(`/taches/jalons/${id}?fait=${fait}`, { method: "PUT" }),
   supprimerJalon: (id) => request(`/taches/jalons/${id}`, { method: "DELETE" }),
-  getDomaines: (contexte) => request(`/domaines${contexte ? `?contexte=${contexte}` : ""}`),
+  getDomaines: (contexte, usage) => {
+    const params = new URLSearchParams();
+    if (contexte) params.set("contexte", contexte);
+    if (usage) params.set("usage", usage);
+    const qs = params.toString();
+    return request(`/domaines${qs ? `?${qs}` : ""}`);
+  },
   creerDomaine: (domaine) => request(`/domaines`, { method: "POST", body: JSON.stringify(domaine) }),
   modifierDomaine: (id, patch) => request(`/domaines/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   supprimerDomaine: (id) => request(`/domaines/${id}`, { method: "DELETE" }),

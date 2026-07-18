@@ -20,6 +20,8 @@ from app.models import (
 class DomaineBase(BaseModel):
     nom: str
     contexte: Contexte
+    utilise_pour_taches: bool = True
+    utilise_pour_veille: bool = True
 
 
 class DomaineCreate(DomaineBase):
@@ -29,6 +31,8 @@ class DomaineCreate(DomaineBase):
 class DomaineUpdate(BaseModel):
     nom: Optional[str] = None
     contexte: Optional[Contexte] = None
+    utilise_pour_taches: Optional[bool] = None
+    utilise_pour_veille: Optional[bool] = None
 
 
 class DomaineOut(DomaineBase):

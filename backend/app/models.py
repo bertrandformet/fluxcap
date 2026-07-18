@@ -60,6 +60,12 @@ class Domaine(Base):
     nom: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     contexte: Mapped[Contexte] = mapped_column(Enum(Contexte), nullable=False)
 
+    # Un domaine n'a pas forcément de sens partout (ex. un sujet de veille large
+    # n'est pas une catégorie de tâche actionnable) — ces flags filtrent les
+    # sélecteurs de domaine côté tâches/veille sans dupliquer la liste.
+    utilise_pour_taches: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    utilise_pour_veille: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     taches: Mapped[list["Tache"]] = relationship(back_populates="domaine")
     veille_items: Mapped[list["VeilleItem"]] = relationship(back_populates="domaine")
     notes: Mapped[list["Note"]] = relationship(back_populates="domaine")

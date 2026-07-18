@@ -90,6 +90,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 - Ajout, renommage, changement de contexte (Pro/Perso), suppression
 - Suppression bloquée si le domaine est encore utilisé par une tâche, un item de veille ou une note
 - Ces mêmes domaines servent de tags pour filtrer les notes
+- **Usage par domaine** (nouveau) : chaque domaine peut être retiré du sélecteur de tâches et/ou du sélecteur de veille indépendamment (badges "Tâches"/"Veille" cliquables), pour les domaines qui n'ont de sens que d'un côté (ex. un sujet de veille large comme "Éducation généraliste" n'est pas une catégorie de tâche actionnable). Les deux activés par défaut à la création ; les notes voient tous les domaines quel que soit leur usage.
 
 ## Onglet Veille (séparé, par domaine)
 - Items groupés par domaine, affichés en cartes (même style visuel que les tâches d'Aujourd'hui), avec un résumé du lien (nouveau champ `apercu`)
