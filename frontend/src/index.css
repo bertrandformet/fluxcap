@@ -389,3 +389,10 @@
 .tnv-select-dot--checked {
   background: var(--tnv-accent);
 }
+
+/* Une URL longue sans espace (lien de note, source RSS...) déborde sinon du bord
+   de la carte au lieu de passer à la ligne — pas de retour à la ligne forcé par
+   défaut sur du texte sans espaces. */
+.tnv-meta-text {
+  overflow-wrap: anywhere;
+}

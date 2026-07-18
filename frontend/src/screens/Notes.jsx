@@ -607,7 +607,12 @@ export default function Notes({ contexte }) {
                   </div>
 
                   {noteSelectionnee.url && (
-                    <a href={noteSelectionnee.url} target="_blank" rel="noreferrer" style={{ fontSize: "var(--tnv-size-caption)" }}>
+                    <a
+                      href={noteSelectionnee.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: "var(--tnv-size-caption)", overflowWrap: "anywhere", display: "block" }}
+                    >
                       {noteSelectionnee.url}
                     </a>
                   )}
