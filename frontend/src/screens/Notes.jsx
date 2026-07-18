@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
 import { DomainBadges } from "../components/DomainBadge.jsx";
-import { IconColonneMasquer, IconColonneSeule, IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
+import {
+  IconCheckmark,
+  IconColonneMasquer,
+  IconColonneSeule,
+  IconDownload,
+  IconEdit,
+  IconPaperclip,
+  IconTrash,
+} from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
 import { formatDate } from "../utils/formatDate.js";
 
@@ -493,7 +501,9 @@ export default function Notes({ contexte }) {
                       }}
                       aria-label="Sélectionner"
                       style={{ marginTop: 3, flexShrink: 0 }}
-                    />
+                    >
+                      {selection.has(n.id) && <IconCheckmark size={12} />}
+                    </button>
                   )}
                   <div className="tnv-notes-row__title">{n.titre}</div>
                 </div>

@@ -24,6 +24,22 @@ export function IconCheck({ filled, size = 22 }) {
   );
 }
 
+// Coche seule (sans cercle), pour un badge/pastille déjà rond ailleurs (ex. sélection multiple).
+export function IconCheckmark({ size = 12 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M3 8.3l3.2 3.2L13 4.7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconPin({ filled, size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
@@ -268,9 +284,10 @@ export function IconChevronDown({ size = 16 }) {
 export function IconCle({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <circle cx="6" cy="14" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="6" cy="14" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="6" cy="14" r="1" fill="currentColor" stroke="none" />
       <path
-        d="M8.1 11.9L15 5m0 0h3v3m-3-3l-2 2"
+        d="M8.3 11.7L16.5 3.5M11.8 8.2l1.9 1.9M14.4 5.6l1.9 1.9"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.6"

@@ -372,3 +372,14 @@
     bottom: 0;
   }
 }
+
+/* ---- Point de sélection : centre l'icône coche affichée à l'état coché ---- */
+.tnv-select-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  color: #fff;
+}
