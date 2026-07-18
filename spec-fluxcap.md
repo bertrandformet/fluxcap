@@ -104,7 +104,7 @@ Pas de date de fin à saisir — se désactive manuellement.
   - Veille Perso : tous les soirs à 20h
 
 ## Onglet Notes
-- **Vue à deux volets façon Notes d'Apple** (nouveau) : colonne de gauche avec titres, tag et résumé de chaque note pour défiler/repérer plus vite, volet de droite avec le détail complet de la note sélectionnée. Sur mobile, un seul volet visible à la fois (liste, puis détail en plein écran au clic, avec bouton "← Retour") ; sur desktop (≥900px) les deux volets restent côte à côte en permanence
+- **Vue à deux volets façon Notes d'Apple** (nouveau) : colonne de gauche compacte avec uniquement le titre de chaque note pour défiler vite, volet de droite avec le détail complet de la note sélectionnée. Sur mobile, un seul volet visible à la fois (liste, puis détail en plein écran au clic, avec bouton "← Retour") ; sur desktop (≥900px) les deux volets restent côte à côte par défaut, avec deux boutons dans l'en-tête pour masquer la colonne (détail plein écran) ou au contraire n'afficher que la colonne (liste plein écran) — sélectionner une note dans ce dernier mode revient automatiquement à la vue partagée
 - **Unique et filtrable par tag**, avec un filtre supplémentaire "Sans tag" (nouveau)
 - **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via le domaine associé à chaque note. Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
 - **Badge d'alerte visuel** ("⚠ Sans tag", nouveau) sur toute note sans domaine, pour éviter qu'elle passe inaperçue
