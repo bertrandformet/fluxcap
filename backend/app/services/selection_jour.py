@@ -155,6 +155,25 @@ def appliquer_decision(db: Session, selection: SelectionJour, decision: Decision
             tache.date_fin = aujourdhui
         else:
             tache.statut = StatutTache.a_realiser
+        # "realiser" a pu faire remonter une tâche suivante pour compenser la place
+        # libérée (_completer_selection) ; sans compensation ici, le quota du jour
+        # dépasse durablement MAX_TACHES après l'annulation. Pas de lien direct entre
+        # une réalisation et la remontée qu'elle a déclenchée (pas de colonne dédiée) —
+        # on retire la remontée automatique la plus récente encore en attente comme
+        # approximation raisonnable, plutôt qu'un undo parfaitement précis.
+        remontee = (
+            db.query(SelectionJour)
+            .filter_by(
+                date=selection.date,
+                contexte=selection.contexte,
+                raison_selection=RaisonSelection.remontee_auto,
+                statut_jour=StatutJour.en_attente,
+            )
+            .order_by(SelectionJour.id.desc())
+            .first()
+        )
+        if remontee:
+            db.delete(remontee)
 
     elif action == "reporter_demain":
         if selection.statut_jour != StatutJour.en_attente:
