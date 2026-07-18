@@ -6,6 +6,13 @@ import { IconArrowRight, IconBookmark, IconIgnore, IconTrash } from "../componen
 import { domainHue } from "../utils/domainHue.js";
 import { formatDate } from "../utils/formatDate.js";
 
+// Un item de veille vient d'un flux RSS tiers, pas d'une saisie de l'utilisateur — un
+// flux compromis pourrait fournir un lien "javascript:" au lieu d'une URL, que React
+// insère tel quel dans href (seul un avertissement console, pas de blocage).
+function urlHttpSure(url) {
+  return /^https?:\/\//i.test(url || "") ? url : null;
+}
+
 function prochaineEcheance() {
   const maintenant = new Date();
   const echeances = [7, 20].map((heure) => {
@@ -75,8 +82,12 @@ export default function Veille({ contexte }) {
   }
 
   async function agir(item, action) {
-    await api.agirVeille(item.id, action);
-    charger();
+    try {
+      await api.agirVeille(item.id, action);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
   }
 
   function basculerFiltreDomaine(domaineId) {
@@ -202,9 +213,13 @@ export default function Veille({ contexte }) {
                   {item.apercu && <p className="tnv-meta-text">{item.apercu}</p>}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                      <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
-                        {item.source || item.url}
-                      </a>
+                      {urlHttpSure(item.url) ? (
+                        <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                          {item.source || item.url}
+                        </a>
+                      ) : (
+                        <span className="tnv-meta-text">{item.source || item.url}</span>
+                      )}
                       <span className="tnv-meta-text">{formatDate(item.date_publication || item.date_ingestion)}</span>
                     </div>
                     <div style={{ display: "flex", gap: 2 }}>

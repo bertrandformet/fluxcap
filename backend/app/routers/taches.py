@@ -97,9 +97,11 @@ def supprimer_tache(tache_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{tache_id}/sous-taches", response_model=SousTacheOut, status_code=201)
 def ajouter_sous_tache(tache_id: int, sous_tache: SousTacheCreate, db: Session = Depends(get_db)):
-    if not db.get(Tache, tache_id):
+    tache = db.get(Tache, tache_id)
+    if not tache:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     obj = SousTache(tache_id=tache_id, **sous_tache.model_dump())
+    tache.derniere_interaction = datetime.now()
     db.add(obj)
     db.commit()
     db.refresh(obj)
@@ -112,6 +114,7 @@ def basculer_sous_tache(sous_tache_id: int, fait: bool, db: Session = Depends(ge
     if not obj:
         raise HTTPException(status_code=404, detail="Sous-tâche introuvable")
     obj.fait = fait
+    obj.tache.derniere_interaction = datetime.now()
     db.commit()
     db.refresh(obj)
     return obj
@@ -122,15 +125,18 @@ def supprimer_sous_tache(sous_tache_id: int, db: Session = Depends(get_db)):
     obj = db.get(SousTache, sous_tache_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Sous-tâche introuvable")
+    obj.tache.derniere_interaction = datetime.now()
     db.delete(obj)
     db.commit()
 
 
 @router.post("/{tache_id}/jalons", response_model=JalonOut, status_code=201)
 def ajouter_jalon(tache_id: int, jalon: JalonCreate, db: Session = Depends(get_db)):
-    if not db.get(Tache, tache_id):
+    tache = db.get(Tache, tache_id)
+    if not tache:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     obj = Jalon(tache_id=tache_id, **jalon.model_dump())
+    tache.derniere_interaction = datetime.now()
     db.add(obj)
     db.commit()
     db.refresh(obj)
@@ -143,6 +149,7 @@ def basculer_jalon(jalon_id: int, fait: bool, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="Jalon introuvable")
     obj.fait = fait
+    obj.tache.derniere_interaction = datetime.now()
     db.commit()
     db.refresh(obj)
     return obj
@@ -153,5 +160,6 @@ def supprimer_jalon(jalon_id: int, db: Session = Depends(get_db)):
     obj = db.get(Jalon, jalon_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Jalon introuvable")
+    obj.tache.derniere_interaction = datetime.now()
     db.delete(obj)
     db.commit()

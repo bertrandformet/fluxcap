@@ -233,10 +233,14 @@ def supprimer_note(note_id: int, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
     db.query(VeilleItem).filter(VeilleItem.note_generee_id == note_id).update({"note_generee_id": None})
-    for piece in obj.pieces_jointes:
-        stockage.supprimer(piece.nom_stocke)
+    # Supprime la ligne DB avant les fichiers physiques : si le commit échoue, on garde
+    # au pire des fichiers orphelins (invisibles, sans conséquence) plutôt qu'une note
+    # dont les pièces jointes pointeraient vers des fichiers déjà effacés.
+    noms_stockes = [piece.nom_stocke for piece in obj.pieces_jointes]
     db.delete(obj)
     db.commit()
+    for nom_stocke in noms_stockes:
+        stockage.supprimer(nom_stocke)
 
 
 @router.post("/{note_id}/transformer-tache", response_model=TacheOut, status_code=201)
@@ -434,6 +438,7 @@ def supprimer_piece_jointe(piece_id: int, db: Session = Depends(get_db)):
     piece = db.get(PieceJointe, piece_id)
     if not piece:
         raise HTTPException(status_code=404, detail="Pièce jointe introuvable")
-    stockage.supprimer(piece.nom_stocke)
+    nom_stocke = piece.nom_stocke
     db.delete(piece)
     db.commit()
+    stockage.supprimer(nom_stocke)

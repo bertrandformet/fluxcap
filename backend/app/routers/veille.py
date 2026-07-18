@@ -66,12 +66,19 @@ def agir_sur_item(item_id: int, action: VeilleAction, db: Session = Depends(get_
         item.note_generee_id = note.id
 
     elif action.action == "transformer_tache":
+        domaines_taches = [d for d in item.domaines if d.utilise_pour_taches]
+        if not domaines_taches:
+            raise HTTPException(
+                status_code=400, detail="Aucun des domaines de cet item n'est utilisable pour une tâche"
+            )
+        description = f"{item.apercu}\n\n{item.url}" if item.apercu else item.url
         tache = Tache(
             titre=item.titre,
             priorite=Priorite.un_jour,
+            description=description,
             derniere_interaction=datetime.now(),
         )
-        tache.domaines = list(item.domaines)
+        tache.domaines = domaines_taches
         db.add(tache)
         db.flush()
         item.statut = StatutVeille.transforme_tache
