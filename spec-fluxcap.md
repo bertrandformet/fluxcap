@@ -60,6 +60,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 - Les tâches reportées la veille remontent automatiquement en premier
 - Épinglage manuel possible pour forcer une tâche dans le quota du jour
 - Bouton "Réalisé" directement sur chaque carte (pas seulement à la clôture) : dès qu'une tâche est marquée faite, la suivante par score remonte automatiquement pour garder le quota rempli
+- **Annuler une réalisation par erreur** (nouveau) : bouton "Annuler" sur chaque ligne du bloc "Réalisées aujourd'hui", remet la tâche dans le quota du jour. Le quota peut transitoirement dépasser 3-4 tâches si une remontée automatique a déjà eu lieu entre-temps (pas de logique d'éviction, cas rare accepté).
 - Formulaire "+ Tâche" pour créer une tâche manuellement (titre, domaine, priorité, échéance, administrative, récurrente, épinglée) — n'existait pas dans la spec initiale, qui décrivait le modèle sans écran de création
 - **Tâches récurrentes** (nouveau) : une tâche peut être marquée récurrente ; une fois réalisée elle se régénère automatiquement pour le lendemain au lieu de rester clôturée. Les tâches récurrentes ne concurrencent jamais le quota des 3-4 : elles ont leur propre bloc dédié
 - **Veille toujours visible séparément**, jamais en concurrence avec les 3-4 tâches — regroupée avec le bloc des tâches récurrentes (même traitement visuel : hors quota, toujours accessible)
