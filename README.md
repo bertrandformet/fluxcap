@@ -25,7 +25,7 @@ FluxCap écarte les usines à gaz et les processus rigides pour se concentrer su
 
 Application personnelle de gestion des tâches et de la veille — deux contextes séparés (Pro / Perso), sélection quotidienne limitée à 3-4 tâches, clôture avec décision obligatoire, veille par domaine, notes filtrables par tag.
 
-Voir [spec-fluxcap.md](./spec-fluxcap.md) pour la spécification complète, et [raccourci-partage.md](./raccourci-partage.md) pour la capture rapide de notes (raccourci Apple Shortcuts ou favori Chrome).
+Voir [spec-fluxcap.md](./spec-fluxcap.md) pour la spécification complète, [raccourci-partage.md](./raccourci-partage.md) pour la capture rapide de notes (raccourci Apple Shortcuts ou favori Chrome), et [widget-taches.md](./widget-taches.md) pour le widget tâches en cours (iPhone via Scriptable, Mac via xbar).
 
 ## Captures
 

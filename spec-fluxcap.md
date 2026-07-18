@@ -27,6 +27,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Partage externe (sortant) | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
 | Capture externe (entrant) | ✅ raccourci Apple Shortcuts (menu Partager) + favori Chrome/bookmarklet (voir [raccourci-partage.md](./raccourci-partage.md)), crée une note dans FluxCap sans ouvrir l'app |
 | Pomodoro (bouton sur tâches administratives, durée réglable) | ✅ |
+| Widget tâches en cours (iPhone/Mac) | ✅ widget iPhone (Scriptable) + menu barre de menu Mac (xbar), tous deux via `GET /jour/{contexte}` — voir [widget-taches.md](./widget-taches.md) |
 
 Les domaines/sources ne sont plus des listes figées : ils sont entièrement libres et gérables depuis l'application (voir "Onglet Domaines").
 
