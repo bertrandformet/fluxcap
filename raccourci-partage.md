@@ -10,7 +10,7 @@ Raccourci qui apparaît dans le menu Partager natif (synchronisé entre iPhone e
 
 ### Résultat
 
-- Partage un lien depuis Safari → une note apparaît dans FluxCap, sans domaine assigné (à trier ensuite dans l'écran Notes), avec :
+- Partage un lien depuis Safari **ou une autre app** (LinkedIn, etc. — testé et confirmé fonctionnel au-delà de Safari) → une note apparaît dans FluxCap, sans domaine assigné (à trier ensuite dans l'écran Notes), avec :
   - **titre** : le vrai titre de la page si trouvable, sinon l'URL elle-même
   - **url** : le lien
   - **apercu** : la meta-description de la page (classique ou Open Graph), si disponible
@@ -31,8 +31,8 @@ Dans l'app **Raccourcis** (macOS ou iOS — se synchronise automatiquement entre
 
 #### Actions, dans l'ordre
 
-1. **Obtenir URL de la page** depuis `Entrée de raccourci` → variable `Lien`
-   *(utiliser précisément "Obtenir URL de la page", pas "Obtenir les URL de..." — cette dernière scanne le contenu de la page et remonte tous les liens qu'elle contient, pas seulement son URL propre.)*
+1. **Obtenir les URL de l'entrée** depuis `Entrée de raccourci` → variable `Lien`
+   *(⚠️ pas "Obtenir URL de la page" : cette action attend un objet "Page web Safari" et échoue ("Raccourcis n'a pu effectuer la conversion de Texte en Page web Safari") pour toute app qui partage juste du texte contenant un lien plutôt qu'une vraie page — LinkedIn par exemple. "Obtenir les URL de l'entrée" convertit d'abord l'entrée en texte avant d'en extraire l'URL, ce qui fonctionne aussi bien pour une page Safari (donne son URL propre) que pour du texte brut contenant un lien — confirmé sur les deux cas.)*
 2. **Définir la variable** `Titre` sur `Entrée de raccourci` *(valeur par défaut, pour le cas d'un partage de texte simple sans lien)*
 3. **Si** `Lien` possède n'importe quelle valeur :
    1. **Définir la variable** `Titre` sur `Lien` *(fallback : le titre sera au moins l'URL si la suite échoue)*
