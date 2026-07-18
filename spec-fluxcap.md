@@ -23,7 +23,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
 | Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par GitHub Actions, pas un vrai cron serveur |
-| Onglet Notes (unique, filtrable par tag, import lien) | ✅ |
+| Onglet Notes (unique, filtrable par tag, import lien) | ✅ vue à deux volets façon Notes d'Apple (liste de titres + détail) |
 | Partage externe (sortant) | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
 | Capture externe (entrant) | ✅ raccourci Apple Shortcuts (menu Partager) + favori Chrome/bookmarklet (voir [raccourci-partage.md](./raccourci-partage.md)), crée une note dans FluxCap sans ouvrir l'app |
 | Pomodoro (bouton sur tâches administratives, durée réglable) | ✅ |
@@ -104,6 +104,7 @@ Pas de date de fin à saisir — se désactive manuellement.
   - Veille Perso : tous les soirs à 20h
 
 ## Onglet Notes
+- **Vue à deux volets façon Notes d'Apple** (nouveau) : colonne de gauche avec titres, tag et résumé de chaque note pour défiler/repérer plus vite, volet de droite avec le détail complet de la note sélectionnée. Sur mobile, un seul volet visible à la fois (liste, puis détail en plein écran au clic, avec bouton "← Retour") ; sur desktop (≥900px) les deux volets restent côte à côte en permanence
 - **Unique et filtrable par tag**, avec un filtre supplémentaire "Sans tag" (nouveau)
 - **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via le domaine associé à chaque note. Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
 - **Badge d'alerte visuel** ("⚠ Sans tag", nouveau) sur toute note sans domaine, pour éviter qu'elle passe inaperçue
