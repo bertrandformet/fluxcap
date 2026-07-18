@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String, Table, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -160,6 +160,7 @@ class HistoriqueReport(Base):
 
 class SelectionJour(Base):
     __tablename__ = "selection_jour"
+    __table_args__ = (UniqueConstraint("date", "contexte", "tache_id", name="uq_selection_jour_date_contexte_tache"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     date: Mapped[datetime] = mapped_column(Date, nullable=False)

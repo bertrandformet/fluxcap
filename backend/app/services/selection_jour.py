@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import (
@@ -23,7 +24,15 @@ def obtenir_ou_construire_selection(db: Session, contexte: Contexte, aujourdhui:
     existantes = db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).all()
     if existantes:
         return existantes
-    return _construire_selection(db, contexte, aujourdhui)
+    try:
+        return _construire_selection(db, contexte, aujourdhui)
+    except IntegrityError:
+        # Deux requêtes concurrentes (ex. deux appareils) ont pu construire la
+        # sélection du jour en même temps ; la contrainte d'unicité (date, contexte,
+        # tache_id) fait échouer la perdante ici plutôt que dupliquer des lignes —
+        # elle récupère simplement ce que l'autre a déjà committé.
+        db.rollback()
+        return db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).all()
 
 
 def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> list[SelectionJour]:
@@ -115,10 +124,15 @@ def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> 
 
 
 def appliquer_decision(db: Session, selection: SelectionJour, decision: DecisionAction, aujourdhui: date) -> None:
+    if selection.date != aujourdhui:
+        raise ValueError("Impossible de clôturer une sélection d'un autre jour")
+
     tache = selection.tache
     action = decision.action
 
     if action == "realiser":
+        if selection.statut_jour == StatutJour.realise:
+            raise ValueError("Cette tâche a déjà été marquée réalisée")
         selection.statut_jour = StatutJour.realise
         if tache.recurrente:
             # se régénère pour le lendemain, comme la veille qui se réalimente chaque jour
@@ -131,29 +145,45 @@ def appliquer_decision(db: Session, selection: SelectionJour, decision: Decision
         # Rattrapage d'un clic "Réalisé" par erreur : remet la tâche dans le quota du
         # jour. Pour une tâche récurrente, tache.statut est déjà "a_realiser" (déjà
         # régénérée pour demain par l'action "realiser" ci-dessus) — on ne touche qu'à
-        # la sélection du jour, pas à la tâche elle-même.
+        # la sélection du jour, pas à la tâche elle-même. date_fin en revanche doit
+        # être restaurée : "realiser" l'avait avancée à J+1, sans quoi l'annulation
+        # laisse une trace permanente d'un clic par erreur.
+        if selection.statut_jour != StatutJour.realise:
+            raise ValueError("Cette tâche n'est pas marquée réalisée")
         selection.statut_jour = StatutJour.en_attente
-        if not tache.recurrente:
+        if tache.recurrente:
+            tache.date_fin = aujourdhui
+        else:
             tache.statut = StatutTache.a_realiser
 
     elif action == "reporter_demain":
+        if selection.statut_jour != StatutJour.en_attente:
+            raise ValueError("Cette tâche a déjà reçu une décision aujourd'hui")
         _reporter(db, tache, aujourdhui + timedelta(days=1))
         selection.statut_jour = StatutJour.reporte
 
     elif action == "reporter_date":
+        if selection.statut_jour != StatutJour.en_attente:
+            raise ValueError("Cette tâche a déjà reçu une décision aujourd'hui")
         if not decision.nouvelle_date:
             raise ValueError("nouvelle_date requise pour l'action reporter_date")
         _reporter(db, tache, decision.nouvelle_date)
         selection.statut_jour = StatutJour.reporte
 
     elif action == "abandonner":
+        if selection.statut_jour != StatutJour.en_attente:
+            raise ValueError("Cette tâche a déjà reçu une décision aujourd'hui")
         tache.statut = StatutTache.abandonne
         selection.statut_jour = StatutJour.abandonne
 
     elif action == "garder":
+        if selection.statut_jour != StatutJour.en_attente:
+            raise ValueError("Cette tâche a déjà reçu une décision aujourd'hui")
         selection.statut_jour = StatutJour.en_attente
 
     elif action == "reprioriser":
+        if selection.statut_jour != StatutJour.en_attente:
+            raise ValueError("Cette tâche a déjà reçu une décision aujourd'hui")
         if decision.nouvelle_priorite is None:
             raise ValueError("nouvelle_priorite requise pour l'action reprioriser")
         tache.priorite = decision.nouvelle_priorite

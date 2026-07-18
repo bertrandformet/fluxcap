@@ -202,12 +202,26 @@ def se_connecter(entree: MotDePasseEntree, db: Session = Depends(get_db)):
 @router.post("/recuperer", response_model=SessionSortie)
 def recuperer_compte(entree: RecuperationEntree, db: Session = Depends(get_db)):
     """Réinitialise le mot de passe avec le code de récupération à usage unique affiché
-    au premier réglage. Pas de limitation de débit dédiée : le code a ~80 bits d'entropie,
-    un bruteforce réseau est hors de portée."""
+    au premier réglage. Le code a ~80 bits d'entropie (bruteforce réseau hors de portée),
+    mais chaque tentative coûte du CPU serveur (hachage PBKDF2) — même verrouillage que
+    /login pour éviter qu'un flot de tentatives, même vouées à l'échec, sature le service."""
     utilisateur = _obtenir_utilisateur(db)
     if not utilisateur or not utilisateur.code_recuperation_hash:
         raise HTTPException(status_code=401, detail="Code de récupération invalide")
+
+    maintenant = datetime.now()
+    if utilisateur.verrouille_jusqu_a and utilisateur.verrouille_jusqu_a > maintenant:
+        minutes_restantes = int((utilisateur.verrouille_jusqu_a - maintenant).total_seconds() // 60) + 1
+        raise HTTPException(
+            status_code=429, detail=f"Trop de tentatives échouées. Réessaie dans {minutes_restantes} min."
+        )
+
     if not verifier_mot_de_passe(normaliser_code_recuperation(entree.code), utilisateur.code_recuperation_hash):
+        utilisateur.tentatives_echouees += 1
+        if utilisateur.tentatives_echouees >= SEUIL_TENTATIVES:
+            utilisateur.verrouille_jusqu_a = maintenant + DUREE_VERROUILLAGE
+            utilisateur.tentatives_echouees = 0
+        db.commit()
         raise HTTPException(status_code=401, detail="Code de récupération invalide")
     if len(entree.nouveau_mot_de_passe) < 8:
         raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")

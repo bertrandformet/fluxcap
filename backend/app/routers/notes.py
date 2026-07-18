@@ -1,4 +1,6 @@
+import functools
 import html
+import http.client
 import ipaddress
 import re
 import socket
@@ -28,6 +30,13 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 MAX_TAILLE_OCTETS = 10 * 1024 * 1024  # 10 Mo
 
 
+def _nom_fichier_sur(nom: str) -> str:
+    """Filtre un nom de fichier pour un usage sûr dans un en-tête Content-Disposition —
+    un guillemet casse sinon la valeur de l'en-tête, un retour à la ligne fait lever une
+    erreur serveur sur toute tentative de téléchargement de cette pièce jointe."""
+    return re.sub(r'[\r\n"]+', "_", nom).strip() or "fichier"
+
+
 @router.get("", response_model=list[NoteOut])
 def lister_notes(
     contexte: Optional[Contexte] = None,
@@ -47,52 +56,121 @@ def lister_notes(
     return query.order_by(Note.cree_le.desc()).all()
 
 
+def _hote_public(hostname: str) -> Optional[str]:
+    """Refuse les hôtes qui résolvent vers une IP privée, loopback, lien-local ou réservée
+    (ex. 169.254.169.254, métadonnées cloud), pour empêcher le serveur d'être utilisé comme
+    proxy SSRF. Retourne l'IP publique validée (à épingler pour la connexion réelle, voir
+    _ConnexionHTTPEpinglee/_ConnexionHTTPSEpinglee ci-dessous) plutôt qu'un simple booléen :
+    sans épinglage, urllib refait sa propre résolution DNS au moment de la connexion, après
+    cette vérification — un DNS malveillant pourrait répondre une IP publique ici puis une IP
+    privée à la connexion réelle quelques centaines de ms plus tard (DNS rebinding)."""
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return None
+    ip_validee = None
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            return None
+        if ip_validee is None:
+            ip_validee = info[4][0]
+    return ip_validee
+
+
+def _url_apercu_autorisee(url: str) -> Optional[tuple[str, str]]:
+    """Retourne (hostname, ip_validee) si l'URL est autorisée, sinon None."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return None
+    if not parsed.hostname:
+        return None
+    ip = _hote_public(parsed.hostname)
+    if ip is None:
+        return None
+    return parsed.hostname, ip
+
+
+class _ConnexionHTTPEpinglee(http.client.HTTPConnection):
+    """Connexion HTTP dont l'adresse de connexion réelle est fixée à l'IP déjà validée
+    par _hote_public, indépendamment du Host utilisé pour la requête elle-même — voir
+    _hote_public pour le TOCTOU que ça évite."""
+
+    def __init__(self, *args, ip_epinglee: str, **kwargs):
+        self._ip_epinglee = ip_epinglee
+        super().__init__(*args, **kwargs)
+
+    def connect(self):
+        self.sock = socket.create_connection((self._ip_epinglee, self.port), self.timeout)
+
+
+class _ConnexionHTTPSEpinglee(http.client.HTTPSConnection):
+    """Idem en HTTPS : la connexion TCP va vers l'IP épinglée, mais le SNI et la
+    validation du certificat restent sur le vrai nom d'hôte (server_hostname) — seule
+    la résolution DNS est court-circuitée, pas la vérification TLS."""
+
+    def __init__(self, *args, ip_epinglee: str, **kwargs):
+        self._ip_epinglee = ip_epinglee
+        super().__init__(*args, **kwargs)
+
+    def connect(self):
+        sock = socket.create_connection((self._ip_epinglee, self.port), self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+class _GestionnaireEpingle(urllib.request.HTTPHandler, urllib.request.HTTPSHandler):
+    """Force chaque connexion à utiliser l'IP déjà validée pour l'hôte demandé (partagée
+    avec _RedirectionValidee via `ip_par_hote`, alimentée à chaque saut de redirection),
+    plutôt que de laisser urllib refaire sa propre résolution DNS."""
+
+    def __init__(self, ip_par_hote: dict[str, str]):
+        super().__init__()
+        self._ip_par_hote = ip_par_hote
+
+    def _ip_pour(self, req) -> str:
+        return self._ip_par_hote[urlparse(req.full_url).hostname]
+
+    def http_open(self, req):
+        return self.do_open(functools.partial(_ConnexionHTTPEpinglee, ip_epinglee=self._ip_pour(req)), req)
+
+    def https_open(self, req):
+        return self.do_open(
+            functools.partial(_ConnexionHTTPSEpinglee, ip_epinglee=self._ip_pour(req)), req, context=self._context
+        )
+
+
 class _RedirectionValidee(urllib.request.HTTPRedirectHandler):
     """Suit les redirections HTTP, mais revalide la nouvelle adresse (schéma + hôte
     public) à chaque saut avant de la suivre — un hôte autorisé pourrait sinon
     rediriger vers une adresse interne pour contourner la vérification initiale
     (SSRF). Très courant en pratique (http -> https, sans-www -> www...)."""
 
+    def __init__(self, ip_par_hote: dict[str, str]):
+        self._ip_par_hote = ip_par_hote
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        if not _url_apercu_autorisee(newurl):
+        autorise = _url_apercu_autorisee(newurl)
+        if not autorise:
             return None
+        hote, ip = autorise
+        self._ip_par_hote[hote] = ip
         return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-def _hote_public(hostname: str) -> bool:
-    """Refuse les hôtes qui résolvent vers une IP privée, loopback, lien-local ou réservée
-    (ex. 169.254.169.254, métadonnées cloud), pour empêcher le serveur d'être utilisé comme proxy SSRF."""
-    try:
-        infos = socket.getaddrinfo(hostname, None)
-    except socket.gaierror:
-        return False
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if not ip.is_global:
-            return False
-    return True
-
-
-def _url_apercu_autorisee(url: str) -> bool:
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        return False
-    if not parsed.hostname:
-        return False
-    return _hote_public(parsed.hostname)
 
 
 @router.get("/apercu-lien")
 def apercu_lien(url: str):
     """Récupère titre et description d'une page pour préremplir l'import manuel d'un lien."""
-    if not _url_apercu_autorisee(url):
+    autorise = _url_apercu_autorisee(url)
+    if not autorise:
         return {"titre": "", "apercu": ""}
+    hote, ip = autorise
+    ip_par_hote = {hote: ip}
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        opener = urllib.request.build_opener(_RedirectionValidee)
+        opener = urllib.request.build_opener(_GestionnaireEpingle(ip_par_hote), _RedirectionValidee(ip_par_hote))
         with opener.open(req, timeout=5) as resp:
             page_html = resp.read(200_000).decode("utf-8", errors="ignore")
-    except (URLError, ValueError, TimeoutError, OSError):
+    except (URLError, ValueError, TimeoutError, OSError, KeyError):
         return {"titre": "", "apercu": ""}
 
     titre_match = re.search(r"<title[^>]*>(.*?)</title>", page_html, re.IGNORECASE | re.DOTALL)
@@ -307,9 +385,17 @@ async def ajouter_piece_jointe(note_id: int, fichier: UploadFile = File(...), db
     if not note:
         raise HTTPException(status_code=404, detail="Note introuvable")
 
-    contenu = await fichier.read()
-    if len(contenu) > MAX_TAILLE_OCTETS:
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
+    morceaux: list[bytes] = []
+    taille = 0
+    while True:
+        morceau = await fichier.read(1024 * 1024)
+        if not morceau:
+            break
+        taille += len(morceau)
+        if taille > MAX_TAILLE_OCTETS:
+            raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
+        morceaux.append(morceau)
+    contenu = b"".join(morceaux)
 
     extension = Path(fichier.filename or "").suffix
     nom_stocke = f"{uuid.uuid4().hex}{extension}"
@@ -339,7 +425,7 @@ def telecharger_piece_jointe(piece_id: int, db: Session = Depends(get_db)):
     return Response(
         content=contenu,
         media_type=piece.type_mime or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{piece.nom_original}"'},
+        headers={"Content-Disposition": f'attachment; filename="{_nom_fichier_sur(piece.nom_original)}"'},
     )
 
 

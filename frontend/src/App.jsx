@@ -45,32 +45,42 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!connecte || !capture || captureLancee.current) return;
+    // Attend une confirmation explicite avant de rien créer : ouvrir cette URL avec
+    // une session active ne doit pas suffire à créer une note (un lien piégé le
+    // pourrait sinon sans qu'on l'ait demandé).
+    if (!connecte || !capture || captureStatut) return;
+    setCaptureStatut("attente");
+  }, [connecte, capture, captureStatut]);
+
+  function fermerCapture() {
+    if (window.opener) window.close();
+    else window.location.assign(window.location.pathname);
+  }
+
+  async function confirmerCapture() {
+    if (captureLancee.current) return;
     captureLancee.current = true;
     setCaptureStatut("en-cours");
-    (async () => {
-      let titre = capture.titre || capture.url;
-      let apercu;
-      if (capture.url) {
-        try {
-          const infos = await api.apercuLien(capture.url);
-          if (infos.titre) titre = infos.titre;
-          if (infos.apercu) apercu = infos.apercu;
-        } catch {
-          // tant pis, on garde le titre du navigateur et pas d'aperçu
-        }
-      }
+    let titre = capture.titre || capture.url;
+    let apercu;
+    if (capture.url) {
       try {
-        await api.creerNote({ titre, url: capture.url || undefined, apercu });
-        setCaptureStatut("ok");
+        const infos = await api.apercuLien(capture.url);
+        if (infos.titre) titre = infos.titre;
+        if (infos.apercu) apercu = infos.apercu;
       } catch {
-        setCaptureStatut("erreur");
-      } finally {
-        if (window.opener) setTimeout(() => window.close(), 1200);
-        else setTimeout(() => window.location.assign(window.location.pathname), 1200);
+        // tant pis, on garde le titre du navigateur et pas d'aperçu
       }
-    })();
-  }, [connecte, capture]);
+    }
+    try {
+      await api.creerNote({ titre, url: capture.url || undefined, apercu });
+      setCaptureStatut("ok");
+    } catch {
+      setCaptureStatut("erreur");
+    } finally {
+      setTimeout(fermerCapture, 1200);
+    }
+  }
 
   useEffect(() => {
     if (!connecte) return;
@@ -123,11 +133,23 @@ export default function App() {
       >
         <div>
           <img src="/icon-192.png" alt="" width={48} height={48} style={{ borderRadius: 10, marginBottom: 12 }} />
-          <p className="tnv-h1" style={{ fontSize: 17 }}>
-            {captureStatut === "ok" && "Note ajoutée à FluxCap ✅"}
-            {captureStatut === "erreur" && "Échec de la capture"}
-            {captureStatut === "en-cours" && "Capture en cours…"}
-          </p>
+          {captureStatut === "attente" && (
+            <>
+              <p className="tnv-h1" style={{ fontSize: 17 }}>Ajouter cette page à FluxCap ?</p>
+              <p className="tnv-meta-text" style={{ margin: "8px 0 16px", wordBreak: "break-all" }}>
+                {capture.titre || capture.url}
+                {capture.url && capture.titre ? <br /> : null}
+                {capture.url}
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <button className="tnv-btn tnv-btn--ghost" onClick={fermerCapture}>Annuler</button>
+                <button className="tnv-btn tnv-btn--primary" onClick={confirmerCapture}>Ajouter à FluxCap</button>
+              </div>
+            </>
+          )}
+          {captureStatut === "en-cours" && <p className="tnv-h1" style={{ fontSize: 17 }}>Capture en cours…</p>}
+          {captureStatut === "ok" && <p className="tnv-h1" style={{ fontSize: 17 }}>Note ajoutée à FluxCap ✅</p>}
+          {captureStatut === "erreur" && <p className="tnv-h1" style={{ fontSize: 17 }}>Échec de la capture</p>}
         </div>
       </div>
     );
