@@ -76,7 +76,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Champ | Détail |
 |---|---|
 | Titre | texte libre |
-| Domaines | **multi-domaines** (nouveau) : une tâche peut porter plusieurs domaines à la fois, tous obligatoirement du même contexte (Pro ou Perso) — géré depuis l'onglet Domaines |
+| Domaines | **multi-domaines** (nouveau) : une tâche peut porter plusieurs domaines à la fois, tous obligatoirement du même contexte (Pro ou Perso) — géré depuis l'onglet Domaines, ou en ajout/retrait rapide directement depuis la carte (bouton "+ tag") |
 | Type | manuel — valeur "administrative" active le bouton Pomodoro |
 | Priorité | 3 niveaux (un jour / cette semaine / aujourd'hui) |
 | Épinglée | booléen, force l'inclusion dans le quota du jour |
@@ -93,6 +93,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 - Ces mêmes domaines servent de tags pour filtrer les notes
 - **Usage par domaine** (nouveau) : chaque domaine peut être retiré du sélecteur de tâches et/ou du sélecteur de veille indépendamment (badges "Tâches"/"Veille" cliquables), pour les domaines qui n'ont de sens que d'un côté (ex. un sujet de veille large comme "Éducation généraliste" n'est pas une catégorie de tâche actionnable). Les deux activés par défaut à la création ; les notes voient tous les domaines quel que soit leur usage.
 - **Multi-domaines** (nouveau) : une tâche, une note ou un item de veille peut être tagué de plusieurs domaines à la fois (sélecteur à chips dans les formulaires, plusieurs badges affichés). Contrainte : tous les domaines d'un même item doivent partager le même contexte Pro/Perso, puisque le contexte effectif d'un item reste entièrement déterminé par ses domaines — pas de mélange Pro/Perso sur un même item.
+- **Ajout/retrait rapide de tag depuis la carte** (nouveau) : bouton "+ tag" (pointillé) à côté des badges de domaine sur chaque carte de tâche (écran Aujourd'hui) et dans le volet détail d'une note — ouvre une rangée de chips à bascule sans passer par le formulaire d'édition complet, application immédiate.
 
 ## Onglet Veille (séparé, par domaine)
 - Items groupés par domaine, affichés en cartes (même style visuel que les tâches d'Aujourd'hui), avec un résumé du lien (nouveau champ `apercu`) — un item multi-domaines apparaît dans chacun des groupes concernés
