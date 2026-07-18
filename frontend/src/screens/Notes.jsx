@@ -69,6 +69,8 @@ export default function Notes({ contexte }) {
   const [modeSelection, setModeSelection] = useState(false);
   const [selection, setSelection] = useState(new Set());
   const [tagSheetOuvert, setTagSheetOuvert] = useState(false);
+  const [fusionCible, setFusionCible] = useState(null); // null | "note" | "tache"
+  const [fusionTitre, setFusionTitre] = useState("");
 
   useEffect(() => {
     api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
@@ -304,6 +306,36 @@ export default function Notes({ contexte }) {
       setInfo("Partage natif indisponible sur ce navigateur — contenu copié dans le presse-papiers.");
     } else {
       setErreur("Ni le partage natif ni le presse-papiers ne sont disponibles sur ce navigateur.");
+    }
+  }
+
+  function ouvrirFusion(cible) {
+    setFusionCible(cible);
+    setFusionTitre("");
+  }
+
+  async function confirmerFusion() {
+    if (selection.size < 2) return;
+    if (
+      fusionCible === "note" &&
+      !window.confirm(`Fusionner ces ${selection.size} notes en une seule ? Les notes d'origine seront supprimées.`)
+    ) {
+      return;
+    }
+    try {
+      const noteIds = [...selection];
+      if (fusionCible === "note") {
+        const nouvelle = await api.fusionnerEnNote(noteIds, fusionTitre.trim());
+        setNoteSelectionneeId(nouvelle.id);
+      } else {
+        await api.fusionnerEnTache(noteIds, fusionTitre.trim());
+      }
+      setFusionCible(null);
+      setSelection(new Set());
+      setModeSelection(false);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
     }
   }
 
@@ -656,12 +688,52 @@ export default function Notes({ contexte }) {
           <button className="tnv-btn tnv-btn--ghost" onClick={() => setTagSheetOuvert(true)}>
             Tag
           </button>
+          {selection.size >= 2 && (
+            <>
+              <button className="tnv-btn tnv-btn--ghost" onClick={() => ouvrirFusion("note")}>
+                Fusionner en note
+              </button>
+              <button className="tnv-btn tnv-btn--ghost" onClick={() => ouvrirFusion("tache")}>
+                Fusionner en tâche
+              </button>
+            </>
+          )}
           <button className="tnv-btn tnv-btn--ghost" onClick={partagerSelection}>
             Partager
           </button>
           <button className="tnv-btn tnv-btn--danger-ghost" onClick={supprimerSelection}>
             Supprimer
           </button>
+        </div>
+      )}
+
+      {fusionCible && (
+        <div className="tnv-overlay tnv-sheet" onClick={() => setFusionCible(null)}>
+          <div className="tnv-sheet__panel" onClick={(e) => e.stopPropagation()}>
+            <div className="tnv-sheet__grabber" />
+            <span className="tnv-sheet__title">
+              Fusionner {selection.size} notes en {fusionCible === "note" ? "une note" : "une tâche"}
+            </span>
+            {fusionCible === "note" && (
+              <p className="tnv-meta-text">
+                Le contenu de chaque note est conservé (concaténé), les domaines sont fusionnés, les pièces jointes
+                réassignées. Les notes d'origine seront supprimées.
+              </p>
+            )}
+            <input
+              className="tnv-input"
+              type="text"
+              placeholder="Titre (optionnel, auto-généré sinon)"
+              value={fusionTitre}
+              onChange={(e) => setFusionTitre(e.target.value)}
+            />
+            <button className="tnv-btn tnv-btn--primary" onClick={confirmerFusion}>
+              Fusionner
+            </button>
+            <button className="tnv-btn tnv-btn--ghost" onClick={() => setFusionCible(null)}>
+              Annuler
+            </button>
+          </div>
         </div>
       )}
 

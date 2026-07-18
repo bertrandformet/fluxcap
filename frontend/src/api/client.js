@@ -150,6 +150,10 @@ export const api = {
   modifierNote: (id, patch) => request(`/notes/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   supprimerNote: (id) => request(`/notes/${id}`, { method: "DELETE" }),
   noteVersTache: (id) => request(`/notes/${id}/transformer-tache`, { method: "POST" }),
+  fusionnerEnNote: (noteIds, titre) =>
+    request(`/notes/fusionner-en-note`, { method: "POST", body: JSON.stringify({ note_ids: noteIds, titre: titre || null }) }),
+  fusionnerEnTache: (noteIds, titre) =>
+    request(`/notes/fusionner-en-tache`, { method: "POST", body: JSON.stringify({ note_ids: noteIds, titre: titre || null }) }),
   apercuLien: (url) => request(`/notes/apercu-lien?url=${encodeURIComponent(url)}`),
   exporterNote: (id, format) => telechargerFichier(`/notes/${id}/export?format=${format}`, `note.${format}`),
   ajouterPieceJointe: async (noteId, fichier) => {

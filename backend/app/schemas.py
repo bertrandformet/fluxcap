@@ -229,6 +229,11 @@ class NoteUpdate(BaseModel):
     domaine_ids: Optional[list[int]] = None
 
 
+class FusionNotesPayload(BaseModel):
+    note_ids: list[int]
+    titre: Optional[str] = None
+
+
 class PieceJointeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

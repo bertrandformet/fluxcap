@@ -350,3 +350,25 @@
   color: var(--tnv-text-muted);
   padding: 5px 10px;
 }
+
+/* ---- Barre d'actions groupées ----
+   1. Défilement horizontal plutôt que débordement hors écran quand il y a plus de
+      boutons que de place (ex. sur mobile avec Tag/Fusionner en note/Fusionner en
+      tâche/Partager/Supprimer).
+   2. Sur mobile, la barre d'onglets flottante (tnv-tabbar, ~63px + 14px de marge)
+      la recouvrait sinon partiellement : décalée au-dessus tant que le tabbar est
+      affiché (<900px, voir le seuil utilisé pour tnv-tabbar lui-même). */
+.tnv-bulk-bar {
+  bottom: 90px;
+  overflow-x: auto;
+  gap: 8px;
+}
+.tnv-bulk-bar > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (min-width: 900px) {
+  .tnv-bulk-bar {
+    bottom: 0;
+  }
+}

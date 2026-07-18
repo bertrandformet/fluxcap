@@ -15,8 +15,8 @@ from sqlalchemy.orm import Session
 
 from app.config import UPLOAD_DIR
 from app.database import get_db
-from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, Tache
-from app.schemas import NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
+from app.models import Contexte, Domaine, Note, PieceJointe, Priorite, SourceNote, Tache
+from app.schemas import FusionNotesPayload, NoteCreate, NoteOut, NoteUpdate, PieceJointeOut, TacheOut
 from app.services import stockage
 from app.services.domaines_utils import resoudre_domaines
 from app.services.export_notes import GENERATEURS
@@ -168,6 +168,106 @@ def transformer_en_tache(note_id: int, db: Session = Depends(get_db)):
         derniere_interaction=datetime.now(),
     )
     tache.domaines = list(note.domaines)
+    db.add(tache)
+    db.commit()
+    db.refresh(tache)
+    return tache
+
+
+def _charger_notes_a_fusionner(db: Session, note_ids: list[int]) -> list[Note]:
+    if len(note_ids) < 2:
+        raise HTTPException(status_code=400, detail="Sélectionnez au moins deux notes à fusionner")
+    notes = db.query(Note).filter(Note.id.in_(note_ids)).all()
+    if len(notes) != len(set(note_ids)):
+        raise HTTPException(status_code=404, detail="Une ou plusieurs notes sont introuvables")
+    return notes
+
+
+def _domaines_fusionnes(notes: list[Note]) -> list[Domaine]:
+    vus = {}
+    for note in notes:
+        for domaine in note.domaines:
+            vus[domaine.id] = domaine
+    domaines = list(vus.values())
+    if len({d.contexte for d in domaines}) > 1:
+        raise HTTPException(
+            status_code=400, detail="Les notes sélectionnées doivent être du même contexte Pro/Perso pour être fusionnées"
+        )
+    return domaines
+
+
+def _titre_fusionne(notes: list[Note], titre: Optional[str]) -> str:
+    if titre and titre.strip():
+        return titre.strip()[:255]
+    return " + ".join(n.titre for n in sorted(notes, key=lambda n: n.cree_le))[:255]
+
+
+def _contenu_fusionne(notes: list[Note]) -> str:
+    """Concatène le contenu de chaque note (ordre chronologique), en bloc distinct
+    titré, pour ne rien perdre de l'information d'origine plutôt que de tenter une
+    fusion "intelligente" du texte."""
+    blocs = []
+    for note in sorted(notes, key=lambda n: n.cree_le):
+        lignes = [f"## {note.titre}"]
+        if note.url:
+            lignes.append(note.url)
+        if note.apercu:
+            lignes.append(note.apercu)
+        if note.contenu:
+            lignes.append(note.contenu)
+        blocs.append("\n\n".join(lignes))
+    return "\n\n---\n\n".join(blocs)
+
+
+@router.post("/fusionner-en-note", response_model=NoteOut, status_code=201)
+def fusionner_en_note(payload: FusionNotesPayload, db: Session = Depends(get_db)):
+    """Consolide plusieurs notes en une seule (contenu concaténé, domaines fusionnés,
+    pièces jointes réassignées) puis supprime les notes d'origine — une vraie fusion,
+    pas une copie : décision produit explicite pour éviter le contenu dupliqué."""
+    notes = _charger_notes_a_fusionner(db, payload.note_ids)
+    domaines = _domaines_fusionnes(notes)
+
+    nouvelle = Note(
+        titre=_titre_fusionne(notes, payload.titre),
+        contenu=_contenu_fusionne(notes),
+        source=SourceNote.manuel,
+    )
+    nouvelle.domaines = domaines
+    db.add(nouvelle)
+    db.flush()
+
+    for note in notes:
+        for piece in list(note.pieces_jointes):
+            note.pieces_jointes.remove(piece)
+            nouvelle.pieces_jointes.append(piece)
+
+    for note in notes:
+        db.delete(note)
+
+    db.commit()
+    db.refresh(nouvelle)
+    return nouvelle
+
+
+@router.post("/fusionner-en-tache", response_model=TacheOut, status_code=201)
+def fusionner_en_tache(payload: FusionNotesPayload, db: Session = Depends(get_db)):
+    """Crée une tâche à partir de plusieurs notes fusionnées, sans toucher aux notes
+    d'origine — cohérent avec le comportement non destructif de /transformer-tache
+    sur une note unique."""
+    notes = _charger_notes_a_fusionner(db, payload.note_ids)
+    domaines = _domaines_fusionnes(notes)
+    if not domaines:
+        raise HTTPException(
+            status_code=400, detail="Les notes sélectionnées doivent avoir au moins un domaine pour être fusionnées en tâche"
+        )
+
+    tache = Tache(
+        titre=_titre_fusionne(notes, payload.titre),
+        description=_contenu_fusionne(notes),
+        priorite=Priorite.un_jour,
+        derniere_interaction=datetime.now(),
+    )
+    tache.domaines = domaines
     db.add(tache)
     db.commit()
     db.refresh(tache)
