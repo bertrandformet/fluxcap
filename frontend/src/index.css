@@ -239,3 +239,91 @@
   border-radius: 14px;
   padding: var(--tnv-space-2) var(--tnv-space-3);
 }
+
+/* ---- Notes : vue à deux volets façon Notes d'Apple ----
+   Mobile : un seul volet visible à la fois (liste, puis détail en plein écran
+   au clic, avec bouton Retour). Desktop (≥900px) : les deux volets côte à côte,
+   toujours visibles, colonne de gauche fixe. */
+.tnv-notes-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tnv-space-4);
+}
+.tnv-notes-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tnv-space-3);
+  min-width: 0;
+}
+.tnv-notes-detail-pane {
+  display: none;
+  min-width: 0;
+}
+.tnv-notes-layout--detail-actif .tnv-notes-list-pane {
+  display: none;
+}
+.tnv-notes-layout--detail-actif .tnv-notes-detail-pane {
+  display: block;
+}
+@media (min-width: 900px) {
+  .tnv-notes-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .tnv-notes-list-pane {
+    display: flex !important;
+    flex: 0 0 300px;
+    max-width: 300px;
+  }
+  .tnv-notes-detail-pane {
+    display: block !important;
+    flex: 1;
+    min-width: 0;
+  }
+  .tnv-notes-back {
+    display: none;
+  }
+}
+
+.tnv-notes-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tnv-space-2);
+}
+.tnv-notes-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--tnv-radius-card);
+  border: 1px solid var(--tnv-hairline);
+  background: var(--tnv-card);
+  box-shadow: var(--tnv-shadow-card);
+  cursor: pointer;
+}
+.tnv-notes-row--active {
+  border-color: var(--tnv-accent);
+  background: var(--tnv-accent-bg);
+}
+.tnv-notes-row__title {
+  font-size: var(--tnv-size-title);
+  font-weight: var(--tnv-weight-semibold);
+  color: var(--tnv-text);
+}
+.tnv-notes-row__snippet {
+  font-size: var(--tnv-size-caption);
+  color: var(--tnv-text-muted);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tnv-notes-detail-empty {
+  padding: 32px 8px;
+  text-align: center;
+}
+.tnv-notes-back {
+  align-self: flex-start;
+  padding-left: 0;
+  margin-bottom: 4px;
+}

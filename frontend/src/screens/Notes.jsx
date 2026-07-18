@@ -11,6 +11,13 @@ function formatTaille(octets) {
   return `${(octets / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
+function resumeNote(n) {
+  if (n.apercu) return n.apercu;
+  if (n.contenu) return n.contenu.replace(/[#*_`>~-]/g, "").replace(/\s+/g, " ").trim();
+  if (n.url) return n.url;
+  return "";
+}
+
 // L'endpoint est protégé par authentification (Authorization header), donc on ne peut
 // pas passer son URL directement en <img src> : on récupère le blob et on en fait une
 // URL locale.
@@ -44,6 +51,7 @@ export default function Notes({ contexte }) {
   const [filtreDomaine, setFiltreDomaine] = useState("");
   const [erreur, setErreur] = useState(null);
   const [info, setInfo] = useState(null);
+  const [noteSelectionneeId, setNoteSelectionneeId] = useState(null);
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [lien, setLien] = useState("");
@@ -76,7 +84,13 @@ export default function Notes({ contexte }) {
 
   function charger() {
     setNotes(null);
-    api.getNotes(filtreDomaine || undefined, contexte).then(setNotes).catch((e) => setErreur(e.message));
+    api
+      .getNotes(filtreDomaine || undefined, contexte)
+      .then((data) => {
+        setNotes(data);
+        setNoteSelectionneeId((id) => (id && data.some((n) => n.id === id) ? id : null));
+      })
+      .catch((e) => setErreur(e.message));
   }
 
   async function recupererApercu() {
@@ -107,6 +121,7 @@ export default function Notes({ contexte }) {
       setDomaineImport("");
       setFichiersAJoindre([]);
       setFormulaireOuvert(false);
+      setNoteSelectionneeId(note.id);
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -142,6 +157,7 @@ export default function Notes({ contexte }) {
     if (!window.confirm(`Supprimer la note « ${note.titre} » ?`)) return;
     try {
       await api.supprimerNote(note.id);
+      if (noteSelectionneeId === note.id) setNoteSelectionneeId(null);
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -189,6 +205,7 @@ export default function Notes({ contexte }) {
   function basculerModeSelection() {
     setModeSelection((m) => !m);
     setSelection(new Set());
+    setNoteSelectionneeId(null);
   }
 
   function basculerSelection(id) {
@@ -260,6 +277,8 @@ export default function Notes({ contexte }) {
     ...domaines.map((d) => ({ value: String(d.id), label: d.nom })),
   ];
 
+  const noteSelectionnee = notes && noteSelectionneeId ? notes.find((n) => n.id === noteSelectionneeId) : null;
+
   return (
     <div className="tnv-screen">
       <div className="tnv-screen-head">
@@ -316,42 +335,100 @@ export default function Notes({ contexte }) {
         </form>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {filtres.map((f) => (
-          <button
-            key={f.value}
-            className={filtreDomaine === f.value ? "tnv-chip tnv-chip--active" : "tnv-chip"}
-            onClick={() => setFiltreDomaine(f.value)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <div className={noteSelectionnee ? "tnv-notes-layout tnv-notes-layout--detail-actif" : "tnv-notes-layout"}>
+        <div className="tnv-notes-list-pane">
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {filtres.map((f) => (
+              <button
+                key={f.value}
+                className={filtreDomaine === f.value ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                onClick={() => setFiltreDomaine(f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-      {modeSelection && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span className="tnv-meta-text">{selection.size} sélectionnée(s)</span>
-          <button className="tnv-btn tnv-btn--ghost" onClick={toutSelectionner}>
-            Tout sélectionner
-          </button>
+          {modeSelection && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="tnv-meta-text">{selection.size} sélectionnée(s)</span>
+              <button className="tnv-btn tnv-btn--ghost" onClick={toutSelectionner}>
+                Tout sélectionner
+              </button>
+            </div>
+          )}
+
+          {!notes && <p className="tnv-empty">Chargement…</p>}
+          {notes && notes.length === 0 && <p className="tnv-empty">Aucune note.</p>}
+
+          <div className="tnv-notes-row-list" style={{ marginBottom: modeSelection && selection.size > 0 ? 90 : 0 }}>
+            {notes &&
+              notes.map((n) => (
+                <div
+                  key={n.id}
+                  role="button"
+                  tabIndex={0}
+                  className={n.id === noteSelectionneeId ? "tnv-notes-row tnv-notes-row--active" : "tnv-notes-row"}
+                  onClick={() => (modeSelection ? basculerSelection(n.id) : setNoteSelectionneeId(n.id))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (modeSelection ? basculerSelection(n.id) : setNoteSelectionneeId(n.id));
+                  }}
+                >
+                  {modeSelection && (
+                    <button
+                      type="button"
+                      className={selection.has(n.id) ? "tnv-select-dot tnv-select-dot--checked" : "tnv-select-dot"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        basculerSelection(n.id);
+                      }}
+                      aria-label="Sélectionner"
+                      style={{ marginTop: 3, flexShrink: 0 }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="tnv-notes-row__title">{n.titre}</div>
+                    <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
+                      {n.domaine ? <DomainBadge domaine={n.domaine} /> : <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>}
+                    </div>
+                    {resumeNote(n) && <div className="tnv-notes-row__snippet">{resumeNote(n)}</div>}
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
-      )}
 
-      {!notes && <p className="tnv-empty">Chargement…</p>}
-      {notes && notes.length === 0 && <p className="tnv-empty">Aucune note.</p>}
+        <div className="tnv-notes-detail-pane">
+          {!noteSelectionnee && (
+            <p className="tnv-empty tnv-notes-detail-empty">Sélectionnez une note pour l'afficher ici.</p>
+          )}
 
-      <div className="tnv-stack" style={{ marginBottom: modeSelection && selection.size > 0 ? 90 : 24 }}>
-        {notes &&
-          notes.map((n) => (
-            <div
-              key={n.id}
-              className={selection.has(n.id) ? "tnv-card tnv-note-card tnv-note-card--selected" : "tnv-card tnv-note-card"}
-            >
-              {enEdition === n.id ? (
+          {noteSelectionnee && (
+            <div className="tnv-card tnv-note-card">
+              <button className="tnv-btn tnv-btn--ghost tnv-notes-back" onClick={() => setNoteSelectionneeId(null)}>
+                ← Retour
+              </button>
+
+              {enEdition === noteSelectionnee.id ? (
                 <>
-                  <input className="tnv-input" value={editionTitre} onChange={(e) => setEditionTitre(e.target.value)} placeholder="Titre" />
-                  <input className="tnv-input" value={editionUrl} onChange={(e) => setEditionUrl(e.target.value)} placeholder="Lien" />
-                  <textarea className="tnv-textarea" value={editionApercu} onChange={(e) => setEditionApercu(e.target.value)} placeholder="Aperçu" />
+                  <input
+                    className="tnv-input"
+                    value={editionTitre}
+                    onChange={(e) => setEditionTitre(e.target.value)}
+                    placeholder="Titre"
+                  />
+                  <input
+                    className="tnv-input"
+                    value={editionUrl}
+                    onChange={(e) => setEditionUrl(e.target.value)}
+                    placeholder="Lien"
+                  />
+                  <textarea
+                    className="tnv-textarea"
+                    value={editionApercu}
+                    onChange={(e) => setEditionApercu(e.target.value)}
+                    placeholder="Aperçu"
+                  />
                   <MarkdownToolbar value={editionContenu} onChange={setEditionContenu} placeholder="Contenu…" />
                   <select className="tnv-select" value={editionDomaine} onChange={(e) => setEditionDomaine(e.target.value)}>
                     <option value="">Sans tag de domaine</option>
@@ -362,7 +439,7 @@ export default function Notes({ contexte }) {
                     ))}
                   </select>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button className="tnv-btn tnv-btn--primary" onClick={() => enregistrerEdition(n)}>
+                    <button className="tnv-btn tnv-btn--primary" onClick={() => enregistrerEdition(noteSelectionnee)}>
                       Enregistrer
                     </button>
                     <button className="tnv-btn tnv-btn--ghost" onClick={() => setEnEdition(null)}>
@@ -373,34 +450,31 @@ export default function Notes({ contexte }) {
               ) : (
                 <>
                   <div className="tnv-note-card__head">
-                    {modeSelection && (
-                      <button
-                        type="button"
-                        className={selection.has(n.id) ? "tnv-select-dot tnv-select-dot--checked" : "tnv-select-dot"}
-                        onClick={() => basculerSelection(n.id)}
-                        aria-label="Sélectionner"
-                        style={{ marginTop: 3 }}
-                      />
-                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <span className="tnv-task-card__title">{n.titre}</span>
+                      <span className="tnv-task-card__title">{noteSelectionnee.titre}</span>
                       <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
-                        {n.domaine ? <DomainBadge domaine={n.domaine} /> : <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>}
+                        {noteSelectionnee.domaine ? (
+                          <DomainBadge domaine={noteSelectionnee.domaine} />
+                        ) : (
+                          <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {n.url && (
-                    <a href={n.url} target="_blank" rel="noreferrer" style={{ fontSize: "var(--tnv-size-caption)" }}>
-                      {n.url}
+                  {noteSelectionnee.url && (
+                    <a href={noteSelectionnee.url} target="_blank" rel="noreferrer" style={{ fontSize: "var(--tnv-size-caption)" }}>
+                      {noteSelectionnee.url}
                     </a>
                   )}
-                  {n.apercu && <p className="tnv-meta-text">{n.apercu}</p>}
-                  {n.contenu && <div className="markdown-apercu" dangerouslySetInnerHTML={{ __html: rendreMarkdown(n.contenu) }} />}
+                  {noteSelectionnee.apercu && <p className="tnv-meta-text">{noteSelectionnee.apercu}</p>}
+                  {noteSelectionnee.contenu && (
+                    <div className="markdown-apercu" dangerouslySetInnerHTML={{ __html: rendreMarkdown(noteSelectionnee.contenu) }} />
+                  )}
 
-                  {n.pieces_jointes.length > 0 && (
+                  {noteSelectionnee.pieces_jointes.length > 0 && (
                     <div className="tnv-stack" style={{ gap: 6, marginBottom: 0 }}>
-                      {n.pieces_jointes.map((p) => (
+                      {noteSelectionnee.pieces_jointes.map((p) => (
                         <div key={p.id} className="tnv-note-card__attachment">
                           {p.type_mime && p.type_mime.startsWith("image/") ? (
                             <ApercuPieceJointe id={p.id} alt={p.nom_original} className="tnv-note-card__attachment-image" />
@@ -432,7 +506,7 @@ export default function Notes({ contexte }) {
                           type="file"
                           multiple
                           onChange={(e) => {
-                            ajouterPieceJointe(n, [...e.target.files]);
+                            ajouterPieceJointe(noteSelectionnee, [...e.target.files]);
                             e.target.value = "";
                           }}
                         />
@@ -440,30 +514,30 @@ export default function Notes({ contexte }) {
                     </span>
 
                     <span className="groupe-actions">
-                      <button className="tnv-icon-btn" onClick={() => commencerEdition(n)} title="Modifier" aria-label="Modifier">
+                      <button className="tnv-icon-btn" onClick={() => commencerEdition(noteSelectionnee)} title="Modifier" aria-label="Modifier">
                         <IconEdit size={16} />
                       </button>
-                      <button className="tnv-icon-btn" onClick={() => supprimer(n)} title="Supprimer" aria-label="Supprimer">
+                      <button className="tnv-icon-btn" onClick={() => supprimer(noteSelectionnee)} title="Supprimer" aria-label="Supprimer">
                         <IconTrash size={16} />
                       </button>
                       <button
                         className="tnv-btn tnv-btn--outline"
-                        onClick={() => transformerEnTache(n)}
-                        disabled={transformees.includes(n.id)}
-                        title={!n.domaine_id ? "Ajoutez un tag de domaine pour transformer cette note en tâche" : undefined}
+                        onClick={() => transformerEnTache(noteSelectionnee)}
+                        disabled={transformees.includes(noteSelectionnee.id)}
+                        title={!noteSelectionnee.domaine_id ? "Ajoutez un tag de domaine pour transformer cette note en tâche" : undefined}
                       >
-                        {transformees.includes(n.id) ? "Tâche créée ✓" : "Transformer en tâche"}
+                        {transformees.includes(noteSelectionnee.id) ? "Tâche créée ✓" : "Transformer en tâche"}
                       </button>
                     </span>
 
                     <span className="groupe-actions">
-                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "txt")}>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(noteSelectionnee, "txt")}>
                         .txt
                       </button>
-                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "md")}>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(noteSelectionnee, "md")}>
                         .md
                       </button>
-                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(n, "docx")}>
+                      <button className="tnv-btn tnv-btn--ghost" onClick={() => exporter(noteSelectionnee, "docx")}>
                         .docx
                       </button>
                     </span>
@@ -471,7 +545,8 @@ export default function Notes({ contexte }) {
                 </>
               )}
             </div>
-          ))}
+          )}
+        </div>
       </div>
 
       {modeSelection && selection.size > 0 && (
