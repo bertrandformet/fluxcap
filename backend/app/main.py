@@ -34,6 +34,6 @@ app.include_router(sources_veille.router, dependencies=_protegee)
 app.include_router(planification.router, dependencies=[Depends(exiger_secret_planificateur)])
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok"}
