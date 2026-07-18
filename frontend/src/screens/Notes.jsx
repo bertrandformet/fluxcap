@@ -2,20 +2,13 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
 import DomainBadge from "../components/DomainBadge.jsx";
-import { IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
+import { IconColonneMasquer, IconColonneSeule, IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
 
 function formatTaille(octets) {
   if (octets < 1024) return `${octets} o`;
   if (octets < 1024 * 1024) return `${(octets / 1024).toFixed(1)} Ko`;
   return `${(octets / (1024 * 1024)).toFixed(1)} Mo`;
-}
-
-function resumeNote(n) {
-  if (n.apercu) return n.apercu;
-  if (n.contenu) return n.contenu.replace(/[#*_`>~-]/g, "").replace(/\s+/g, " ").trim();
-  if (n.url) return n.url;
-  return "";
 }
 
 // L'endpoint est protégé par authentification (Authorization header), donc on ne peut
@@ -52,6 +45,7 @@ export default function Notes({ contexte }) {
   const [erreur, setErreur] = useState(null);
   const [info, setInfo] = useState(null);
   const [noteSelectionneeId, setNoteSelectionneeId] = useState(null);
+  const [modeDesktop, setModeDesktop] = useState("split"); // 'split' | 'liste' | 'detail' — n'a d'effet qu'à partir de 900px
 
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [lien, setLien] = useState("");
@@ -208,6 +202,16 @@ export default function Notes({ contexte }) {
     setNoteSelectionneeId(null);
   }
 
+  function selectionnerNote(id) {
+    if (modeSelection) {
+      basculerSelection(id);
+      return;
+    }
+    setNoteSelectionneeId(id);
+    // Choisir une note en mode "liste seule" doit rouvrir le volet de détail, sinon rien ne s'affiche.
+    setModeDesktop((m) => (m === "liste" ? "split" : m));
+  }
+
   function basculerSelection(id) {
     setSelection((s) => {
       const nouveau = new Set(s);
@@ -286,7 +290,27 @@ export default function Notes({ contexte }) {
           <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
           <h1 className="tnv-h1">Notes</h1>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span className="tnv-notes-desktop-controls">
+            <button
+              type="button"
+              className="tnv-icon-btn"
+              onClick={() => setModeDesktop((m) => (m === "detail" ? "split" : "detail"))}
+              title={modeDesktop === "detail" ? "Afficher la colonne des notes" : "Masquer la colonne des notes"}
+              aria-label="Masquer la colonne des notes"
+            >
+              <IconColonneMasquer size={16} />
+            </button>
+            <button
+              type="button"
+              className="tnv-icon-btn"
+              onClick={() => setModeDesktop((m) => (m === "liste" ? "split" : "liste"))}
+              title={modeDesktop === "liste" ? "Revenir à la vue partagée" : "N'afficher que la colonne des notes"}
+              aria-label="N'afficher que la colonne des notes"
+            >
+              <IconColonneSeule size={16} />
+            </button>
+          </span>
           <button className="tnv-btn tnv-btn--secondary" onClick={basculerModeSelection}>
             {modeSelection ? "Annuler" : "Sélectionner"}
           </button>
@@ -335,7 +359,16 @@ export default function Notes({ contexte }) {
         </form>
       )}
 
-      <div className={noteSelectionnee ? "tnv-notes-layout tnv-notes-layout--detail-actif" : "tnv-notes-layout"}>
+      <div
+        className={[
+          "tnv-notes-layout",
+          noteSelectionnee && "tnv-notes-layout--detail-actif",
+          modeDesktop === "liste" && "tnv-notes-layout--liste-seule",
+          modeDesktop === "detail" && "tnv-notes-layout--detail-seule",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="tnv-notes-list-pane">
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {filtres.map((f) => (
@@ -369,9 +402,9 @@ export default function Notes({ contexte }) {
                   role="button"
                   tabIndex={0}
                   className={n.id === noteSelectionneeId ? "tnv-notes-row tnv-notes-row--active" : "tnv-notes-row"}
-                  onClick={() => (modeSelection ? basculerSelection(n.id) : setNoteSelectionneeId(n.id))}
+                  onClick={() => selectionnerNote(n.id)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") (modeSelection ? basculerSelection(n.id) : setNoteSelectionneeId(n.id));
+                    if (e.key === "Enter") selectionnerNote(n.id);
                   }}
                 >
                   {modeSelection && (
@@ -386,13 +419,7 @@ export default function Notes({ contexte }) {
                       style={{ marginTop: 3, flexShrink: 0 }}
                     />
                   )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="tnv-notes-row__title">{n.titre}</div>
-                    <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
-                      {n.domaine ? <DomainBadge domaine={n.domaine} /> : <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>}
-                    </div>
-                    {resumeNote(n) && <div className="tnv-notes-row__snippet">{resumeNote(n)}</div>}
-                  </div>
+                  <div className="tnv-notes-row__title">{n.titre}</div>
                 </div>
               ))}
           </div>

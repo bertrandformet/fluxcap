@@ -139,6 +139,25 @@ export function IconDownload({ size = 18 }) {
   );
 }
 
+export function IconColonneMasquer({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <rect x="2.5" y="4" width="15" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 4v12" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.5 7.5l-1.5 2.5 1.5 2.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconColonneSeule({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <rect x="2.5" y="4" width="15" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6 7.5l-2 2.5 2 2.5M14 7.5l2 2.5-2 2.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconPaperclip({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
