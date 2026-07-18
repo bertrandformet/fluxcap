@@ -48,6 +48,11 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     charger();
   }
 
+  async function annulerRealisation(selection) {
+    await api.cloturerTache(contexte, selection.id, { action: "annuler_realisation" });
+    charger();
+  }
+
   async function supprimerTache(tache) {
     await api.supprimerTache(tache.id);
     charger();
@@ -196,7 +201,16 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
             {realisees.map((s) => (
               <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <IconCheck filled size={18} />
-                <span className="tnv-task-card__title tnv-task-card__title--done">{s.tache.titre}</span>
+                <span className="tnv-task-card__title tnv-task-card__title--done" style={{ flex: 1 }}>
+                  {s.tache.titre}
+                </span>
+                <button
+                  className="tnv-btn tnv-btn--ghost"
+                  onClick={() => annulerRealisation(s)}
+                  title="Remettre dans les tâches en cours"
+                >
+                  Annuler
+                </button>
               </div>
             ))}
           </div>

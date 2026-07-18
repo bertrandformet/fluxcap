@@ -127,6 +127,15 @@ def appliquer_decision(db: Session, selection: SelectionJour, decision: Decision
         else:
             tache.statut = StatutTache.realise
 
+    elif action == "annuler_realisation":
+        # Rattrapage d'un clic "Réalisé" par erreur : remet la tâche dans le quota du
+        # jour. Pour une tâche récurrente, tache.statut est déjà "a_realiser" (déjà
+        # régénérée pour demain par l'action "realiser" ci-dessus) — on ne touche qu'à
+        # la sélection du jour, pas à la tâche elle-même.
+        selection.statut_jour = StatutJour.en_attente
+        if not tache.recurrente:
+            tache.statut = StatutTache.a_realiser
+
     elif action == "reporter_demain":
         _reporter(db, tache, aujourdhui + timedelta(days=1))
         selection.statut_jour = StatutJour.reporte
