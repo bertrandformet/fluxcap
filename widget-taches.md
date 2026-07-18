@@ -8,13 +8,107 @@ Piste initialement envisagée et abandonnée : faire apparaître le widget iPhon
 
 [Scriptable](https://apps.apple.com/app/scriptable/id1405459188) (app iOS/iPadOS gratuite, App Store — pas de version Mac, l'app est spécifiquement iPhone/iPad) exécute un script JavaScript et peut l'afficher comme widget d'écran d'accueil.
 
-Principe du script :
-1. Appelle `GET /jour/pro` et `GET /jour/perso` (en-tête `Authorization: Bearer <clé API>`).
-2. Filtre les tâches dont `statut_jour == "en_attente"`.
-3. Construit un `ListWidget` (titre + liste des tâches, un widget séparé par contexte plutôt qu'un seul widget mixte Pro/Perso).
-4. `Script.setWidget(...)` puis `Script.complete()`.
+Un widget séparé par contexte plutôt qu'un seul widget mixte Pro/Perso : deux instances du même script, différenciées par le paramètre du widget (`pro`/`perso`).
 
-Installation : créer le script dans l'app Scriptable, puis depuis l'écran d'accueil iPhone → "+" → chercher "Scriptable" → choisir la taille → configurer le widget pour pointer vers ce script précis (paramètre du widget = nom du script si plusieurs scripts).
+### Script
+
+```js
+// FluxCap – widget des tâches du jour (Scriptable)
+const CLE_API = "COLLER_LA_CLE_API_ICI";
+const BASE_URL = "https://taches-notes-veille-api.onrender.com";
+const CONTEXTE = (args.widgetParameter || "pro").trim().toLowerCase();
+
+const COULEUR_FOND = new Color("#16211D");
+const COULEUR_TEXTE = new Color("#F2F7F4");
+const COULEUR_MUTED = new Color("#8FA39A");
+const COULEUR_ACCENT = new Color("#0A84FF");
+
+async function chargerJour() {
+  const req = new Request(`${BASE_URL}/jour/${CONTEXTE}`);
+  req.headers = { Authorization: `Bearer ${CLE_API}` };
+  req.timeoutInterval = 10;
+  return await req.loadJSON();
+}
+
+function creerWidgetErreur(message) {
+  const w = new ListWidget();
+  w.backgroundColor = COULEUR_FOND;
+  w.setPadding(14, 14, 14, 14);
+  const t = w.addText("FluxCap");
+  t.font = Font.boldSystemFont(14);
+  t.textColor = COULEUR_TEXTE;
+  w.addSpacer(6);
+  const e = w.addText(message);
+  e.font = Font.systemFont(12);
+  e.textColor = COULEUR_MUTED;
+  return w;
+}
+
+function creerWidget(jour) {
+  const w = new ListWidget();
+  w.backgroundColor = COULEUR_FOND;
+  w.setPadding(14, 14, 14, 14);
+
+  const titre = w.addText(CONTEXTE === "pro" ? "FluxCap · Pro" : "FluxCap · Perso");
+  titre.font = Font.boldSystemFont(14);
+  titre.textColor = COULEUR_TEXTE;
+  w.addSpacer(8);
+
+  const enAttente = (jour.selection || []).filter((s) => s.statut_jour === "en_attente");
+
+  const famille = config.widgetFamily || "medium";
+  const maxAffiches = famille === "small" ? 3 : famille === "large" ? 8 : 5;
+
+  if (enAttente.length === 0) {
+    const vide = w.addText("Rien à traiter aujourd'hui 🎉");
+    vide.font = Font.systemFont(12);
+    vide.textColor = COULEUR_MUTED;
+  } else {
+    enAttente.slice(0, maxAffiches).forEach((s) => {
+      const ligne = w.addText(`•  ${s.tache.titre}`);
+      ligne.font = Font.systemFont(12);
+      ligne.textColor = COULEUR_TEXTE;
+      ligne.lineLimit = 1;
+      w.addSpacer(4);
+    });
+    if (enAttente.length > maxAffiches) {
+      const reste = w.addText(`+ ${enAttente.length - maxAffiches} autre(s)`);
+      reste.font = Font.systemFont(11);
+      reste.textColor = COULEUR_MUTED;
+      w.addSpacer(4);
+    }
+  }
+
+  const veille = (jour.veille_a_traiter || []).length;
+  if (veille > 0) {
+    w.addSpacer(6);
+    const v = w.addText(`${veille} nouveau(x) en veille`);
+    v.font = Font.systemFont(10);
+    v.textColor = COULEUR_ACCENT;
+  }
+
+  return w;
+}
+
+let widget;
+try {
+  const jour = await chargerJour();
+  widget = creerWidget(jour);
+} catch (e) {
+  widget = creerWidgetErreur("Erreur de connexion");
+}
+
+if (config.runsInWidget) {
+  Script.setWidget(widget);
+} else {
+  await widget.presentMedium();
+}
+Script.complete();
+```
+
+Remplacer `COLLER_LA_CLE_API_ICI` par la clé API générée dans FluxCap (panneau Sécurité) — **piège rencontré** : tant que ce placeholder n'est pas remplacé, le widget affiche silencieusement "Rien à traiter aujourd'hui 🎉" au lieu d'une erreur visible. Cause : `Request.loadJSON()` dans Scriptable ne lève pas d'exception sur une réponse HTTP non-2xx (401 non authentifié inclus), donc le `catch` du script n'est jamais déclenché ; le corps JSON de l'erreur n'a pas de champ `selection`, `(jour.selection || [])` retombe sur un tableau vide, et l'écran "vide" s'affiche comme si tout était traité — un faux négatif qui ressemble à un succès. Toujours vérifier la clé en premier si le widget affiche "Rien à traiter" alors que des tâches sont attendues (comparer avec l'écran Aujourd'hui de l'app ou le widget Mac xbar).
+
+Installation : créer le script dans l'app Scriptable, puis depuis l'écran d'accueil iPhone → "+" → chercher "Scriptable" → choisir la taille → configurer le widget pour pointer vers ce script précis, avec `pro` ou `perso` dans le champ Paramètre (un widget par contexte).
 
 ## Mac : xbar
 
