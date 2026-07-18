@@ -1,3 +1,4 @@
+import html
 import ipaddress
 import re
 import socket
@@ -90,22 +91,29 @@ def apercu_lien(url: str):
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         opener = urllib.request.build_opener(_RedirectionValidee)
         with opener.open(req, timeout=5) as resp:
-            html = resp.read(200_000).decode("utf-8", errors="ignore")
+            page_html = resp.read(200_000).decode("utf-8", errors="ignore")
     except (URLError, ValueError, TimeoutError, OSError):
         return {"titre": "", "apercu": ""}
 
-    titre_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    titre_match = re.search(r"<title[^>]*>(.*?)</title>", page_html, re.IGNORECASE | re.DOTALL)
     desc_match = re.search(
-        r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']', page_html, re.IGNORECASE
     )
     if not desc_match:
         # Repli Open Graph : beaucoup de sites n'ont que og:description, pas la balise classique.
         desc_match = re.search(
-            r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE
+            r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']', page_html, re.IGNORECASE
         )
+
+    def _nettoyer(texte: str) -> str:
+        # Décode les entités HTML (&amp;, &#39;...) et réduit les espaces/retours à la
+        # ligne issus de la mise en forme du HTML source, sinon "Nus &amp; culottés"
+        # reste tel quel au lieu d'afficher "Nus & culottés".
+        return " ".join(html.unescape(texte).split())
+
     return {
-        "titre": titre_match.group(1).strip() if titre_match else "",
-        "apercu": desc_match.group(1).strip() if desc_match else "",
+        "titre": _nettoyer(titre_match.group(1)) if titre_match else "",
+        "apercu": _nettoyer(desc_match.group(1)) if desc_match else "",
     }
 
 
