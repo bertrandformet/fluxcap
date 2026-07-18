@@ -146,8 +146,8 @@ export default function Domaines() {
                       </select>
                       <button
                         type="button"
-                        className={d.utilise_pour_taches ? "tnv-badge tnv-badge--accent" : "tnv-badge"}
-                        style={{ border: "none", cursor: "pointer", opacity: d.utilise_pour_taches ? 1 : 0.45, font: "inherit" }}
+                        className={d.utilise_pour_taches ? "tnv-badge tnv-badge--accent" : "tnv-badge tnv-badge--muted"}
+                        style={{ border: "none", cursor: "pointer", font: "inherit" }}
                         onClick={() => basculerUsage(d, "utilise_pour_taches")}
                         title={d.utilise_pour_taches ? "Utilisé pour les tâches — cliquer pour retirer" : "Non utilisé pour les tâches — cliquer pour ajouter"}
                       >
@@ -155,8 +155,8 @@ export default function Domaines() {
                       </button>
                       <button
                         type="button"
-                        className={d.utilise_pour_veille ? "tnv-badge tnv-badge--accent" : "tnv-badge"}
-                        style={{ border: "none", cursor: "pointer", opacity: d.utilise_pour_veille ? 1 : 0.45, font: "inherit" }}
+                        className={d.utilise_pour_veille ? "tnv-badge tnv-badge--accent" : "tnv-badge tnv-badge--muted"}
+                        style={{ border: "none", cursor: "pointer", font: "inherit" }}
                         onClick={() => basculerUsage(d, "utilise_pour_veille")}
                         title={d.utilise_pour_veille ? "Utilisé pour la veille — cliquer pour retirer" : "Non utilisé pour la veille — cliquer pour ajouter"}
                       >

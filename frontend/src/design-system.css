@@ -63,7 +63,7 @@
   --tnv-card: #16211D;
   --tnv-card-2: #1C2723;
   --tnv-text: #F2F7F4;
-  --tnv-text-muted: rgba(230, 245, 238, 0.62);
+  --tnv-text-muted: rgba(230, 245, 238, 0.72);
   --tnv-hairline: rgba(230, 245, 238, 0.12);
   --tnv-accent-bg: rgba(10, 132, 255, 0.2);
   --tnv-shadow-card: none;
@@ -77,7 +77,7 @@
     --tnv-card: #16211D;
     --tnv-card-2: #1C2723;
     --tnv-text: #F2F7F4;
-    --tnv-text-muted: rgba(230, 245, 238, 0.62);
+    --tnv-text-muted: rgba(230, 245, 238, 0.72);
     --tnv-hairline: rgba(230, 245, 238, 0.12);
     --tnv-accent-bg: rgba(10, 132, 255, 0.2);
     --tnv-shadow-card: none;
@@ -146,6 +146,12 @@ a:hover { text-decoration: underline; }
 }
 .tnv-badge--accent { color: var(--tnv-accent); background: var(--tnv-accent-bg); }
 .tnv-badge--warning { color: var(--tnv-warning); background: color-mix(in oklab, var(--tnv-warning) 12%, transparent); }
+/* Distingue "Priorité du jour" des autres raisons de sélection (même famille de teinte
+   que --accent, pas de nouvelle couleur, mais fond plus soutenu + plus de poids) */
+.tnv-badge--priorite { color: var(--tnv-accent); background: color-mix(in oklab, var(--tnv-accent) 26%, transparent); font-weight: 700; }
+/* État désactivé explicite (ex. badges Tâches/Veille sur l'écran Domaines) — remplace un
+   opacity hack sur un bouton sans couleur définie, illisible en thème clair */
+.tnv-badge--muted { color: var(--tnv-text-muted); background: var(--tnv-card-2); }
 
 /* Badge de domaine — la teinte vient de --domain-hue posé inline sur l'élément,
    ex: <span class="tnv-badge tnv-badge--domain" style="--domain-hue:250">   */
@@ -255,6 +261,13 @@ a:hover { text-decoration: underline; }
 .tnv-sheet__panel--floating { border-radius: var(--tnv-radius-modal); }
 .tnv-sheet__grabber { width: 36px; height: 4px; border-radius: 999px; background: var(--tnv-hairline); align-self: center; margin-bottom: 6px; }
 .tnv-sheet__title { font-size: 16px; font-weight: 700; }
+/* En-tête restant visible en scrollant une modale longue (ex. panneau Sources) —
+   position sticky dans le conteneur défilant, qui est le panneau lui-même. */
+.tnv-sheet__header-sticky {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--tnv-card);
+}
 .tnv-sheet__subtitle { font-size: 13px; color: var(--tnv-text-muted); margin-bottom: 6px; }
 
 /* Options de décision — même geste visuel qu'un bouton de liste, jamais un piège */

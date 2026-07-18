@@ -186,7 +186,12 @@ export default function TaskCard({
   const [pomodoroOuvert, setPomodoroOuvert] = useState(false);
   const [detailsOuverts, setDetailsOuverts] = useState(false);
   const [tagsOuverts, setTagsOuverts] = useState(false);
-  const badgeClass = raison === "anti_oubli" ? "tnv-badge tnv-badge--warning" : "tnv-badge tnv-badge--accent";
+  const badgeClass =
+    raison === "anti_oubli"
+      ? "tnv-badge tnv-badge--warning"
+      : raison === "score"
+      ? "tnv-badge tnv-badge--priorite"
+      : "tnv-badge tnv-badge--accent";
   const nbSousTaches = tache.sous_taches ? tache.sous_taches.length : 0;
   const nbJalons = tache.jalons ? tache.jalons.length : 0;
   const nbHistorique = tache.historique_reports ? tache.historique_reports.length : 0;
