@@ -383,3 +383,9 @@
   cursor: pointer;
   color: #fff;
 }
+/* Restaure le fond plein de l'état coché : sans cette règle, le "background: none"
+   ci-dessus l'écrase (même spécificité, cascade CSS) et la coche blanche devient
+   invisible sur fond clair (seul le contour bleu reste visible). */
+.tnv-select-dot--checked {
+  background: var(--tnv-accent);
+}
