@@ -104,11 +104,13 @@ Pas de date de fin à saisir — se désactive manuellement.
 - **Ingestion automatisée** : collecte réelle des flux RSS/Atom (feedparser), déclenchée par un workflow GitHub Actions planifié — limitée aux flux RSS/Atom, pas de scraping générique ni d'API tierces (voir État d'implémentation)
   - Veille Pro : tous les matins avant 7h30
   - Veille Perso : tous les soirs à 20h
+- **Date de publication d'origine** (nouveau) : chaque carte affiche la date de publication fournie par le flux RSS/Atom (extraite par feedparser à l'ingestion), plutôt que la date de collecte par notre serveur. Repli sur la date de collecte si le flux n'expose aucune date d'origine (certains flux n'en fournissent pas).
 
 ## Onglet Notes
 - **Vue à deux volets façon Notes d'Apple** (nouveau) : colonne de gauche compacte avec uniquement le titre de chaque note pour défiler vite, volet de droite avec le détail complet de la note sélectionnée. Sur mobile, un seul volet visible à la fois (liste, puis détail en plein écran au clic, avec bouton "← Retour") ; sur desktop (≥900px) les deux volets restent côte à côte par défaut, avec deux boutons dans l'en-tête pour masquer la colonne (détail plein écran) ou au contraire n'afficher que la colonne (liste plein écran) — sélectionner une note dans ce dernier mode revient automatiquement à la vue partagée
 - **Unique et filtrable par tag**, avec un filtre supplémentaire "Sans tag" (nouveau)
 - **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via les domaines associés à chaque note (au moins un domaine du bon contexte suffit). Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
+- **Date d'ajout affichée** (nouveau) : "Ajoutée le [date]" dans le volet détail, basée sur le moment de création de la note (à distinguer de la date de publication affichée côté Veille pour les items collectés)
 - **Badge d'alerte visuel** ("⚠ Sans tag", nouveau) sur toute note sans domaine, pour éviter qu'elle passe inaperçue
 - Import manuel : champ "coller un lien" avec récupération auto du titre/aperçu
 - **Éditeur de texte markdown** (nouveau) avec barre d'outils (titres, gras, italique, barré, code, listes, case à cocher, citation, lien, ligne horizontale) et bascule aperçu/édition, pour rédiger des notes de texte libres et pas seulement importer des liens
