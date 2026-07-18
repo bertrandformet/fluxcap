@@ -13,6 +13,11 @@ name: Planification veille et notifications
 # à Perso de basculer sur le rythme week-end pendant la semaine quand les congés sont
 # actifs, sans dépendre d'un cron figé sur lun-ven/sam-dim.
 #
+# Pro clôture le vendredi à 13h au lieu de 17h30 (remplace, pas en plus) — contrairement
+# à Perso, Pro n'a pas de logique de créneau côté backend : notifier_cloture() envoie
+# simplement le récap de ce qui est en attente, quelle que soit l'heure d'appel. Il
+# suffit donc de découper le cron lun-jeu/vendredi, sans changement de code backend.
+#
 # Secrets de repo requis (Settings → Secrets and variables → Actions) :
 #   BACKEND_URL       ex. https://taches-notes-veille-api.onrender.com
 #   SCHEDULER_SECRET  même valeur que la variable d'env SCHEDULER_SECRET sur Render
@@ -22,7 +27,8 @@ on:
     - cron: "0 5 * * 1-5"    # veille Pro — 6h Paris, lun-ven
     - cron: "0 19 * * *"     # veille Perso — 20h Paris, tous les jours
     - cron: "30 6 * * 1-5"   # notif Pro ouverture — 7h30 Paris, lun-ven
-    - cron: "30 16 * * 1-5"  # notif Pro clôture — 17h30 Paris, lun-ven
+    - cron: "30 16 * * 1-4"  # notif Pro clôture — 17h30 Paris, lun-jeu
+    - cron: "0 12 * * 5"     # notif Pro clôture — 13h00 Paris, vendredi
     - cron: "0 20 * * *"     # notif Perso ouverture (rythme semaine) — 21h00 Paris, tous les jours
     - cron: "1 20 * * *"     # notif Perso clôture (rythme weekend) — 21h01 Paris, tous les jours
     - cron: "0 6 * * *"      # notif Perso clôture (rythme semaine) — 7h Paris, tous les jours
@@ -38,6 +44,7 @@ on:
           - veille_perso
           - notif_pro_ouverture
           - notif_pro_cloture
+          - notif_pro_cloture_vendredi
           - notif_perso_ouverture_semaine
           - notif_perso_cloture_semaine
           - notif_perso_ouverture_weekend
@@ -62,7 +69,9 @@ jobs:
               ENDPOINT="/planification/veille/perso" ;;
             notif_pro_ouverture|"30 6 * * 1-5")
               ENDPOINT="/planification/notification/pro/ouverture" ;;
-            notif_pro_cloture|"30 16 * * 1-5")
+            notif_pro_cloture|"30 16 * * 1-4")
+              ENDPOINT="/planification/notification/pro/cloture" ;;
+            notif_pro_cloture_vendredi|"0 12 * * 5")
               ENDPOINT="/planification/notification/pro/cloture" ;;
             notif_perso_ouverture_semaine|"0 20 * * *")
               ENDPOINT="/planification/notification/perso/ouverture?creneau=semaine" ;;
