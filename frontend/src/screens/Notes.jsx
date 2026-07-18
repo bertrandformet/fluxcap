@@ -63,6 +63,7 @@ export default function Notes({ contexte }) {
   const [editionDomaineIds, setEditionDomaineIds] = useState(new Set());
 
   const [transformees, setTransformees] = useState([]);
+  const [tagsRapidesOuverts, setTagsRapidesOuverts] = useState(false);
 
   const [modeSelection, setModeSelection] = useState(false);
   const [selection, setSelection] = useState(new Set());
@@ -156,6 +157,17 @@ export default function Notes({ contexte }) {
     }
   }
 
+  async function basculerTagRapide(note, domaineId) {
+    try {
+      const actuels = note.domaines.map((d) => d.id);
+      const nouveaux = actuels.includes(domaineId) ? actuels.filter((x) => x !== domaineId) : [...actuels, domaineId];
+      await api.modifierNote(note.id, { domaine_ids: nouveaux });
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
   async function supprimer(note) {
     if (!window.confirm(`Supprimer la note « ${note.titre} » ?`)) return;
     try {
@@ -217,6 +229,7 @@ export default function Notes({ contexte }) {
       return;
     }
     setNoteSelectionneeId(id);
+    setTagsRapidesOuverts(false);
     // Choisir une note en mode "liste seule" doit rouvrir le volet de détail, sinon rien ne s'affiche.
     setModeDesktop((m) => (m === "liste" ? "split" : m));
   }
@@ -520,7 +533,32 @@ export default function Notes({ contexte }) {
                         ) : (
                           <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>
                         )}
+                        <button
+                          type="button"
+                          className="tnv-chip tnv-chip--tag-rapide"
+                          onClick={() => setTagsRapidesOuverts((o) => !o)}
+                          title="Ajouter/retirer un tag"
+                          aria-label="Ajouter/retirer un tag"
+                        >
+                          + tag
+                        </button>
                       </div>
+                      {tagsRapidesOuverts && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                          {domaines.map((d) => (
+                            <button
+                              key={d.id}
+                              type="button"
+                              className={
+                                noteSelectionnee.domaines.some((nd) => nd.id === d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"
+                              }
+                              onClick={() => basculerTagRapide(noteSelectionnee, d.id)}
+                            >
+                              {d.nom}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 

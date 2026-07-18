@@ -342,3 +342,11 @@
   padding-left: 0;
   margin-bottom: 4px;
 }
+
+/* ---- Ajout rapide de tag depuis une carte (tâche ou note) ---- */
+.tnv-chip--tag-rapide {
+  background: transparent;
+  border-style: dashed;
+  color: var(--tnv-text-muted);
+  padding: 5px 10px;
+}

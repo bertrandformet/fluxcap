@@ -171,9 +171,21 @@ function DetailsTache({ tache }) {
   );
 }
 
-export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteToggle, onRealiser, onSupprimer, dense, children }) {
+export default function TaskCard({
+  tache,
+  raison,
+  onEpingleToggle,
+  onRecurrenteToggle,
+  onRealiser,
+  onSupprimer,
+  domainesDisponibles,
+  onDomainesChange,
+  dense,
+  children,
+}) {
   const [pomodoroOuvert, setPomodoroOuvert] = useState(false);
   const [detailsOuverts, setDetailsOuverts] = useState(false);
+  const [tagsOuverts, setTagsOuverts] = useState(false);
   const badgeClass = raison === "anti_oubli" ? "tnv-badge tnv-badge--warning" : "tnv-badge tnv-badge--accent";
   const nbSousTaches = tache.sous_taches ? tache.sous_taches.length : 0;
   const nbJalons = tache.jalons ? tache.jalons.length : 0;
@@ -182,6 +194,12 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
   const echeanceLointaine = tache.date_fin && joursAvantEcheance(tache.date_fin) > SEUIL_JOURS_ECHEANCE_LOINTAINE;
   const descriptionLongue = tache.description && tache.description.length > SEUIL_LONGUEUR_DESCRIPTION;
   const suggererDecoupage = nbSousTaches === 0 && (echeanceLointaine || descriptionLongue);
+
+  function basculerDomaine(id) {
+    const actuels = tache.domaines.map((d) => d.id);
+    const nouveaux = actuels.includes(id) ? actuels.filter((x) => x !== id) : [...actuels, id];
+    onDomainesChange(tache, nouveaux);
+  }
 
   return (
     <article className={dense ? "tnv-task-card tnv-task-card--dense" : "tnv-card tnv-task-card"}>
@@ -195,12 +213,37 @@ export default function TaskCard({ tache, raison, onEpingleToggle, onRecurrenteT
         <span className="tnv-task-card__title">{tache.titre}</span>
         <div className="tnv-task-card__meta">
           <DomainBadges domaines={tache.domaines} />
+          {onDomainesChange && (
+            <button
+              type="button"
+              className="tnv-chip tnv-chip--tag-rapide"
+              onClick={() => setTagsOuverts((o) => !o)}
+              title="Ajouter/retirer un tag"
+              aria-label="Ajouter/retirer un tag"
+            >
+              + tag
+            </button>
+          )}
           <span className="tnv-meta-text">
             {LABELS_PRIORITE[tache.priorite]}
             {tache.date_fin && ` · échéance ${tache.date_fin}`}
           </span>
           {raison && <span className={badgeClass}>{LABELS_RAISON[raison]}</span>}
         </div>
+        {tagsOuverts && domainesDisponibles && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {domainesDisponibles.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                className={tache.domaines.some((td) => td.id === d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                onClick={() => basculerDomaine(d.id)}
+              >
+                {d.nom}
+              </button>
+            ))}
+          </div>
+        )}
         {tache.description && <p className="tnv-meta-text">{tache.description}</p>}
         {children}
 
