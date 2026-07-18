@@ -505,7 +505,7 @@ export default function Notes({ contexte }) {
                       {selection.has(n.id) && <IconCheckmark size={12} />}
                     </button>
                   )}
-                  <div className="tnv-notes-row__title">{n.titre}</div>
+                  <div className="tnv-notes-row__title" title={n.titre}>{n.titre}</div>
                 </div>
               ))}
           </div>

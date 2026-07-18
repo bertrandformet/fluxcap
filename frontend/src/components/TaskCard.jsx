@@ -267,7 +267,8 @@ export default function TaskCard({
               onClick={() => setDetailsOuverts(!detailsOuverts)}
               style={{
                 display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer",
-                padding: 0, color: "var(--tnv-text-muted)", font: "inherit", fontSize: "var(--tnv-size-caption)", alignSelf: "flex-start",
+                padding: "0 4px", minHeight: 44, color: "var(--tnv-text-muted)", font: "inherit", fontSize: "var(--tnv-size-caption)",
+                alignSelf: "flex-start", marginLeft: -4,
               }}
             >
               <span style={{ display: "inline-flex", transform: detailsOuverts ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>

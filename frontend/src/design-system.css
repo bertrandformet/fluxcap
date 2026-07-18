@@ -194,8 +194,9 @@ a:hover { text-decoration: underline; }
 .tnv-icon-btn--active { color: var(--tnv-accent); }
 
 .tnv-fab {
-  width: 34px; height: 34px; border-radius: 999px; border: none; background: var(--tnv-accent);
+  width: 44px; height: 44px; border-radius: 999px; border: none; background: var(--tnv-accent);
   color: #fff; font-size: 18px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
 /* ---- 5. Sélecteur de contexte Pro/Perso & chips filtrantes ---------------- */
@@ -317,7 +318,7 @@ a:hover { text-decoration: underline; }
 /* ---- 9. Tableau de bord : barres factuelles -------------------------------- */
 .tnv-bar-row { display: flex; flex-direction: column; gap: 6px; }
 .tnv-bar-row__labels { display: flex; justify-content: space-between; font-size: 13.5px; }
-.tnv-bar-track { height: 8px; border-radius: 999px; background: var(--tnv-card-2); overflow: hidden; }
+.tnv-bar-track { height: 8px; border-radius: 999px; background: var(--tnv-card-2); border: 1px solid var(--tnv-hairline); box-sizing: border-box; overflow: hidden; }
 .tnv-bar-fill { height: 100%; border-radius: 999px; background: var(--tnv-accent); } /* width en style inline, ex: width:44% */
 
 /* ---- 10. Switch (sources de veille, congés) -------------------------------- */
