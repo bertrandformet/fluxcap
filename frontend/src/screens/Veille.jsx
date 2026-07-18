@@ -4,6 +4,7 @@ import { DomainBadges } from "../components/DomainBadge.jsx";
 import Switch from "../components/Switch.jsx";
 import { IconArrowRight, IconBookmark, IconIgnore, IconTrash } from "../components/Icons.jsx";
 import { domainHue } from "../utils/domainHue.js";
+import { formatDate } from "../utils/formatDate.js";
 
 function prochaineEcheance() {
   const maintenant = new Date();
@@ -200,9 +201,12 @@ export default function Veille({ contexte }) {
                   )}
                   {item.apercu && <p className="tnv-meta-text">{item.apercu}</p>}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-                    <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
-                      {item.source || item.url}
-                    </a>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                      <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                        {item.source || item.url}
+                      </a>
+                      <span className="tnv-meta-text">{formatDate(item.date_publication || item.date_ingestion)}</span>
+                    </div>
                     <div style={{ display: "flex", gap: 2 }}>
                       <button className="tnv-icon-btn" onClick={() => agir(item, "ignorer")} title="Ignorer" aria-label="Ignorer">
                         <IconIgnore size={18} />

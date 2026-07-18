@@ -180,6 +180,10 @@ class VeilleItem(Base):
     apercu: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     source: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     date_ingestion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    # Date de publication d'origine fournie par le flux RSS/Atom (nullable : certains flux
+    # ne l'exposent pas). Affichée en priorité sur date_ingestion, qui reste le seul horodatage
+    # fiable à 100% (date de collecte par notre serveur) mais n'a pas de sens éditorial.
+    date_publication: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     statut: Mapped[StatutVeille] = mapped_column(Enum(StatutVeille), nullable=False, default=StatutVeille.nouveau)
     tache_generee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("taches.id"), nullable=True)
     note_generee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("notes.id"), nullable=True)

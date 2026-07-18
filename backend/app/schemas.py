@@ -170,6 +170,7 @@ class VeilleItemOut(VeilleItemBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     date_ingestion: datetime
+    date_publication: Optional[datetime] = None
     statut: StatutVeille
     tache_generee_id: Optional[int]
     note_generee_id: Optional[int]

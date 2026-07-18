@@ -140,6 +140,7 @@ def seed() -> None:
                 apercu="Retour sur une expérimentation menée dans trois équipes réparties sur plusieurs sites : "
                 "rituels adaptés au distanciel, cadence de synchronisation réduite et outils partagés.",
                 source="Flux Pro",
+                date_publication=datetime.utcnow() - timedelta(days=2),
             ),
             VeilleItem(
                 titre="Retour d'expérience sur un projet interne",
@@ -147,9 +148,12 @@ def seed() -> None:
                 apercu="Bilan à froid d'un projet mené sur six mois : ce qui a bien fonctionné, les points de "
                 "friction avec les parties prenantes et les ajustements recommandés pour la suite.",
                 source="Flux Pro",
+                date_publication=datetime.utcnow() - timedelta(days=5),
             ),
             VeilleItem(
-                # Exemple multi-domaines : pertinent pour deux domaines Pro à la fois.
+                # Exemple multi-domaines : pertinent pour deux domaines Pro à la fois. Pas de
+                # date_publication : simule un flux qui n'expose pas de date d'origine, pour
+                # vérifier le repli sur date_ingestion à l'affichage.
                 titre="Publication sur l'IA générative en administration",
                 url="https://example.org/veille/ia-generative-admin",
                 apercu="Panorama des usages émergents de l'IA générative dans les services publics, avec un focus "
@@ -162,6 +166,7 @@ def seed() -> None:
                 apercu="Synthèse de plusieurs études sur les techniques de blocage de temps et leurs limites, "
                 "avec des pistes concrètes pour réduire la fragmentation de l'attention.",
                 source="Flux Perso",
+                date_publication=datetime.utcnow() - timedelta(days=1),
             ),
         ]
         veille_items[0].domaines = [domaine_a]

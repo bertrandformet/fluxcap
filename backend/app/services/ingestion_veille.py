@@ -4,6 +4,8 @@ appel planifié externe (voir app/routers/veille.py + le workflow GitHub Actions
 import html
 import re
 import socket
+from datetime import datetime
+from typing import Optional
 
 import feedparser
 from sqlalchemy.orm import Session
@@ -20,6 +22,17 @@ def _texte_brut(html_brut: str) -> str:
     texte = html.unescape(sans_balises)
     texte = " ".join(texte.split())
     return texte[:LONGUEUR_MAX_APERCU]
+
+
+def _date_publication(entree) -> Optional[datetime]:
+    """feedparser normalise la date de publication (RSS `pubDate`, Atom `published`...)
+    en `published_parsed`, avec `updated_parsed` en repli si seule une date de mise à jour
+    est fournie. Certains flux n'exposent ni l'un ni l'autre — repli None dans ce cas
+    (l'UI retombe alors sur la date de collecte)."""
+    struct = entree.get("published_parsed") or entree.get("updated_parsed")
+    if not struct:
+        return None
+    return datetime(*struct[:6])
 
 
 def ingerer_source(db: Session, source: SourceVeille) -> int:
@@ -50,6 +63,7 @@ def ingerer_source(db: Session, source: SourceVeille) -> int:
             apercu=_texte_brut(entree.get("summary", "")),
             source=source.nom,
             statut=StatutVeille.nouveau,
+            date_publication=_date_publication(entree),
         )
         nouvel_item.domaines = [domaine]
         db.add(nouvel_item)

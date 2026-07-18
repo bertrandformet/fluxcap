@@ -4,6 +4,7 @@ import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
 import { DomainBadges } from "../components/DomainBadge.jsx";
 import { IconColonneMasquer, IconColonneSeule, IconDownload, IconEdit, IconPaperclip, IconTrash } from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
+import { formatDate } from "../utils/formatDate.js";
 
 function formatTaille(octets) {
   if (octets < 1024) return `${octets} o`;
@@ -527,6 +528,7 @@ export default function Notes({ contexte }) {
                   <div className="tnv-note-card__head">
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span className="tnv-task-card__title">{noteSelectionnee.titre}</span>
+                      <p className="tnv-meta-text" style={{ marginTop: 2 }}>Ajoutée le {formatDate(noteSelectionnee.cree_le)}</p>
                       <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
                         {noteSelectionnee.domaines.length > 0 ? (
                           <DomainBadges domaines={noteSelectionnee.domaines} />
