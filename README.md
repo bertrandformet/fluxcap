@@ -94,6 +94,17 @@ Toutes les variables d'environnement nécessaires (connexion Postgres, clés Sup
 
 Le plan gratuit de Render met le service en veille après ~15 min d'inactivité (cold start lent au réveil) — un moniteur UptimeRobot ping `/health` toutes les 5 minutes pour l'éviter (un essai précédent avec un workflow GitHub Actions planifié a été abandonné : les crons GitHub Actions ne sont pas fiables sur des intervalles aussi courts, retards observés de 60-95 min).
 
+### Migrations de schéma
+
+Pas d'Alembic ni d'outil de migration : `Base.metadata.create_all()` (appelé au démarrage du backend) ne crée que les tables **manquantes**, jamais les colonnes ajoutées à une table qui existe déjà en prod. Tout changement de schéma sur une table existante nécessite donc un `ALTER TABLE` (ou `CREATE TABLE`, `INSERT` de backfill...) manuel, à exécuter dans le SQL Editor de Supabase.
+
+Ordre à respecter pour un changement qui ajoute des tables/colonnes dont le nouveau code a besoin pour fonctionner :
+1. Exécuter le SQL de migration dans Supabase (création de tables, backfill des données existantes) **avant** de pousser le code qui en dépend — sinon, entre le déploiement et la migration, le nouveau code lirait des tables/colonnes vides ou absentes.
+2. Pousser le code, laisser Render redéployer.
+3. Une fois le bon fonctionnement confirmé en prod, exécuter en dernier le nettoyage des anciennes colonnes/tables devenues inutiles (`DROP COLUMN`...) — cette étape n'est jamais urgente puisque le nouveau code ne les lit plus.
+
+Si l'éditeur SQL de Supabase affiche un avertissement Row Level Security (RLS) lors d'une création de table : répondre **"Run without RLS"**. Le backend n'utilise jamais le SDK client Supabase ni les clés anon/authenticated (seulement `SUPABASE_SERVICE_KEY` pour le storage et une connexion Postgres directe pour l'ORM), donc RLS n'a aucun effet protecteur ici — le frontend ne parle jamais à Supabase directement, toujours via l'API FastAPI.
+
 ## Démarrage local
 
 ### Backend
