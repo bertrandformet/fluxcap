@@ -64,6 +64,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 - **Tâches récurrentes** (nouveau) : une tâche peut être marquée récurrente ; une fois réalisée elle se régénère automatiquement pour le lendemain au lieu de rester clôturée. Les tâches récurrentes ne concurrencent jamais le quota des 3-4 : elles ont leur propre bloc dédié
 - **Veille toujours visible séparément**, jamais en concurrence avec les 3-4 tâches — regroupée avec le bloc des tâches récurrentes (même traitement visuel : hors quota, toujours accessible)
 - **Mécanisme anti-oubli** : une tâche jamais touchée depuis **7 jours** (14 initialement, réduit en cours de POC) est forcée une fois dans les 3-4, avec décision obligatoire (garder / reprioriser / abandonner), pas de report possible sur ce cas
+- **Suppression directe** (nouveau) : bouton "Supprimer" (icône corbeille, avec confirmation) sur chaque carte de tâche, en plus des décisions de clôture (reporter/abandonner) — utile pour retirer une tâche créée par erreur sans attendre le soir
 
 ## Écran de clôture (soir)
 - Liste des tâches du jour avec statut fait/pas fait
@@ -103,7 +104,8 @@ Pas de date de fin à saisir — se désactive manuellement.
   - Veille Perso : tous les soirs à 20h
 
 ## Onglet Notes
-- **Unique et filtrable par tag** (pas séparé Pro/Perso — les tags de domaine suffisent à s'y retrouver), avec un filtre supplémentaire "Sans tag" (nouveau)
+- **Unique et filtrable par tag**, avec un filtre supplémentaire "Sans tag" (nouveau)
+- **Filtrage par contexte Pro/Perso** (nouveau) : la liste suit le sélecteur Pro/Perso global, filtré via le domaine associé à chaque note. Une note sans tag n'a pas de contexte déterminable et reste **toujours visible des deux côtés**, plutôt que masquée arbitrairement d'un côté
 - **Badge d'alerte visuel** ("⚠ Sans tag", nouveau) sur toute note sans domaine, pour éviter qu'elle passe inaperçue
 - Import manuel : champ "coller un lien" avec récupération auto du titre/aperçu
 - **Éditeur de texte markdown** (nouveau) avec barre d'outils (titres, gras, italique, barré, code, listes, case à cocher, citation, lien, ligne horizontale) et bascule aperçu/édition, pour rédiger des notes de texte libres et pas seulement importer des liens
