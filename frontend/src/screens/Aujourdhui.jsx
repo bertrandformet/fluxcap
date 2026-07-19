@@ -218,7 +218,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
       )}
 
       <div className={enPauseConges ? "tnv-card tnv-card--dashed tnv-grisees" : "tnv-card tnv-card--dashed"}>
-        <span className="tnv-section-label">Récurrentes &amp; veille · hors quota</span>
+        <span className="tnv-section-label">Tâches récurrentes · hors quota</span>
 
         {recurrentes.length === 0 && jour.veille_a_traiter.length === 0 ? (
           <p className="tnv-empty" style={{ marginTop: 10 }}>
