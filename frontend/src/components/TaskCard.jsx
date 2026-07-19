@@ -237,7 +237,10 @@ export default function TaskCard({
         </div>
         {tagsOuverts && domainesDisponibles && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {domainesDisponibles.map((d) => (
+            {/* Union avec les domaines déjà sur la tâche : un domaine retiré de la liste
+                "utilisable pour les tâches" (écran Domaines) doit rester décochable ici
+                même s'il n'est plus proposé pour un nouvel ajout. */}
+            {[...domainesDisponibles, ...tache.domaines.filter((td) => !domainesDisponibles.some((d) => d.id === td.id))].map((d) => (
               <button
                 key={d.id}
                 type="button"
