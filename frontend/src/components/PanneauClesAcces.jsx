@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
-import { IconTrash } from "./Icons.jsx";
+import { IconIgnore, IconTrash } from "./Icons.jsx";
 import { estWebauthnDisponible, optionsInscriptionDepuisJson, serialiserCredentialInscription } from "../utils/webauthn.js";
 
 export default function PanneauClesAcces({ onClose, onDeconnecte }) {
@@ -148,7 +148,12 @@ export default function PanneauClesAcces({ onClose, onDeconnecte }) {
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: "85vh", overflow: "auto" }}
       >
-        <span className="tnv-sheet__title">Sécurité</span>
+        <div className="tnv-sheet__header-sticky">
+          <span className="tnv-sheet__title">Sécurité</span>
+          <button className="tnv-icon-btn" onClick={onClose} title="Fermer" aria-label="Fermer">
+            <IconIgnore size={16} />
+          </button>
+        </div>
 
         <div>
           <p className="tnv-task-card__title" style={{ marginBottom: 4 }}>Mot de passe</p>
