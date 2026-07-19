@@ -396,3 +396,30 @@
 .tnv-meta-text {
   overflow-wrap: anywhere;
 }
+
+/* Pied de page, présent sur tous les écrans — marge basse plus grande sous 900px
+   pour ne pas se retrouver caché derrière la barre d'onglets flottante mobile
+   (même seuil que .tnv-bulk-bar, ~63px de barre + 14px de marge). */
+.tnv-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: var(--tnv-space-5) var(--tnv-space-4) 90px;
+  font-size: var(--tnv-size-label);
+  color: var(--tnv-text-muted);
+}
+.tnv-footer a {
+  color: var(--tnv-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tnv-footer a:hover {
+  color: var(--tnv-text);
+}
+@media (min-width: 900px) {
+  .tnv-footer {
+    padding-bottom: var(--tnv-space-5);
+  }
+}

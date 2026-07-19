@@ -213,6 +213,14 @@ export default function App() {
         {ecran === "bord" && <TableauDeBord contexte={contexte} />}
       </main>
 
+      <footer className="tnv-footer">
+        <span>FluxCap © Bertrand Formet</span>
+        <span aria-hidden="true">·</span>
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/bertrandformet/fluxcap" target="_blank" rel="noreferrer">GitHub</a>
+      </footer>
+
       <nav className="tnv-tabbar">
         {ECRANS.map((e) => (
           <button
