@@ -23,9 +23,20 @@ FluxCap écarte les usines à gaz et les processus rigides pour se concentrer su
 
 ## En pratique
 
-Application personnelle de gestion des tâches et de la veille — deux contextes séparés (Pro / Perso), sélection quotidienne limitée à 3-4 tâches, clôture avec décision obligatoire, veille par domaine, notes filtrables par tag.
+Application personnelle de gestion des tâches, des notes et de la veille, en deux contextes séparés **Pro / Perso** (chacun son rythme, ses notifications email d'ouverture/clôture, son mode congés) :
 
-Voir [spec-fluxcap.md](./spec-fluxcap.md) pour la spécification complète, [raccourci-partage.md](./raccourci-partage.md) pour la capture rapide de notes (raccourci Apple Shortcuts ou favori Chrome), et [widget-taches.md](./widget-taches.md) pour le widget tâches en cours (iPhone via Scriptable, Mac via xbar).
+- **Aujourd'hui** — sélection quotidienne limitée à 3-4 tâches (score priorité × urgence, épinglage, report remonté, alerte anti-oubli après 7 jours d'inactivité), sous-tâches et jalons, historique de report.
+- **Clôture** — décision obligatoire en fin de journée sur chaque tâche du jour (réalisée / reportée / abandonnée), sans compteur de "streak" culpabilisant.
+- **Veille** — flux RSS/Atom groupés par domaine, collecte automatique planifiée, trois actions par article (ignorer / garder pour lecture / transformer en tâche).
+- **Notes** — vue à deux volets, éditeur markdown, pièces jointes, fusion de plusieurs notes en une seule ou en tâche, capture externe sans ouvrir l'app (raccourci Apple Shortcuts ou favori Chrome — voir [raccourci-partage.md](./raccourci-partage.md)).
+- **Domaines** — tags entièrement libres et gérables depuis l'app, distincts pour les tâches et pour la veille.
+- **Tableau de bord** — vue d'ensemble des tâches actives par domaine et par priorité.
+- **Pomodoro** intégré sur les tâches administratives (durée réglable).
+- **Sécurité** — mot de passe et/ou clé d'accès WebAuthn (Face ID/Touch ID), révocation des sessions, clé API dédiée pour les intégrations externes.
+- **Widget** des tâches en cours sur iPhone (Scriptable) et Mac (xbar) — voir [widget-taches.md](./widget-taches.md).
+- PWA installable, thème clair/sombre.
+
+Voir [spec-fluxcap.md](./spec-fluxcap.md) pour le détail complet de chaque fonctionnalité et son état d'implémentation.
 
 ## Captures
 
