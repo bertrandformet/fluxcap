@@ -115,6 +115,20 @@ Points à garder en tête :
 - Pour Perso, qui a deux rythmes selon le jour (semaine 21h/7h, week-end 9h/21h — voir `app/services/notification_email.py::_bon_creneau`), c'est le backend qui décide du bon rythme à appliquer, pas le cron : les deux créneaux sont déclenchés tous les jours, un seul aboutit réellement selon le vrai jour de la semaine (et le mode congés). Pro n'a pas cette logique de créneau — chaque appel du workflow envoie simplement le récap de ce qui est en attente au moment de l'appel, donc changer son horaire (y compris juste pour un jour) ne touche que le cron, jamais le code backend.
 - Chaque entrée `cron:` a une option de déclenchement manuel correspondante dans `workflow_dispatch` (menu **Actions → Planification veille et notifications → Run workflow** sur GitHub) — pratique pour tester un changement d'horaire sans attendre l'heure ou le jour réel.
 
+### Alternative : serveur unique auto-hébergé
+
+Le déploiement actuel (Vercel + Render + Supabase + GitHub Actions) répartit l'app sur quatre plans gratuits. Rien n'empêche de tout consolider sur un seul serveur si on préfère gérer une seule machine plutôt que quatre tableaux de bord — voici ce qu'il faudrait, dans l'ordre où ça devient bloquant :
+
+- **Base de données** : Postgres auto-hébergé (ou SQLite pour un usage strictement mono-utilisateur, mais Postgres colle mieux à ce qui a déjà été testé — enums natifs, contrainte d'unicité sur `selection_jour`). Un conteneur Postgres standard suffit, sans équivalent du dashboard Supabase.
+- **Pièces jointes** : rien à faire — `backend/app/services/stockage.py` retombe déjà sur le disque local dès qu'aucune variable Supabase n'est renseignée. Il suffit de monter un volume persistant pour ce répertoire.
+- **Frontend** : servir le build statique (`npm run build`, dossier `frontend/dist`) directement via un reverse proxy devant FastAPI, plutôt que Vercel.
+- **Reverse proxy + TLS** : un point qui n'existe pas aujourd'hui (Vercel/Render gèrent ça pour nous) — [Caddy](https://caddyserver.com) est le plus simple pour avoir du HTTPS automatique (obligatoire pour l'installation PWA) sans certificat à renouveler à la main.
+- **Tâches planifiées** : remplacer les crons GitHub Actions (`.github/workflows/planification.yml`) par un cron système ou un scheduler in-process (ex. APScheduler) qui appelle les mêmes endpoints `/planification/...`. Ça réglerait au passage la fiabilité douteuse des crons GitHub Actions sur intervalle court, déjà documentée plus haut.
+- **Email (Resend)** resterait externe — auto-héberger l'envoi d'emails n'a pas de sens pour ce volume d'usage.
+- **Ping anti-veille (UptimeRobot)** deviendrait inutile : c'est spécifiquement un contournement du cold start du plan gratuit Render, qui ne concerne pas un serveur toujours allumé.
+
+Le vrai compromis n'est pas technique mais opérationnel : ce changement fait passer d'une architecture zéro-ops (mais éclatée) à un seul serveur plus simple à raisonner, en échange de la responsabilité — jusqu'ici gratuite et automatique — des sauvegardes, des correctifs de sécurité et de la disponibilité. Docker Compose (backend + Postgres + Caddy) serait l'assemblage le plus simple à maintenir si ce chemin est un jour suivi.
+
 ## Démarrage local
 
 ### Backend
