@@ -214,11 +214,11 @@ export default function Veille({ contexte }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                       {urlHttpSure(item.url) ? (
-                        <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                        <a href={item.url} target="_blank" rel="noreferrer" className="tnv-meta-text tnv-meta-text--url">
                           {item.source || item.url}
                         </a>
                       ) : (
-                        <span className="tnv-meta-text">{item.source || item.url}</span>
+                        <span className="tnv-meta-text tnv-meta-text--url">{item.source || item.url}</span>
                       )}
                       <span className="tnv-meta-text">{formatDate(item.date_publication || item.date_ingestion)}</span>
                     </div>
@@ -316,7 +316,7 @@ export default function Veille({ contexte }) {
                   >
                     <div style={{ flex: 1, minWidth: 140, opacity: s.actif ? 1 : 0.5 }}>
                       <div className="tnv-task-card__title" style={{ fontSize: "var(--tnv-size-body)" }}>{s.nom}</div>
-                      <a href={s.url} target="_blank" rel="noreferrer" className="tnv-meta-text">
+                      <a href={s.url} target="_blank" rel="noreferrer" className="tnv-meta-text tnv-meta-text--url">
                         {s.url}
                       </a>
                     </div>

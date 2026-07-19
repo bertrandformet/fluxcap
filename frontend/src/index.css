@@ -392,8 +392,12 @@
 
 /* Une URL longue sans espace (lien de note, source RSS...) déborde sinon du bord
    de la carte au lieu de passer à la ligne — pas de retour à la ligne forcé par
-   défaut sur du texte sans espaces. */
-.tnv-meta-text {
+   défaut sur du texte sans espaces. Classe dédiée plutôt qu'appliquée à
+   .tnv-meta-text globalement : "anywhere" réduit aussi la taille min-content
+   calculée par le navigateur pour du texte normal (avec espaces), ce qui casse
+   par ex. "Aujourd'hui · échéance ..." caractère par caractère dès que la ligne
+   flex qui le contient est un peu à l'étroit (carte récurrente en mobile). */
+.tnv-meta-text--url {
   overflow-wrap: anywhere;
 }
 
