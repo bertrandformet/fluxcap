@@ -73,8 +73,9 @@ export function IconLoop({ size = 18 }) {
 export function IconTomato({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <circle cx="10" cy="11" r="8" fill="#FF6B57" />
-      <path d="M10 3c1-1.5 3-2 4-1.4" fill="none" stroke="var(--tnv-success)" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="10" cy="13" r="7.2" fill="#E8483B" />
+      <path d="M10 6.5v13M4 13h12" stroke="var(--tnv-text)" strokeWidth="0.6" strokeOpacity="0.15" />
+      <polygon points="10,0.5 11.3,3.9 14.8,4 12,6.1 13,9.5 10,7.5 7,9.5 8,6.1 5.2,4 8.7,3.9" fill="#189067" />
     </svg>
   );
 }

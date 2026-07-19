@@ -397,6 +397,22 @@
   overflow-wrap: anywhere;
 }
 
+/* Carte de tâche en écran étroit : les boutons d'action (récurrence/épingle/
+   suppression) prenaient de la place à côté du titre, qui se retrouvait comprimé
+   dans une colonne très fine et s'étalait sur de nombreuses lignes peu lisibles.
+   Les fait passer sur leur propre ligne, en bas de carte, plutôt qu'à côté du
+   titre — desktop inchangé (assez de largeur pour rester côte à côte). */
+@media (max-width: 480px) {
+  .tnv-task-card {
+    flex-wrap: wrap;
+  }
+  .tnv-task-card__actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    padding-top: 2px;
+  }
+}
+
 /* Pied de page, présent sur tous les écrans — marge basse plus grande sous 900px
    pour ne pas se retrouver caché derrière la barre d'onglets flottante mobile
    (même seuil que .tnv-bulk-bar, ~63px de barre + 14px de marge). */

@@ -135,6 +135,7 @@ export default function Pomodoro({ tache, onClose }) {
   return (
     <div className="tnv-overlay tnv-modal-center" onClick={onClose}>
       <div className="tnv-pomodoro" onClick={(e) => e.stopPropagation()}>
+        <IconTomato size={40} />
         <span className="tnv-pomodoro__task">{tache?.titre}</span>
 
         {phase === "reglage" ? (
