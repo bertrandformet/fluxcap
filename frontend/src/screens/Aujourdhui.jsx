@@ -67,6 +67,15 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     }
   }
 
+  async function modifierTache(tache, updates) {
+    try {
+      await api.updateTache(tache.id, updates);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
   function basculerDomaineFormulaire(id) {
     setDomaineIds((s) => {
       const nouveau = new Set(s);
@@ -188,6 +197,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
             onRecurrenteToggle={basculerRecurrente}
             onRealiser={() => marquerRealise(s)}
             onSupprimer={supprimerTache}
+            onModifier={modifierTache}
             domainesDisponibles={domaines}
             onDomainesChange={modifierDomainesTache}
           />
@@ -238,6 +248,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
                     onRecurrenteToggle={basculerRecurrente}
                     onRealiser={() => marquerRealise(s)}
                     onSupprimer={supprimerTache}
+                    onModifier={modifierTache}
                     domainesDisponibles={domaines}
                     onDomainesChange={modifierDomainesTache}
                   />

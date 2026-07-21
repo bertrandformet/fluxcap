@@ -17,7 +17,8 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
 | Écran de clôture (décision obligatoire, compteur sans streak) | ✅ |
-| Modèle de tâche : titre, domaine(s), type, priorité, date de fin, date événement + délai | ✅ multi-domaines (une tâche/note/item de veille peut porter plusieurs domaines, tous du même contexte) |
+| Modèle de tâche : titre, domaine(s), type, priorité, date de fin, date événement + délai | ✅ multi-domaines (une tâche/note/item de veille peut porter plusieurs domaines, tous du même contexte, sauf domaine "les_deux" — voir Domaines) |
+| Modification d'une tâche déjà créée | ✅ titre, description, priorité, échéance, type (administrative) éditables en place via l'icône crayon sur la carte |
 | Sous-tâches (avec suggestion automatique) | ✅ interface faite (disclosure "Détails" sur chaque tâche : cocher/ajouter/supprimer) + suggestion proactive (badge "💡 Échéance lointaine / Description détaillée — découper en sous-tâches ?") si échéance >7 jours ou description >150 caractères et aucune sous-tâche encore créée |
 | Jalons intermédiaires | ✅ interface faite (même disclosure "Détails" : titre, date, cocher/ajouter/supprimer) |
 | Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
@@ -81,7 +82,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 | Champ | Détail |
 |---|---|
 | Titre | texte libre |
-| Domaines | **multi-domaines** (nouveau) : une tâche peut porter plusieurs domaines à la fois, tous obligatoirement du même contexte (Pro ou Perso) — géré depuis l'onglet Domaines, ou en ajout/retrait rapide directement depuis la carte (bouton "+ tag") |
+| Domaines | **multi-domaines** (nouveau) : une tâche peut porter plusieurs domaines à la fois, tous obligatoirement du même contexte (Pro, Perso, ou "les deux") — géré depuis l'onglet Domaines, ou en ajout/retrait rapide directement depuis la carte (bouton "+ tag") |
 | Type | manuel — valeur "administrative" active le bouton Pomodoro |
 | Priorité | 3 niveaux (un jour / cette semaine / aujourd'hui) |
 | Épinglée | booléen, force l'inclusion dans le quota du jour |
@@ -93,11 +94,12 @@ Pas de date de fin à saisir — se désactive manuellement.
 
 ## Onglet Domaines (nouveau)
 Écran de gestion des domaines/tags, nécessaire car les domaines sont entièrement libres (plus de liste figée) :
-- Ajout, renommage, changement de contexte (Pro/Perso), suppression
+- Ajout, renommage, changement de contexte (Pro/Perso/Les deux), suppression
 - Suppression bloquée si le domaine est encore utilisé par une tâche, un item de veille ou une note
 - Ces mêmes domaines servent de tags pour filtrer les notes
 - **Usage par domaine** (nouveau) : chaque domaine peut être retiré du sélecteur de tâches et/ou du sélecteur de veille indépendamment (badges "Tâches"/"Veille" cliquables), pour les domaines qui n'ont de sens que d'un côté (ex. un sujet de veille large comme "Éducation généraliste" n'est pas une catégorie de tâche actionnable). Les deux activés par défaut à la création ; les notes voient tous les domaines quel que soit leur usage.
-- **Multi-domaines** (nouveau) : une tâche, une note ou un item de veille peut être tagué de plusieurs domaines à la fois (sélecteur à chips dans les formulaires, plusieurs badges affichés). Contrainte : tous les domaines d'un même item doivent partager le même contexte Pro/Perso, puisque le contexte effectif d'un item reste entièrement déterminé par ses domaines — pas de mélange Pro/Perso sur un même item.
+- **Multi-domaines** (nouveau) : une tâche, une note ou un item de veille peut être tagué de plusieurs domaines à la fois (sélecteur à chips dans les formulaires, plusieurs badges affichés). Contrainte : tous les domaines d'un même item doivent être compatibles entre eux — un domaine "les deux" se combine librement avec n'importe quoi, mais on ne peut toujours pas mélanger un domaine strictement pro avec un domaine strictement perso sur le même item.
+- **Domaine partagé Pro/Perso** (nouveau) : un domaine peut être marqué "les deux" (3e option à côté de Pro/Perso) plutôt que dupliqué en deux tags distincts — il apparaît alors dans les sélecteurs des deux contextes, et une tâche/note/item de veille taguée uniquement avec un domaine "les deux" est visible des deux côtés. Les sources de veille restent en revanche strictement Pro ou Perso (portée jugée hors périmètre, comme pour le multi-domaines).
 - **Ajout/retrait rapide de tag depuis la carte** (nouveau) : bouton "+ tag" (pointillé) à côté des badges de domaine sur chaque carte de tâche (écran Aujourd'hui) et dans le volet détail d'une note — ouvre une rangée de chips à bascule sans passer par le formulaire d'édition complet, application immédiate.
 
 ## Onglet Veille (séparé, par domaine)

@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -12,13 +13,13 @@ router = APIRouter(prefix="/jour", tags=["jour"])
 
 
 @router.get("/{contexte}", response_model=JourOut)
-def obtenir_jour(contexte: Contexte, db: Session = Depends(get_db)):
+def obtenir_jour(contexte: Literal["pro", "perso"], db: Session = Depends(get_db)):
     aujourdhui = date.today()
     selection = obtenir_ou_construire_selection(db, contexte, aujourdhui)
     veille = (
         db.query(VeilleItem)
         .join(VeilleItem.domaines)
-        .filter(Domaine.contexte == contexte, VeilleItem.statut == StatutVeille.nouveau)
+        .filter(Domaine.contexte.in_([contexte, Contexte.les_deux]), VeilleItem.statut == StatutVeille.nouveau)
         .distinct()
         .order_by(VeilleItem.date_ingestion.desc())
         .all()
@@ -32,7 +33,7 @@ def obtenir_jour(contexte: Contexte, db: Session = Depends(get_db)):
 
 
 @router.post("/{contexte}/cloture/{selection_id}", response_model=SelectionJourOut)
-def cloturer_tache(contexte: Contexte, selection_id: int, decision: DecisionAction, db: Session = Depends(get_db)):
+def cloturer_tache(contexte: Literal["pro", "perso"], selection_id: int, decision: DecisionAction, db: Session = Depends(get_db)):
     selection = db.get(SelectionJour, selection_id)
     if not selection or selection.contexte != contexte:
         raise HTTPException(status_code=404, detail="Sélection introuvable")

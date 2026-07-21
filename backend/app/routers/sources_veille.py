@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -10,18 +10,18 @@ from app.schemas import SourceVeilleCreate, SourceVeilleOut, SourceVeilleUpdate
 router = APIRouter(prefix="/sources-veille", tags=["sources-veille"])
 
 
-def _valider_domaine_source(db: Session, domaine_id: Optional[int], contexte: Contexte) -> None:
+def _valider_domaine_source(db: Session, domaine_id: Optional[int], contexte: str) -> None:
     if domaine_id is None:
         return
     domaine = db.get(Domaine, domaine_id)
     if not domaine:
         raise HTTPException(status_code=400, detail="Domaine introuvable")
-    if domaine.contexte != contexte:
+    if domaine.contexte not in (contexte, Contexte.les_deux):
         raise HTTPException(status_code=400, detail="Le domaine doit être du même contexte que la source")
 
 
 @router.get("", response_model=list[SourceVeilleOut])
-def lister_sources(contexte: Optional[Contexte] = None, db: Session = Depends(get_db)):
+def lister_sources(contexte: Optional[Literal["pro", "perso"]] = None, db: Session = Depends(get_db)):
     query = db.query(SourceVeille)
     if contexte:
         query = query.filter(SourceVeille.contexte == contexte)

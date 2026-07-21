@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -23,14 +23,14 @@ router = APIRouter(prefix="/taches", tags=["taches"])
 
 @router.get("", response_model=list[TacheOut])
 def lister_taches(
-    contexte: Optional[Contexte] = None,
+    contexte: Optional[Literal["pro", "perso"]] = None,
     statut: Optional[StatutTache] = None,
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Tache)
     if contexte:
-        query = query.join(Tache.domaines).filter(Domaine.contexte == contexte)
+        query = query.join(Tache.domaines).filter(Domaine.contexte.in_([contexte, Contexte.les_deux]))
     if statut:
         query = query.filter(Tache.statut == statut)
     if domaine_id:

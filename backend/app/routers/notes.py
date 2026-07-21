@@ -8,7 +8,7 @@ import urllib.request
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 from urllib.error import URLError
 from urllib.parse import urlparse
 
@@ -39,7 +39,7 @@ def _nom_fichier_sur(nom: str) -> str:
 
 @router.get("", response_model=list[NoteOut])
 def lister_notes(
-    contexte: Optional[Contexte] = None,
+    contexte: Optional[Literal["pro", "perso"]] = None,
     domaine_id: Optional[int] = None,
     sans_tag: Optional[bool] = None,
     db: Session = Depends(get_db),
@@ -48,7 +48,9 @@ def lister_notes(
     if contexte:
         # Une note sans domaine n'a pas de contexte déterminable — toujours visible,
         # plutôt que masquée arbitrairement d'un côté (voir spec, Onglet Notes).
-        query = query.filter(or_(~Note.domaines.any(), Note.domaines.any(Domaine.contexte == contexte)))
+        query = query.filter(
+            or_(~Note.domaines.any(), Note.domaines.any(Domaine.contexte.in_([contexte, Contexte.les_deux])))
+        )
     if sans_tag:
         query = query.filter(~Note.domaines.any())
     elif domaine_id:
@@ -280,7 +282,8 @@ def _domaines_fusionnes(notes: list[Note]) -> list[Domaine]:
         for domaine in note.domaines:
             vus[domaine.id] = domaine
     domaines = list(vus.values())
-    if len({d.contexte for d in domaines}) > 1:
+    contextes_stricts = {d.contexte for d in domaines if d.contexte != Contexte.les_deux}
+    if len(contextes_stricts) > 1:
         raise HTTPException(
             status_code=400, detail="Les notes sélectionnées doivent être du même contexte Pro/Perso pour être fusionnées"
         )

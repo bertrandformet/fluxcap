@@ -39,7 +39,7 @@ def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> 
     toutes_eligibles = (
         db.query(Tache)
         .join(Tache.domaines)
-        .filter(Domaine.contexte == contexte, Tache.statut == StatutTache.a_realiser)
+        .filter(Domaine.contexte.in_([contexte, Contexte.les_deux]), Tache.statut == StatutTache.a_realiser)
         .distinct()
         .all()
     )
@@ -234,7 +234,7 @@ def _completer_selection(db: Session, contexte: Contexte, jour: date) -> None:
         return
 
     query = db.query(Tache).join(Tache.domaines).filter(
-        Domaine.contexte == contexte, Tache.statut == StatutTache.a_realiser, Tache.recurrente.is_(False)
+        Domaine.contexte.in_([contexte, Contexte.les_deux]), Tache.statut == StatutTache.a_realiser, Tache.recurrente.is_(False)
     )
     if deja_ids:
         query = query.filter(~Tache.id.in_(deja_ids))

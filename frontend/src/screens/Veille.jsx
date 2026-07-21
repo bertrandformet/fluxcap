@@ -293,7 +293,7 @@ export default function Veille({ contexte }) {
               <select className="tnv-select" value={nouveauDomaine} onChange={(e) => setNouveauDomaine(e.target.value)}>
                 <option value="">Sans domaine (ne sera pas collectée)</option>
                 {tousDomaines
-                  .filter((d) => d.contexte === nouveauContexte)
+                  .filter((d) => d.contexte === nouveauContexte || d.contexte === "les_deux")
                   .map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.nom}
@@ -328,7 +328,7 @@ export default function Veille({ contexte }) {
                     >
                       <option value="">Sans domaine</option>
                       {tousDomaines
-                        .filter((d) => d.contexte === s.contexte)
+                        .filter((d) => d.contexte === s.contexte || d.contexte === "les_deux")
                         .map((d) => (
                           <option key={d.id} value={d.id}>
                             {d.nom}

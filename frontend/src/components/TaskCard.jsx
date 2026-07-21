@@ -2,7 +2,13 @@ import { useState } from "react";
 import { api } from "../api/client.js";
 import Pomodoro from "./Pomodoro.jsx";
 import { DomainBadges } from "./DomainBadge.jsx";
-import { IconCheck, IconChevronDown, IconLoop, IconPin, IconTomato, IconTrash } from "./Icons.jsx";
+import { IconCheck, IconChevronDown, IconEdit, IconLoop, IconPin, IconTomato, IconTrash } from "./Icons.jsx";
+
+const PRIORITES_EDITION = [
+  { value: "aujourd_hui", label: "Aujourd'hui" },
+  { value: "cette_semaine", label: "Cette semaine" },
+  { value: "un_jour", label: "Un jour" },
+];
 
 const LABELS_PRIORITE = {
   un_jour: "Un jour",
@@ -178,6 +184,7 @@ export default function TaskCard({
   onRecurrenteToggle,
   onRealiser,
   onSupprimer,
+  onModifier,
   domainesDisponibles,
   onDomainesChange,
   dense,
@@ -186,6 +193,8 @@ export default function TaskCard({
   const [pomodoroOuvert, setPomodoroOuvert] = useState(false);
   const [detailsOuverts, setDetailsOuverts] = useState(false);
   const [tagsOuverts, setTagsOuverts] = useState(false);
+  const [editionOuverte, setEditionOuverte] = useState(false);
+  const [champsEdition, setChampsEdition] = useState(null);
   const badgeClass =
     raison === "anti_oubli"
       ? "tnv-badge tnv-badge--warning"
@@ -206,6 +215,30 @@ export default function TaskCard({
     onDomainesChange(tache, nouveaux);
   }
 
+  function ouvrirEdition() {
+    setChampsEdition({
+      titre: tache.titre,
+      description: tache.description || "",
+      priorite: tache.priorite,
+      date_fin: tache.date_fin || "",
+      administrative: tache.type === "administrative",
+    });
+    setEditionOuverte(true);
+  }
+
+  async function soumettreEdition(e) {
+    e.preventDefault();
+    if (!champsEdition.titre.trim()) return;
+    await onModifier(tache, {
+      titre: champsEdition.titre.trim(),
+      description: champsEdition.description.trim() || null,
+      priorite: champsEdition.priorite,
+      date_fin: champsEdition.date_fin || null,
+      type: champsEdition.administrative ? "administrative" : "standard",
+    });
+    setEditionOuverte(false);
+  }
+
   return (
     <article className={dense ? "tnv-task-card tnv-task-card--dense" : "tnv-card tnv-task-card"}>
       {onRealiser && (
@@ -215,27 +248,82 @@ export default function TaskCard({
       )}
 
       <div className="tnv-task-card__body">
-        <span className="tnv-task-card__title">{tache.titre}</span>
-        <div className="tnv-task-card__meta">
-          <DomainBadges domaines={tache.domaines} />
-          {onDomainesChange && (
-            <button
-              type="button"
-              className="tnv-chip tnv-chip--tag-rapide"
-              onClick={() => setTagsOuverts((o) => !o)}
-              title="Ajouter/retirer un tag"
-              aria-label="Ajouter/retirer un tag"
-            >
-              + tag
-            </button>
-          )}
-          <span className="tnv-meta-text">
-            {LABELS_PRIORITE[tache.priorite]}
-            {tache.date_fin && ` · échéance ${tache.date_fin}`}
-          </span>
-          {raison && <span className={badgeClass}>{LABELS_RAISON[raison]}</span>}
-        </div>
-        {tagsOuverts && domainesDisponibles && (
+        {editionOuverte ? (
+          <form onSubmit={soumettreEdition} style={{ display: "flex", flexDirection: "column", gap: "var(--tnv-space-3)" }}>
+            <input
+              className="tnv-input"
+              type="text"
+              value={champsEdition.titre}
+              onChange={(e) => setChampsEdition({ ...champsEdition, titre: e.target.value })}
+              autoFocus
+            />
+            <textarea
+              className="tnv-textarea"
+              placeholder="Description"
+              value={champsEdition.description}
+              onChange={(e) => setChampsEdition({ ...champsEdition, description: e.target.value })}
+            />
+            <div className="tnv-field-row">
+              <select
+                className="tnv-select"
+                value={champsEdition.priorite}
+                onChange={(e) => setChampsEdition({ ...champsEdition, priorite: e.target.value })}
+              >
+                {PRIORITES_EDITION.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="tnv-input"
+                type="date"
+                value={champsEdition.date_fin}
+                onChange={(e) => setChampsEdition({ ...champsEdition, date_fin: e.target.value })}
+              />
+            </div>
+            <label className="tnv-checkbox-row">
+              <input
+                type="checkbox"
+                checked={champsEdition.administrative}
+                onChange={(e) => setChampsEdition({ ...champsEdition, administrative: e.target.checked })}
+              />
+              Administrative (active le Pomodoro)
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="submit" className="tnv-btn tnv-btn--primary">
+                Enregistrer
+              </button>
+              <button type="button" className="tnv-btn tnv-btn--ghost" onClick={() => setEditionOuverte(false)}>
+                Annuler
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <span className="tnv-task-card__title">{tache.titre}</span>
+            <div className="tnv-task-card__meta">
+              <DomainBadges domaines={tache.domaines} />
+              {onDomainesChange && (
+                <button
+                  type="button"
+                  className="tnv-chip tnv-chip--tag-rapide"
+                  onClick={() => setTagsOuverts((o) => !o)}
+                  title="Ajouter/retirer un tag"
+                  aria-label="Ajouter/retirer un tag"
+                >
+                  + tag
+                </button>
+              )}
+              <span className="tnv-meta-text">
+                {LABELS_PRIORITE[tache.priorite]}
+                {tache.date_fin && ` · échéance ${tache.date_fin}`}
+              </span>
+              {raison && <span className={badgeClass}>{LABELS_RAISON[raison]}</span>}
+            </div>
+          </>
+        )}
+        {!editionOuverte && tagsOuverts && domainesDisponibles && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {/* Union avec les domaines déjà sur la tâche : un domaine retiré de la liste
                 "utilisable pour les tâches" (écran Domaines) doit rester décochable ici
@@ -252,10 +340,10 @@ export default function TaskCard({
             ))}
           </div>
         )}
-        {tache.description && <p className="tnv-meta-text">{tache.description}</p>}
-        {children}
+        {!editionOuverte && tache.description && <p className="tnv-meta-text">{tache.description}</p>}
+        {!editionOuverte && children}
 
-        {!dense && (
+        {!editionOuverte && !dense && (
           <>
             {suggererDecoupage && !detailsOuverts && (
               <button
@@ -286,45 +374,52 @@ export default function TaskCard({
         )}
       </div>
 
-      <div className="tnv-task-card__actions">
-        {tache.type === "administrative" && (
-          <button className="tnv-icon-btn" onClick={() => setPomodoroOuvert(true)} title="Démarrer un focus" aria-label="Démarrer un focus">
-            <IconTomato />
-          </button>
-        )}
-        {onRecurrenteToggle && (
-          <button
-            className={tache.recurrente ? "tnv-icon-btn tnv-icon-btn--active" : "tnv-icon-btn"}
-            onClick={() => onRecurrenteToggle(tache)}
-            title={tache.recurrente ? "Rendre classique" : "Rendre récurrente"}
-            aria-label={tache.recurrente ? "Rendre classique" : "Rendre récurrente"}
-          >
-            <IconLoop />
-          </button>
-        )}
-        {onEpingleToggle && (
-          <button
-            className={tache.epinglee ? "tnv-icon-btn tnv-icon-btn--active" : "tnv-icon-btn"}
-            onClick={() => onEpingleToggle(tache)}
-            title={tache.epinglee ? "Désépingler" : "Épingler"}
-            aria-label={tache.epinglee ? "Désépingler" : "Épingler"}
-          >
-            <IconPin filled={tache.epinglee} />
-          </button>
-        )}
-        {onSupprimer && (
-          <button
-            className="tnv-icon-btn"
-            onClick={() => {
-              if (window.confirm(`Supprimer la tâche « ${tache.titre} » ?`)) onSupprimer(tache);
-            }}
-            title="Supprimer"
-            aria-label="Supprimer"
-          >
-            <IconTrash size={16} />
-          </button>
-        )}
-      </div>
+      {!editionOuverte && (
+        <div className="tnv-task-card__actions">
+          {tache.type === "administrative" && (
+            <button className="tnv-icon-btn" onClick={() => setPomodoroOuvert(true)} title="Démarrer un focus" aria-label="Démarrer un focus">
+              <IconTomato />
+            </button>
+          )}
+          {onModifier && (
+            <button className="tnv-icon-btn" onClick={ouvrirEdition} title="Modifier" aria-label="Modifier">
+              <IconEdit size={16} />
+            </button>
+          )}
+          {onRecurrenteToggle && (
+            <button
+              className={tache.recurrente ? "tnv-icon-btn tnv-icon-btn--active" : "tnv-icon-btn"}
+              onClick={() => onRecurrenteToggle(tache)}
+              title={tache.recurrente ? "Rendre classique" : "Rendre récurrente"}
+              aria-label={tache.recurrente ? "Rendre classique" : "Rendre récurrente"}
+            >
+              <IconLoop />
+            </button>
+          )}
+          {onEpingleToggle && (
+            <button
+              className={tache.epinglee ? "tnv-icon-btn tnv-icon-btn--active" : "tnv-icon-btn"}
+              onClick={() => onEpingleToggle(tache)}
+              title={tache.epinglee ? "Désépingler" : "Épingler"}
+              aria-label={tache.epinglee ? "Désépingler" : "Épingler"}
+            >
+              <IconPin filled={tache.epinglee} />
+            </button>
+          )}
+          {onSupprimer && (
+            <button
+              className="tnv-icon-btn"
+              onClick={() => {
+                if (window.confirm(`Supprimer la tâche « ${tache.titre} » ?`)) onSupprimer(tache);
+              }}
+              title="Supprimer"
+              aria-label="Supprimer"
+            >
+              <IconTrash size={16} />
+            </button>
+          )}
+        </div>
+      )}
 
       {pomodoroOuvert && <Pomodoro tache={tache} onClose={() => setPomodoroOuvert(false)} />}
     </article>

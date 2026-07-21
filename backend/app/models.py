@@ -34,6 +34,10 @@ veille_item_domaines = Table(
 class Contexte(str, enum.Enum):
     pro = "pro"
     perso = "perso"
+    # Réservé à Domaine.contexte (un domaine partagé entre les deux espaces) — jamais
+    # une valeur valide pour un item concret (tâche/note/veille/source), qui reste
+    # toujours résolu à pro OU perso. Voir domaines_utils.resoudre_domaines.
+    les_deux = "les_deux"
 
 
 class Priorite(str, enum.Enum):

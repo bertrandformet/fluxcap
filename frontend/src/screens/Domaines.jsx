@@ -3,6 +3,8 @@ import { api } from "../api/client.js";
 import { IconEdit } from "../components/Icons.jsx";
 import { domainHue } from "../utils/domainHue.js";
 
+const LABELS_CONTEXTE = { pro: "Pro", perso: "Perso", les_deux: "Les deux" };
+
 export default function Domaines() {
   const [domaines, setDomaines] = useState(null);
   const [erreur, setErreur] = useState(null);
@@ -105,11 +107,11 @@ export default function Domaines() {
 
       {erreur && <p className="tnv-error">{erreur}</p>}
 
-      {["pro", "perso"].map((contexte) => {
+      {["pro", "perso", "les_deux"].map((contexte) => {
         const groupe = domaines.filter((d) => d.contexte === contexte);
         return (
           <div key={contexte} style={{ marginBottom: "var(--tnv-space-5)" }}>
-            <span className="tnv-section-label">{contexte === "pro" ? "Pro" : "Perso"}</span>
+            <span className="tnv-section-label">{LABELS_CONTEXTE[contexte]}</span>
             <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
               {groupe.length === 0 && <p className="tnv-empty">Aucun domaine.</p>}
               {groupe.map((d) => (
@@ -143,6 +145,7 @@ export default function Domaines() {
                       >
                         <option value="pro">Pro</option>
                         <option value="perso">Perso</option>
+                        <option value="les_deux">Les deux</option>
                       </select>
                       <button
                         type="button"
@@ -189,6 +192,7 @@ export default function Domaines() {
           <select className="tnv-select" value={nouveauContexte} onChange={(e) => setNouveauContexte(e.target.value)}>
             <option value="pro">Pro</option>
             <option value="perso">Perso</option>
+            <option value="les_deux">Les deux</option>
           </select>
           <label className="tnv-checkbox-row">
             <input type="checkbox" checked={nouveauUtiliseTaches} onChange={(e) => setNouveauUtiliseTaches(e.target.checked)} />

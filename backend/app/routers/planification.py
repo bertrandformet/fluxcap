@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Contexte
 from app.services.ingestion_veille import ingerer_contexte
 from app.services.notification_email import notifier_cloture, notifier_ouverture
 
@@ -16,14 +15,14 @@ router = APIRouter(prefix="/planification", tags=["planification"])
 
 
 @router.post("/veille/{contexte}")
-def declencher_ingestion_veille(contexte: Contexte, db: Session = Depends(get_db)):
+def declencher_ingestion_veille(contexte: Literal["pro", "perso"], db: Session = Depends(get_db)):
     nouveaux = ingerer_contexte(db, contexte)
     return {"contexte": contexte, "nouveaux_items": nouveaux}
 
 
 @router.post("/notification/{contexte}/{evenement}")
 def declencher_notification(
-    contexte: Contexte,
+    contexte: Literal["pro", "perso"],
     evenement: Literal["ouverture", "cloture"],
     creneau: Optional[Literal["semaine", "weekend"]] = None,
     db: Session = Depends(get_db),

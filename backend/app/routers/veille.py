@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -15,14 +15,14 @@ router = APIRouter(prefix="/veille", tags=["veille"])
 
 @router.get("", response_model=list[VeilleItemOut])
 def lister_veille(
-    contexte: Optional[Contexte] = None,
+    contexte: Optional[Literal["pro", "perso"]] = None,
     statut: Optional[StatutVeille] = None,
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(VeilleItem)
     if contexte:
-        query = query.join(VeilleItem.domaines).filter(Domaine.contexte == contexte)
+        query = query.join(VeilleItem.domaines).filter(Domaine.contexte.in_([contexte, Contexte.les_deux]))
     if statut:
         query = query.filter(VeilleItem.statut == statut)
     if domaine_id:

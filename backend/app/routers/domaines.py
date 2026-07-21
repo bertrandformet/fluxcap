@@ -21,13 +21,14 @@ def _domaine_utilise(db: Session, domaine_id: int) -> bool:
 
 @router.get("", response_model=list[DomaineOut])
 def lister_domaines(
-    contexte: Optional[Contexte] = None,
+    contexte: Optional[Literal["pro", "perso"]] = None,
     usage: Optional[Literal["taches", "veille"]] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Domaine)
     if contexte:
-        query = query.filter(Domaine.contexte == contexte)
+        # Un domaine "les_deux" doit apparaître dans les sélecteurs des deux contextes.
+        query = query.filter(Domaine.contexte.in_([contexte, Contexte.les_deux]))
     if usage == "taches":
         query = query.filter(Domaine.utilise_pour_taches.is_(True))
     elif usage == "veille":

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -184,7 +184,9 @@ class VeilleAction(BaseModel):
 class SourceVeilleBase(BaseModel):
     nom: str
     url: str
-    contexte: Contexte
+    # Contrairement à Domaine, une source garde un contexte strictement pro OU perso
+    # (jamais "les_deux") — portée jugée hors périmètre lors du multi-domaines.
+    contexte: Literal["pro", "perso"]
     domaine_id: Optional[int] = None
     actif: bool = True
 
@@ -196,7 +198,7 @@ class SourceVeilleCreate(SourceVeilleBase):
 class SourceVeilleUpdate(BaseModel):
     nom: Optional[str] = None
     url: Optional[str] = None
-    contexte: Optional[Contexte] = None
+    contexte: Optional[Literal["pro", "perso"]] = None
     domaine_id: Optional[int] = None
     actif: Optional[bool] = None
 
