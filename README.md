@@ -114,7 +114,11 @@ Ordre à respecter pour un changement qui ajoute des tables/colonnes dont le nou
 2. Pousser le code, laisser Render redéployer.
 3. Une fois le bon fonctionnement confirmé en prod, exécuter en dernier le nettoyage des anciennes colonnes/tables devenues inutiles (`DROP COLUMN`...) — cette étape n'est jamais urgente puisque le nouveau code ne les lit plus.
 
-Si l'éditeur SQL de Supabase affiche un avertissement Row Level Security (RLS) lors d'une création de table : répondre **"Run without RLS"**. Le backend n'utilise jamais le SDK client Supabase ni les clés anon/authenticated (seulement `SUPABASE_SERVICE_KEY` pour le storage et une connexion Postgres directe pour l'ORM), donc RLS n'a aucun effet protecteur ici — le frontend ne parle jamais à Supabase directement, toujours via l'API FastAPI.
+Toute nouvelle table doit avoir Row Level Security (RLS) activé, sinon elle reste exposée en lecture/écriture à quiconque connaît l'URL du projet via l'API REST publique que Supabase génère automatiquement (PostgREST) — indépendamment du fait que le backend ne l'utilise jamais (il se connecte en direct Postgres avec le rôle `postgres`, qui bypass RLS par défaut, donc l'activer ne casse rien côté app et ne nécessite aucune policy) :
+```sql
+ALTER TABLE public.<nom_de_la_table> ENABLE ROW LEVEL SECURITY;
+```
+(Si l'éditeur SQL de Supabase propose "Run without RLS" lors d'une création de table, ne pas accepter — exécuter la commande ci-dessus juste après la création.)
 
 ### Horaires de notification
 
