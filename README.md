@@ -103,7 +103,7 @@ POC fonctionnel (logique + écrans), déployé, protégé par authentification (
 
 Toutes les variables d'environnement nécessaires (connexion Postgres, clés Supabase, origine CORS, clé de signature des sessions, config WebAuthn) sont listées dans [`.env.example`](./.env.example) et dans `render.yaml`. Aucune valeur réelle n'est commitée ; elles sont saisies directement dans les tableaux de bord Render/Vercel.
 
-Le plan gratuit de Render met le service en veille après ~15 min d'inactivité (cold start lent au réveil) — un moniteur UptimeRobot ping `/health` toutes les 5 minutes pour l'éviter (un essai précédent avec un workflow GitHub Actions planifié a été abandonné : les crons GitHub Actions ne sont pas fiables sur des intervalles aussi courts, retards observés de 60-95 min).
+Le plan gratuit de Render met le service en veille après ~15 min d'inactivité (cold start lent au réveil) — une 10e tâche cron-job.org (GET `/health` toutes les 5 minutes, pas d'authentification requise) l'évite. Auparavant sur UptimeRobot, consolidée sur cron-job.org le 2026-07-23 en même temps que la planification veille/notifications (voir "Horaires de notification" ci-dessous) — un seul service à gérer plutôt que deux, un cron GitHub Actions ayant déjà été écarté avant ça pour ce même besoin (peu fiable sur des intervalles courts, retards observés de 60-95 min).
 
 ### Migrations de schéma
 
@@ -140,6 +140,7 @@ Points à garder en tête :
 - Pour Perso, qui a deux rythmes selon le jour (semaine 21h/7h, week-end 9h/21h — voir `app/services/notification_email.py::_bon_creneau`), c'est le backend qui décide du bon rythme à appliquer, pas le planificateur : les deux créneaux sont déclenchés tous les jours, un seul aboutit réellement selon le vrai jour de la semaine (et le mode congés). Pro n'a pas cette logique de créneau — chaque appel envoie simplement le récap de ce qui est en attente au moment de l'appel, donc changer son horaire (y compris juste pour un jour) ne touche qu'à la tâche cron-job.org concernée, jamais au code backend.
 - **Historique** : ces 9 tâches remplacent depuis le 2026-07-23 les `schedule:` cron de [`.github/workflows/planification.yml`](./.github/workflows/planification.yml), abandonnés pour cause de fiabilité — GitHub Actions retardait ces envois de façon très importante et systématique (jusqu'à 5h40 de retard observé, confirmé par l'historique d'envoi Resend), pas juste de la congestion occasionnelle. Le workflow GitHub garde uniquement un déclenchement manuel (`workflow_dispatch`, menu **Actions → Planification veille et notifications → Run workflow**), pratique pour tester un endpoint sans attendre l'heure réelle.
 - Pour changer un horaire : modifier directement la tâche correspondante sur cron-job.org (pas de redéploiement Render nécessaire, effectif au prochain déclenchement).
+- Le même compte cron-job.org porte aussi une 10e tâche, sans rapport avec les notifications : un ping anti-cold-start (`GET /health` toutes les 5 minutes, sans authentification) qui évite la mise en veille du plan gratuit Render — voir section "Déploiement" ci-dessus.
 
 ### Alternative : serveur unique auto-hébergé
 
@@ -151,7 +152,7 @@ Le déploiement actuel (Vercel + Render + Supabase + GitHub Actions) répartit l
 - **Reverse proxy + TLS** : un point qui n'existe pas aujourd'hui (Vercel/Render gèrent ça pour nous) — [Caddy](https://caddyserver.com) est le plus simple pour avoir du HTTPS automatique (obligatoire pour l'installation PWA) sans certificat à renouveler à la main.
 - **Tâches planifiées** : remplacer les 9 tâches cron-job.org par un cron système ou un scheduler in-process (ex. APScheduler) qui appelle les mêmes endpoints `/planification/...` — mais rien d'urgent ici, cron-job.org fonctionne bien et reste externe au serveur applicatif.
 - **Email (Resend)** resterait externe — auto-héberger l'envoi d'emails n'a pas de sens pour ce volume d'usage.
-- **Ping anti-veille (UptimeRobot)** deviendrait inutile : c'est spécifiquement un contournement du cold start du plan gratuit Render, qui ne concerne pas un serveur toujours allumé.
+- **Ping anti-veille (10e tâche cron-job.org)** deviendrait inutile : c'est spécifiquement un contournement du cold start du plan gratuit Render, qui ne concerne pas un serveur toujours allumé.
 
 Le vrai compromis n'est pas technique mais opérationnel : ce changement fait passer d'une architecture zéro-ops (mais éclatée) à un seul serveur plus simple à raisonner, en échange de la responsabilité — jusqu'ici gratuite et automatique — des sauvegardes, des correctifs de sécurité et de la disponibilité. Docker Compose (backend + Postgres + Caddy) serait l'assemblage le plus simple à maintenir si ce chemin est un jour suivi.
 
