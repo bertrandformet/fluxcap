@@ -12,7 +12,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | PWA React + FastAPI, logique et écrans locaux | ✅ |
 | Authentification (mot de passe / WebAuthn) | ✅ mot de passe + WebAuthn/Face ID/Touch ID, session JWT, toutes les routes protégées. Panneau Sécurité (nouveau) : changer son mot de passe en étant connecté, régénérer le code de récupération à la demande, révoquer toutes les sessions ouvertes, clé API longue durée pour intégrations externes |
 | Déploiement Vercel/Render | ✅ en production (Vercel + Render + Supabase) |
-| Planning des notifications (horaires Pro/Perso) | ⚠️ fait par email (Resend) plutôt que push navigateur — déclenché par un workflow GitHub Actions planifié, respecte le mode congés pour Pro |
+| Planning des notifications (horaires Pro/Perso) | ⚠️ fait par email (Resend) plutôt que push navigateur — déclenché par 9 tâches planifiées sur cron-job.org (remplace un workflow GitHub Actions abandonné pour cause de retards de plusieurs heures), respecte le mode congés pour Pro |
 | Mode congés | ✅ bascule visuelle + Pro grisé/dépriorisé + notifications Pro coupées (mail) + Perso bascule sur le rythme week-end (9h/21h) tous les jours pendant les congés |
 | Écran Aujourd'hui (3-4 tâches, score, épinglage, report remonté) | ✅ |
 | Anti-oubli | ⚠️ seuil passé de 14 à 7 jours (changement demandé en cours de POC) |
@@ -23,7 +23,7 @@ Légende : ✅ fait · ⚠️ fait différemment de la spec initiale · ⏳ pas 
 | Jalons intermédiaires | ✅ interface faite (même disclosure "Détails" : titre, date, cocher/ajouter/supprimer) |
 | Historique de report | ✅ stocké, utilisé pour la remontée automatique, et affiché comme historique consultable dans le disclosure "Détails" de chaque tâche |
 | Onglet Veille (groupé par domaine, 3 actions) | ✅ |
-| Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par GitHub Actions, pas un vrai cron serveur |
+| Ingestion automatisée (`fetch_tools.py` en job planifié) | ⚠️ fait, mais limité aux flux RSS/Atom (feedparser) — pas de scraping générique ni d'API tierces. Déclenché par une tâche cron-job.org, pas un vrai cron serveur |
 | Onglet Notes (unique, filtrable par tag, import lien) | ✅ vue à deux volets façon Notes d'Apple (liste de titres + détail) |
 | Partage externe (sortant) | ⚠️ Web Share API native (macOS/iOS) au lieu d'un raccourci Apple Shortcuts dédié — même résultat pratique (menu de partage natif), mécanisme différent |
 | Capture externe (entrant) | ✅ raccourci Apple Shortcuts (menu Partager) + favori Chrome/bookmarklet (voir [raccourci-partage.md](./raccourci-partage.md)), crée une note dans FluxCap sans ouvrir l'app |
@@ -50,7 +50,7 @@ Pas un simple filtre — deux contextes distincts, chacun avec son propre rituel
 | Vendredi | 7h30 (ouverture) + 13h (clôture) | 21h (ouverture) + 7h (clôture, juste avant Pro) |
 | Sam–Dim | — | 9h (ouverture) + 21h (clôture) |
 
-Ces horaires sont modifiables sans toucher au code backend (voir README, section "Horaires de notification") — ils sont définis par des expressions cron dans `.github/workflows/planification.yml`, y compris pour donner un horaire différent à un jour précis plutôt qu'à toute la semaine, comme pour la clôture Pro du vendredi ci-dessus.
+Ces horaires sont modifiables sans toucher au code backend (voir README, section "Horaires de notification") — ils sont définis par 9 tâches planifiées sur cron-job.org (un service de cron externe, plus fiable que GitHub Actions pour du timing précis — voir README), y compris pour donner un horaire différent à un jour précis plutôt qu'à toute la semaine, comme pour la clôture Pro du vendredi ci-dessus.
 
 ### Mode congés
 Statut activable/désactivable ("Congés" dans l'en-tête, à côté du sélecteur Pro/Perso). Tant qu'actif :
@@ -108,7 +108,7 @@ Pas de date de fin à saisir — se désactive manuellement.
 - **Filtre par domaine** (nouveau), sélection unique ou multiple
 - **Actualisation automatique** de la liste à 7h et 20h (nouveau), tant que l'écran reste ouvert dans le navigateur — ne déclenche pas de vraie collecte, relit simplement les données actuelles
 - **Sources de veille** (nouveau) : panneau "⚙️ Sources" pour ajouter/désactiver/supprimer les sources à interroger, taguées Pro ou Perso — inspiré de `uneIAparjour/veille-agregateurs`
-- **Ingestion automatisée** : collecte réelle des flux RSS/Atom (feedparser), déclenchée par un workflow GitHub Actions planifié — limitée aux flux RSS/Atom, pas de scraping générique ni d'API tierces (voir État d'implémentation)
+- **Ingestion automatisée** : collecte réelle des flux RSS/Atom (feedparser), déclenchée par une tâche cron-job.org planifiée — limitée aux flux RSS/Atom, pas de scraping générique ni d'API tierces (voir État d'implémentation)
   - Veille Pro : tous les matins avant 7h30
   - Veille Perso : tous les soirs à 20h
 - **Date de publication d'origine** (nouveau) : chaque carte affiche la date de publication fournie par le flux RSS/Atom (extraite par feedparser à l'ingestion), plutôt que la date de collecte par notre serveur. Repli sur la date de collecte si le flux n'expose aucune date d'origine (certains flux n'en fournissent pas).

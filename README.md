@@ -122,13 +122,24 @@ ALTER TABLE public.<nom_de_la_table> ENABLE ROW LEVEL SECURITY;
 
 ### Horaires de notification
 
-Les horaires d'ouverture/clôture Pro/Perso (et de collecte de veille) sont définis par les expressions cron dans [`.github/workflows/planification.yml`](./.github/workflows/planification.yml) — pas dans le code Python. Pour changer une heure, il suffit de modifier l'expression cron correspondante et de pousser le fichier ; le nouveau planning s'applique dès le déclenchement suivant, sans redéploiement Render.
+Les horaires d'ouverture/clôture Pro/Perso (et de collecte de veille) sont planifiés par **9 tâches sur [cron-job.org](https://cron-job.org)** (compte gratuit), pas par du code ni un fichier versionné — chaque tâche fait un `POST` vers un endpoint `/planification/...` du backend avec l'en-tête `X-Scheduler-Secret` (même valeur que la variable d'env `SCHEDULER_SECRET` sur Render), en fuseau **Europe/Paris** (cron-job.org gère nativement le passage heure d'été/hiver, pas de dérive à corriger contrairement à un cron en UTC).
+
+| Tâche | Endpoint | Horaire (Paris) | Jours |
+|---|---|---|---|
+| Veille Pro | `/planification/veille/pro` | 06:00 | Lun-Ven |
+| Veille Perso | `/planification/veille/perso` | 20:00 | Tous les jours |
+| Notif Pro ouverture | `/planification/notification/pro/ouverture` | 07:30 | Lun-Ven |
+| Notif Pro clôture | `/planification/notification/pro/cloture` | 17:30 | Lun-Jeu |
+| Notif Pro clôture vendredi | `/planification/notification/pro/cloture` | 13:00 | Ven |
+| Notif Perso ouverture semaine | `/planification/notification/perso/ouverture?creneau=semaine` | 21:00 | Tous les jours |
+| Notif Perso clôture weekend | `/planification/notification/perso/cloture?creneau=weekend` | 21:01 | Tous les jours |
+| Notif Perso clôture semaine | `/planification/notification/perso/cloture?creneau=semaine` | 07:00 | Tous les jours |
+| Notif Perso ouverture weekend | `/planification/notification/perso/ouverture?creneau=weekend` | 09:00 | Tous les jours |
 
 Points à garder en tête :
-- Les horaires du fichier sont en UTC, calés sur l'heure d'hiver (CET, UTC+1) — ils dérivent d'environ 1h pendant l'heure d'été (CEST), GitHub Actions ne gérant pas les fuseaux horaires nativement.
-- Rien n'empêche de découper un horaire par jour de la semaine (`* * 1-4` vs `* * 5`, par exemple) pour donner un horaire différent à un jour précis plutôt qu'à toute la semaine — c'est ce qui a été fait pour la clôture Pro du vendredi (13h au lieu de 17h30).
-- Pour Perso, qui a deux rythmes selon le jour (semaine 21h/7h, week-end 9h/21h — voir `app/services/notification_email.py::_bon_creneau`), c'est le backend qui décide du bon rythme à appliquer, pas le cron : les deux créneaux sont déclenchés tous les jours, un seul aboutit réellement selon le vrai jour de la semaine (et le mode congés). Pro n'a pas cette logique de créneau — chaque appel du workflow envoie simplement le récap de ce qui est en attente au moment de l'appel, donc changer son horaire (y compris juste pour un jour) ne touche que le cron, jamais le code backend.
-- Chaque entrée `cron:` a une option de déclenchement manuel correspondante dans `workflow_dispatch` (menu **Actions → Planification veille et notifications → Run workflow** sur GitHub) — pratique pour tester un changement d'horaire sans attendre l'heure ou le jour réel.
+- Pour Perso, qui a deux rythmes selon le jour (semaine 21h/7h, week-end 9h/21h — voir `app/services/notification_email.py::_bon_creneau`), c'est le backend qui décide du bon rythme à appliquer, pas le planificateur : les deux créneaux sont déclenchés tous les jours, un seul aboutit réellement selon le vrai jour de la semaine (et le mode congés). Pro n'a pas cette logique de créneau — chaque appel envoie simplement le récap de ce qui est en attente au moment de l'appel, donc changer son horaire (y compris juste pour un jour) ne touche qu'à la tâche cron-job.org concernée, jamais au code backend.
+- **Historique** : ces 9 tâches remplacent depuis le 2026-07-23 les `schedule:` cron de [`.github/workflows/planification.yml`](./.github/workflows/planification.yml), abandonnés pour cause de fiabilité — GitHub Actions retardait ces envois de façon très importante et systématique (jusqu'à 5h40 de retard observé, confirmé par l'historique d'envoi Resend), pas juste de la congestion occasionnelle. Le workflow GitHub garde uniquement un déclenchement manuel (`workflow_dispatch`, menu **Actions → Planification veille et notifications → Run workflow**), pratique pour tester un endpoint sans attendre l'heure réelle.
+- Pour changer un horaire : modifier directement la tâche correspondante sur cron-job.org (pas de redéploiement Render nécessaire, effectif au prochain déclenchement).
 
 ### Alternative : serveur unique auto-hébergé
 
@@ -138,7 +149,7 @@ Le déploiement actuel (Vercel + Render + Supabase + GitHub Actions) répartit l
 - **Pièces jointes** : rien à faire — `backend/app/services/stockage.py` retombe déjà sur le disque local dès qu'aucune variable Supabase n'est renseignée. Il suffit de monter un volume persistant pour ce répertoire.
 - **Frontend** : servir le build statique (`npm run build`, dossier `frontend/dist`) directement via un reverse proxy devant FastAPI, plutôt que Vercel.
 - **Reverse proxy + TLS** : un point qui n'existe pas aujourd'hui (Vercel/Render gèrent ça pour nous) — [Caddy](https://caddyserver.com) est le plus simple pour avoir du HTTPS automatique (obligatoire pour l'installation PWA) sans certificat à renouveler à la main.
-- **Tâches planifiées** : remplacer les crons GitHub Actions (`.github/workflows/planification.yml`) par un cron système ou un scheduler in-process (ex. APScheduler) qui appelle les mêmes endpoints `/planification/...`. Ça réglerait au passage la fiabilité douteuse des crons GitHub Actions sur intervalle court, déjà documentée plus haut.
+- **Tâches planifiées** : remplacer les 9 tâches cron-job.org par un cron système ou un scheduler in-process (ex. APScheduler) qui appelle les mêmes endpoints `/planification/...` — mais rien d'urgent ici, cron-job.org fonctionne bien et reste externe au serveur applicatif.
 - **Email (Resend)** resterait externe — auto-héberger l'envoi d'emails n'a pas de sens pour ce volume d'usage.
 - **Ping anti-veille (UptimeRobot)** deviendrait inutile : c'est spécifiquement un contournement du cold start du plan gratuit Render, qui ne concerne pas un serveur toujours allumé.
 
