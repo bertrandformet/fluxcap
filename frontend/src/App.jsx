@@ -38,6 +38,9 @@ export default function App() {
     return url || titre ? { url, titre } : null;
   });
   const [captureStatut, setCaptureStatut] = useState(null);
+  const [captureErreur, setCaptureErreur] = useState(null);
+  const [domainesCapture, setDomainesCapture] = useState([]);
+  const [domaineIdsCapture, setDomaineIdsCapture] = useState(new Set());
   const captureLancee = useRef(false);
 
   useEffect(() => {
@@ -50,11 +53,21 @@ export default function App() {
     // pourrait sinon sans qu'on l'ait demandé).
     if (!connecte || !capture || captureStatut) return;
     setCaptureStatut("attente");
+    api.getDomaines().then(setDomainesCapture).catch(() => {});
   }, [connecte, capture, captureStatut]);
 
   function fermerCapture() {
     if (window.opener) window.close();
     else window.location.assign(window.location.pathname);
+  }
+
+  function basculerDomaineCapture(id) {
+    setDomaineIdsCapture((s) => {
+      const nouveau = new Set(s);
+      if (nouveau.has(id)) nouveau.delete(id);
+      else nouveau.add(id);
+      return nouveau;
+    });
   }
 
   async function confirmerCapture() {
@@ -73,12 +86,13 @@ export default function App() {
       }
     }
     try {
-      await api.creerNote({ titre, url: capture.url || undefined, apercu });
+      await api.creerNote({ titre, url: capture.url || undefined, apercu, domaine_ids: [...domaineIdsCapture] });
       setCaptureStatut("ok");
-    } catch {
-      setCaptureStatut("erreur");
-    } finally {
       setTimeout(fermerCapture, 1200);
+    } catch (err) {
+      setCaptureErreur(err.message);
+      setCaptureStatut("erreur");
+      captureLancee.current = false;
     }
   }
 
@@ -131,7 +145,7 @@ export default function App() {
         className="tnv-app-shell"
         style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: 24, textAlign: "center" }}
       >
-        <div>
+        <div style={{ maxWidth: 360, width: "100%" }}>
           <img src="/icon-192.png" alt="" width={48} height={48} style={{ borderRadius: 10, marginBottom: 12 }} />
           {captureStatut === "attente" && (
             <>
@@ -141,6 +155,20 @@ export default function App() {
                 {capture.url && capture.titre ? <br /> : null}
                 {capture.url}
               </p>
+              {domainesCapture.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 16 }}>
+                  {domainesCapture.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className={domaineIdsCapture.has(d.id) ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+                      onClick={() => basculerDomaineCapture(d.id)}
+                    >
+                      {d.nom}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button className="tnv-btn tnv-btn--ghost" onClick={fermerCapture}>Annuler</button>
                 <button className="tnv-btn tnv-btn--primary" onClick={confirmerCapture}>Ajouter à FluxCap</button>
@@ -149,7 +177,16 @@ export default function App() {
           )}
           {captureStatut === "en-cours" && <p className="tnv-h1" style={{ fontSize: 17 }}>Capture en cours…</p>}
           {captureStatut === "ok" && <p className="tnv-h1" style={{ fontSize: 17 }}>Note ajoutée à FluxCap ✅</p>}
-          {captureStatut === "erreur" && <p className="tnv-h1" style={{ fontSize: 17 }}>Échec de la capture</p>}
+          {captureStatut === "erreur" && (
+            <>
+              <p className="tnv-h1" style={{ fontSize: 17 }}>Échec de la capture</p>
+              {captureErreur && <p className="tnv-error" style={{ margin: "8px 0 16px" }}>{captureErreur}</p>}
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                <button className="tnv-btn tnv-btn--ghost" onClick={fermerCapture}>Annuler</button>
+                <button className="tnv-btn tnv-btn--primary" onClick={() => setCaptureStatut("attente")}>Réessayer</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
