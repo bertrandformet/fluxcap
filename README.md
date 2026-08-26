@@ -88,7 +88,7 @@ Voir [spec-fluxcap.md](./spec-fluxcap.md) pour le détail complet de chaque fonc
 
 ## État actuel
 
-POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Veille alimentée automatiquement (flux RSS/Atom) et notifications email d'ouverture/clôture, déclenchées par un workflow GitHub Actions planifié. Données factices uniquement en développement local — la base de production est vide par défaut.
+POC fonctionnel (logique + écrans), déployé, protégé par authentification (mot de passe + WebAuthn/Face ID/Touch ID). Veille alimentée automatiquement (flux RSS/Atom) et notifications email d'ouverture/clôture, déclenchées par des tâches planifiées sur cron-job.org. Données factices uniquement en développement local — la base de production est vide par défaut.
 
 ## Structure
 
