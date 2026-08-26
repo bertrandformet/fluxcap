@@ -367,7 +367,8 @@
 .tnv-notes-row__meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px 6px;
 }
 .tnv-notes-row__title {
   font-size: var(--tnv-size-caption);
