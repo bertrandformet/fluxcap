@@ -445,6 +445,20 @@ export default function Notes({ contexte }) {
       )}
 
       <div
+        className={["tnv-notes-filtres", noteSelectionnee && "tnv-notes-filtres--cache-mobile"].filter(Boolean).join(" ")}
+      >
+        {filtres.map((f) => (
+          <button
+            key={f.value}
+            className={filtreDomaine === f.value ? "tnv-chip tnv-chip--active" : "tnv-chip"}
+            onClick={() => setFiltreDomaine(f.value)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div
         className={[
           "tnv-notes-layout",
           noteSelectionnee && "tnv-notes-layout--detail-actif",
@@ -455,18 +469,6 @@ export default function Notes({ contexte }) {
           .join(" ")}
       >
         <div className="tnv-notes-list-pane">
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {filtres.map((f) => (
-              <button
-                key={f.value}
-                className={filtreDomaine === f.value ? "tnv-chip tnv-chip--active" : "tnv-chip"}
-                onClick={() => setFiltreDomaine(f.value)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
           {modeSelection && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="tnv-meta-text">{selection.size} sélectionnée(s)</span>

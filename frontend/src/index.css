@@ -257,6 +257,25 @@
    au clic, avec bouton Retour). Desktop (≥900px) : les deux volets côte à côte
    par défaut, colonne de gauche fixe — avec bascule manuelle "liste seule" /
    "détail seul" via tnv-notes-desktop-controls. */
+/* Filtres de domaine : au-dessus des deux volets (pas dans la colonne de liste),
+   pour profiter de toute la largeur de l'écran plutôt que de déborder sur de
+   nombreuses lignes courtes dès qu'il y a beaucoup de domaines. Masqués sur
+   mobile quand le détail plein écran est affiché (pas de sens sans la liste). */
+.tnv-notes-filtres {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: var(--tnv-space-4);
+}
+.tnv-notes-filtres--cache-mobile {
+  display: none;
+}
+@media (min-width: 900px) {
+  .tnv-notes-filtres--cache-mobile {
+    display: flex;
+  }
+}
+
 .tnv-notes-layout {
   display: flex;
   flex-direction: column;
