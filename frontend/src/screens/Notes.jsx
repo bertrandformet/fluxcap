@@ -13,6 +13,7 @@ import {
 } from "../components/Icons.jsx";
 import { rendreMarkdown } from "../utils/markdown.js";
 import { formatDate } from "../utils/formatDate.js";
+import { domainHue } from "../utils/domainHue.js";
 
 function formatTaille(octets) {
   if (octets < 1024) return `${octets} o`;
@@ -505,7 +506,18 @@ export default function Notes({ contexte }) {
                       {selection.has(n.id) && <IconCheckmark size={12} />}
                     </button>
                   )}
-                  <div className="tnv-notes-row__title" title={n.titre}>{n.titre}</div>
+                  <div className="tnv-notes-row__body">
+                    <div className="tnv-notes-row__meta">
+                      {n.domaines.length > 0 ? (
+                        <span className="tnv-dot" style={{ "--domain-hue": domainHue(n.domaines[0].nom) }} />
+                      ) : (
+                        <span className="tnv-badge tnv-badge--warning">⚠ Sans tag</span>
+                      )}
+                      <span className="tnv-notes-row__snippet">{formatDate(n.cree_le)}</span>
+                    </div>
+                    <div className="tnv-notes-row__title" title={n.titre}>{n.titre}</div>
+                    {n.apercu && <div className="tnv-notes-row__snippet">{n.apercu}</div>}
+                  </div>
                 </div>
               ))}
           </div>
