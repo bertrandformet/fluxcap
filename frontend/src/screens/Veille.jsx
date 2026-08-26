@@ -27,6 +27,7 @@ function prochaineEcheance() {
 export default function Veille({ contexte }) {
   const [items, setItems] = useState(null);
   const [erreur, setErreur] = useState(null);
+  const [collecteEnCours, setCollecteEnCours] = useState(false);
 
   const [domaines, setDomaines] = useState([]);
   const [domainesFiltre, setDomainesFiltre] = useState(new Set());
@@ -87,6 +88,19 @@ export default function Veille({ contexte }) {
       .getVeille({ contexte, statut: "nouveau" })
       .then(setItems)
       .catch((e) => setErreur(e.message));
+  }
+
+  async function forcerCollecte() {
+    if (collecteEnCours) return;
+    setCollecteEnCours(true);
+    try {
+      await api.rafraichirVeille(contexte);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setCollecteEnCours(false);
+    }
   }
 
   function chargerSources() {
@@ -181,7 +195,13 @@ export default function Veille({ contexte }) {
           <h1 className="tnv-h1">Veille</h1>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="tnv-icon-btn" onClick={charger} title="Rafraîchir" aria-label="Rafraîchir">
+          <button
+            className="tnv-icon-btn"
+            onClick={forcerCollecte}
+            disabled={collecteEnCours}
+            title="Lancer une collecte immédiate"
+            aria-label="Lancer une collecte immédiate"
+          >
             <IconLoop size={18} />
           </button>
           <button className="tnv-btn tnv-btn--secondary" onClick={() => setPanneauSourcesOuvert(true)}>

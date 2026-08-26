@@ -9,8 +9,18 @@ from app.database import get_db
 from app.models import Contexte, Domaine, Note, Priorite, SourceNote, StatutVeille, Tache, VeilleItem
 from app.schemas import VeilleAction, VeilleItemCreate, VeilleItemOut
 from app.services.domaines_utils import resoudre_domaines
+from app.services.ingestion_veille import ingerer_contexte
 
 router = APIRouter(prefix="/veille", tags=["veille"])
+
+
+@router.post("/rafraichir/{contexte}")
+def rafraichir_veille(contexte: Literal["pro", "perso"], db: Session = Depends(get_db)):
+    """Déclenche une collecte immédiate (même logique que /planification/veille/{contexte}),
+    pour un utilisateur connecté qui veut forcer une mise à jour en dehors des horaires
+    planifiés sur cron-job.org."""
+    nouveaux = ingerer_contexte(db, contexte)
+    return {"contexte": contexte, "nouveaux_items": nouveaux}
 
 
 @router.get("", response_model=list[VeilleItemOut])

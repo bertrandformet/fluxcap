@@ -138,6 +138,7 @@ export const api = {
   supprimerDomaine: (id) => request(`/domaines/${id}`, { method: "DELETE" }),
   getVeille: (params = {}) => request(`/veille?${new URLSearchParams(params)}`),
   agirVeille: (id, action) => request(`/veille/${id}/action`, { method: "POST", body: JSON.stringify({ action }) }),
+  rafraichirVeille: (contexte) => request(`/veille/rafraichir/${contexte}`, { method: "POST" }),
   getNotes: (filtre, contexte) => {
     const params = new URLSearchParams();
     if (contexte) params.set("contexte", contexte);
