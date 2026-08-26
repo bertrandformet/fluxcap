@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import TaskCard from "../components/TaskCard.jsx";
-import { IconCheck } from "../components/Icons.jsx";
+import { IconCheck, IconChevronDown } from "../components/Icons.jsx";
 
 const PRIORITES = [
   { value: "un_jour", label: "Un jour" },
@@ -23,10 +23,23 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
   const [recurrente, setRecurrente] = useState(false);
   const [epinglee, setEpinglee] = useState(false);
 
+  const [panneauToutesOuvert, setPanneauToutesOuvert] = useState(false);
+  const [toutesTaches, setToutesTaches] = useState(null);
+
   useEffect(() => {
     charger();
     api.getDomaines(contexte, "taches").then(setDomaines).catch((e) => setErreur(e.message));
   }, [contexte]);
+
+  // Toutes les tâches en cours (au-delà des 3-4 sélectionnées aujourd'hui), chargées à la
+  // demande à l'ouverture du volet plutôt qu'à chaque affichage de l'écran.
+  useEffect(() => {
+    if (!panneauToutesOuvert) return;
+    api
+      .getTaches(contexte)
+      .then((t) => setToutesTaches(t.filter((tache) => tache.statut === "a_realiser")))
+      .catch((e) => setErreur(e.message));
+  }, [contexte, panneauToutesOuvert]);
 
   function charger() {
     setJour(null);
@@ -126,6 +139,10 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
   const principales = enPauseConges
     ? [...principalesBrutes].sort((a, b) => (a.raison_selection === "epingle" ? 1 : 0) - (b.raison_selection === "epingle" ? 1 : 0))
     : principalesBrutes;
+
+  // Le volet montre les tâches en cours qui ne sont pas déjà visibles plus haut (sélection du jour).
+  const idsDejaAffiches = new Set(jour.selection.map((s) => s.tache.id));
+  const autresTaches = (toutesTaches || []).filter((t) => !idsDejaAffiches.has(t.id));
 
   return (
     <div className="tnv-screen">
@@ -263,6 +280,39 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
               >
                 {jour.veille_a_traiter.length} nouveaux articles en veille →
               </button>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="tnv-card tnv-card--dashed" style={{ marginTop: "var(--tnv-space-6)" }}>
+        <button
+          onClick={() => setPanneauToutesOuvert((o) => !o)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer",
+            padding: 0, minHeight: 44, color: "var(--tnv-text)", font: "inherit", width: "100%", textAlign: "left",
+          }}
+        >
+          <span style={{ display: "inline-flex", transform: panneauToutesOuvert ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
+            <IconChevronDown size={14} />
+          </span>
+          <span className="tnv-section-label">
+            Toutes les tâches en cours{panneauToutesOuvert && toutesTaches ? ` (${autresTaches.length})` : ""}
+          </span>
+        </button>
+
+        {panneauToutesOuvert && (
+          <>
+            {!toutesTaches && <p className="tnv-empty" style={{ marginTop: 10 }}>Chargement…</p>}
+            {toutesTaches && autresTaches.length === 0 && (
+              <p className="tnv-empty" style={{ marginTop: 10 }}>Aucune autre tâche en cours.</p>
+            )}
+            {toutesTaches && autresTaches.length > 0 && (
+              <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
+                {autresTaches.map((tache) => (
+                  <TaskCard key={tache.id} dense tache={tache} domainesDisponibles={domaines} />
+                ))}
+              </div>
             )}
           </>
         )}
