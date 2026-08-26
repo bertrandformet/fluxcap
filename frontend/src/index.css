@@ -304,8 +304,8 @@
   }
   .tnv-notes-list-pane {
     display: flex !important;
-    flex: 0 0 300px;
-    max-width: 300px;
+    flex: 0 0 340px;
+    max-width: 340px;
   }
   .tnv-notes-detail-pane {
     display: flex !important;
