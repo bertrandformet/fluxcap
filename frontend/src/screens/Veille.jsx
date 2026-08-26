@@ -208,7 +208,9 @@ export default function Veille({ contexte }) {
             title="Lancer une collecte immédiate"
             aria-label="Lancer une collecte immédiate"
           >
-            <IconLoop size={18} />
+            <span className={collecteEnCours ? "tnv-spin" : undefined}>
+              <IconLoop size={18} />
+            </span>
           </button>
           <button className="tnv-btn tnv-btn--secondary" onClick={() => setPanneauSourcesOuvert(true)}>
             ⚙ Sources
