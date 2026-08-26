@@ -61,6 +61,18 @@ export default function Veille({ contexte }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contexte]);
 
+  // Filet de sécurité : sur mobile/PWA, un setTimeout programmé des heures à l'avance
+  // est throttlé ou suspendu quand l'onglet est en arrière-plan et peut rater son
+  // échéance. Un retour au premier plan redéclenche donc aussi le chargement.
+  useEffect(() => {
+    function surVisible() {
+      if (document.visibilityState === "visible") charger();
+    }
+    document.addEventListener("visibilitychange", surVisible);
+    return () => document.removeEventListener("visibilitychange", surVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contexte]);
+
   useEffect(() => {
     setNouveauContexte(contexte);
     if (panneauSourcesOuvert) {
