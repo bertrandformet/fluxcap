@@ -581,8 +581,8 @@ export default function Notes({ contexte }) {
                 <>
                   <div className="tnv-note-card__head">
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <span className="tnv-task-card__title">{noteSelectionnee.titre}</span>
-                      <p className="tnv-meta-text" style={{ marginTop: 2 }}>Ajoutée le {formatDate(noteSelectionnee.cree_le)}</p>
+                      <span className="tnv-task-card__title" style={{ fontSize: 21, lineHeight: 1.3 }}>{noteSelectionnee.titre}</span>
+                      <p className="tnv-meta-text" style={{ marginTop: 6 }}>Ajoutée le {formatDate(noteSelectionnee.cree_le)}</p>
                       <div className="tnv-task-card__meta" style={{ marginTop: 4 }}>
                         {noteSelectionnee.domaines.length > 0 ? (
                           <DomainBadges domaines={noteSelectionnee.domaines} />

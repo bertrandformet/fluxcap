@@ -62,10 +62,14 @@
 }
 @media (min-width: 900px) {
   /* Plafonne la largeur de lecture plutôt que de la laisser s'étirer sur tout le
-     volet — l'espace récupéré devient une marge, pas un vide. */
+     volet — l'espace récupéré devient une marge, pas un vide. Plus de respiration
+     interne aussi (padding/gap du .tnv-card générique trop serrés pour un contenu
+     de lecture — titre, aperçu, corps markdown, pièces jointes, actions). */
   .tnv-note-card {
     width: 100%;
     max-width: 760px;
+    padding: 28px 32px;
+    gap: 14px;
   }
 }
 .tnv-note-card__head {
