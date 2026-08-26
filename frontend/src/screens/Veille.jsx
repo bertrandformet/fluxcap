@@ -249,7 +249,19 @@ export default function Veille({ contexte }) {
             <div className="tnv-stack" style={{ marginBottom: 0 }}>
               {itemsDomaine.map((item) => (
                 <article key={item.id} className="tnv-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span className="tnv-task-card__title">{item.titre}</span>
+                  {urlHttpSure(item.url) ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tnv-task-card__title"
+                      style={{ color: "var(--tnv-text)" }}
+                    >
+                      {item.titre}
+                    </a>
+                  ) : (
+                    <span className="tnv-task-card__title">{item.titre}</span>
+                  )}
                   {item.domaines.length > 1 && (
                     <div className="tnv-task-card__meta">
                       <DomainBadges domaines={item.domaines} />
