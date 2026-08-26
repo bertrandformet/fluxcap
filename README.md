@@ -26,9 +26,9 @@ FluxCap se concentre sur la maîtrise de l'attention. En reliant directement ce 
 
 Application personnelle de gestion des tâches, des notes et de la veille, en deux contextes séparés **Pro / Perso** (chacun son rythme, ses notifications email d'ouverture/clôture, son mode congés) :
 
-- **Aujourd'hui** : sélection quotidienne limitée à 3-4 tâches (score priorité × urgence, épinglage, report remonté, alerte anti-oubli après 7 jours d'inactivité), sous-tâches et jalons, historique de report).
+- **Aujourd'hui** : sélection quotidienne limitée à 3-4 tâches (score priorité × urgence, épinglage, report remonté, alerte anti-oubli après 7 jours d'inactivité), sous-tâches et jalons, historique de report, volet dépliable pour voir toutes les tâches en cours au-delà de la sélection du jour.
 - **Clôture** : décision obligatoire en fin de journée sur chaque tâche du jour (réalisée / reportée / abandonnée), sans compteur culpabilisant.
-- **Veille** : flux RSS/Atom groupés par domaine, collecte automatique planifiée, trois actions par article (ignorer / garder pour lecture / transformer en tâche).
+- **Veille** : flux RSS/Atom groupés par domaine, collecte automatique planifiée (bouton de rafraîchissement manuel pour forcer une collecte à la demande), trois actions par article (ignorer / garder pour lecture / transformer en tâche).
 - **Notes** : vue à deux volets, éditeur markdown, pièces jointes, fusion de plusieurs notes en une seule ou en tâche, capture externe sans ouvrir l'app (raccourci Apple Shortcuts ou favori Chrome — voir [raccourci-partage.md](./raccourci-partage.md)).
 - **Domaines** : tags entièrement libres et gérables depuis l'app, pour les tâches et/ou pour la veille.
 - **Tableau de bord** : vue d'ensemble des tâches actives par domaine et par priorité.
@@ -145,7 +145,7 @@ Points à garder en tête :
 
 ### Alternative : serveur unique auto-hébergé
 
-Le déploiement actuel (Vercel + Render + Supabase + GitHub Actions) répartit l'app sur quatre plans gratuits. Rien n'empêche de tout consolider sur un seul serveur si on préfère gérer une seule machine plutôt que quatre tableaux de bord — voici ce qu'il faudrait, dans l'ordre où ça devient bloquant :
+Le déploiement actuel (Vercel + Render + Supabase + cron-job.org) répartit l'app sur quatre plans gratuits. Rien n'empêche de tout consolider sur un seul serveur si on préfère gérer une seule machine plutôt que quatre tableaux de bord — voici ce qu'il faudrait, dans l'ordre où ça devient bloquant :
 
 - **Base de données** : Postgres auto-hébergé (ou SQLite pour un usage strictement mono-utilisateur, mais Postgres colle mieux à ce qui a déjà été testé — enums natifs, contrainte d'unicité sur `selection_jour`). Un conteneur Postgres standard suffit, sans équivalent du dashboard Supabase.
 - **Pièces jointes** : rien à faire — `backend/app/services/stockage.py` retombe déjà sur le disque local dès qu'aucune variable Supabase n'est renseignée. Il suffit de monter un volume persistant pour ce répertoire.
