@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.config import UPLOAD_DIR
 from app.database import get_db
@@ -44,7 +44,11 @@ def lister_notes(
     sans_tag: Optional[bool] = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Note)
+    # domaines/pieces_jointes sont en lazy loading par défaut : sans eager loading, chaque
+    # note de la liste déclenche ses propres requêtes séparées vers Supabase — sur une
+    # liste de plusieurs dizaines de notes, la latence réseau cumulée peut se compter en
+    # secondes (constaté : plusieurs secondes de lenteur sur l'écran Notes).
+    query = db.query(Note).options(selectinload(Note.domaines), selectinload(Note.pieces_jointes))
     if contexte:
         # Une note sans domaine n'a pas de contexte déterminable — toujours visible,
         # plutôt que masquée arbitrairement d'un côté (voir spec, Onglet Notes).

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.models import Contexte, Domaine, Note, Priorite, SourceNote, StatutVeille, Tache, VeilleItem
@@ -30,7 +30,8 @@ def lister_veille(
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(VeilleItem)
+    # Évite le N+1 sur VeilleItem.domaines (lazy-loaded) — voir le même correctif sur GET /notes.
+    query = db.query(VeilleItem).options(selectinload(VeilleItem.domaines))
     if contexte:
         query = query.join(VeilleItem.domaines).filter(Domaine.contexte.in_([contexte, Contexte.les_deux]))
     if statut:

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.models import Contexte, Domaine, Jalon, SelectionJour, SousTache, StatutTache, Tache, VeilleItem
@@ -28,7 +28,14 @@ def lister_taches(
     domaine_id: Optional[int] = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Tache)
+    # Évite le N+1 sur les 4 collections lazy-loaded de TacheOut (domaines, sous_taches,
+    # jalons, historique_reports) — voir le même correctif sur GET /notes.
+    query = db.query(Tache).options(
+        selectinload(Tache.domaines),
+        selectinload(Tache.sous_taches),
+        selectinload(Tache.jalons),
+        selectinload(Tache.historique_reports),
+    )
     if contexte:
         query = query.join(Tache.domaines).filter(Domaine.contexte.in_([contexte, Contexte.les_deux]))
     if statut:
