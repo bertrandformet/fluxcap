@@ -35,10 +35,8 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
   // demande à l'ouverture du volet plutôt qu'à chaque affichage de l'écran.
   useEffect(() => {
     if (!panneauToutesOuvert) return;
-    api
-      .getTaches(contexte)
-      .then((t) => setToutesTaches(t.filter((tache) => tache.statut === "a_realiser")))
-      .catch((e) => setErreur(e.message));
+    chargerToutes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contexte, panneauToutesOuvert]);
 
   function charger() {
@@ -46,14 +44,28 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
     api.getJour(contexte).then(setJour).catch((e) => setErreur(e.message));
   }
 
+  function chargerToutes() {
+    api
+      .getTaches(contexte)
+      .then((t) => setToutesTaches(t.filter((tache) => tache.statut === "a_realiser")))
+      .catch((e) => setErreur(e.message));
+  }
+
+  // Les tâches du volet "Toutes les tâches en cours" ne font pas partie de `jour` : toute
+  // action dessus doit aussi rafraîchir `toutesTaches`, sans quoi le volet resterait périmé.
+  function rafraichirApresAction() {
+    charger();
+    if (panneauToutesOuvert) chargerToutes();
+  }
+
   async function basculerEpingle(tache) {
     await api.updateTache(tache.id, { epinglee: !tache.epinglee });
-    charger();
+    rafraichirApresAction();
   }
 
   async function basculerRecurrente(tache) {
     await api.updateTache(tache.id, { recurrente: !tache.recurrente });
-    charger();
+    rafraichirApresAction();
   }
 
   async function marquerRealise(selection) {
@@ -68,13 +80,13 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
 
   async function supprimerTache(tache) {
     await api.supprimerTache(tache.id);
-    charger();
+    rafraichirApresAction();
   }
 
   async function modifierDomainesTache(tache, domaineIds) {
     try {
       await api.updateTache(tache.id, { domaine_ids: domaineIds });
-      charger();
+      rafraichirApresAction();
     } catch (err) {
       setErreur(err.message);
     }
@@ -83,7 +95,7 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
   async function modifierTache(tache, updates) {
     try {
       await api.updateTache(tache.id, updates);
-      charger();
+      rafraichirApresAction();
     } catch (err) {
       setErreur(err.message);
     }
@@ -310,7 +322,17 @@ export default function Aujourdhui({ contexte, congesActif, onNaviguerVeille }) 
             {toutesTaches && autresTaches.length > 0 && (
               <div className="tnv-stack" style={{ marginTop: 10, marginBottom: 0 }}>
                 {autresTaches.map((tache) => (
-                  <TaskCard key={tache.id} dense tache={tache} domainesDisponibles={domaines} />
+                  <TaskCard
+                    key={tache.id}
+                    dense
+                    tache={tache}
+                    onEpingleToggle={basculerEpingle}
+                    onRecurrenteToggle={basculerRecurrente}
+                    onSupprimer={supprimerTache}
+                    onModifier={modifierTache}
+                    domainesDisponibles={domaines}
+                    onDomainesChange={modifierDomainesTache}
+                  />
                 ))}
               </div>
             )}
