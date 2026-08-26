@@ -42,6 +42,7 @@ export default function Veille({ contexte }) {
 
   useEffect(() => {
     setDomainesFiltre(new Set());
+    setItems(null); // change de contexte : on ne veut pas montrer un instant les items de l'autre contexte
     charger();
     api.getDomaines(contexte, "veille").then(setDomaines).catch((e) => setErreur(e.message));
   }, [contexte]);
@@ -82,8 +83,11 @@ export default function Veille({ contexte }) {
     }
   }, [contexte, panneauSourcesOuvert]);
 
+  // items reste tel quel pendant le fetch (pas de setItems(null) ici) : un rechargement
+  // en arrière-plan (minuteur, retour au premier plan, action, bouton) ne doit pas faire
+  // disparaître la liste affichée le temps de la requête. Seul le premier chargement d'un
+  // contexte passe par l'état initial `null` (cf. useState ci-dessus) et affiche "Chargement…".
   function charger() {
-    setItems(null);
     api
       .getVeille({ contexte, statut: "nouveau" })
       .then(setItems)
@@ -110,7 +114,9 @@ export default function Veille({ contexte }) {
   async function agir(item, action) {
     try {
       await api.agirVeille(item.id, action);
-      charger();
+      // Retrait local plutôt que charger() : l'item quitte de toute façon la liste
+      // (filtrée sur statut "nouveau"), pas besoin d'un aller-retour serveur pour ça.
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
     } catch (err) {
       setErreur(err.message);
     }
