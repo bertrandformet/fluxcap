@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { DomainBadges } from "../components/DomainBadge.jsx";
 import Switch from "../components/Switch.jsx";
-import { IconArrowRight, IconBookmark, IconIgnore, IconTrash } from "../components/Icons.jsx";
+import { IconArrowRight, IconBookmark, IconIgnore, IconLoop, IconTrash } from "../components/Icons.jsx";
 import { domainHue } from "../utils/domainHue.js";
 import { formatDate } from "../utils/formatDate.js";
 
@@ -180,9 +180,14 @@ export default function Veille({ contexte }) {
           <p className="tnv-eyebrow">{contexte === "pro" ? "Espace professionnel" : "Espace personnel"}</p>
           <h1 className="tnv-h1">Veille</h1>
         </div>
-        <button className="tnv-btn tnv-btn--secondary" onClick={() => setPanneauSourcesOuvert(true)}>
-          ⚙ Sources
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="tnv-icon-btn" onClick={charger} title="Rafraîchir" aria-label="Rafraîchir">
+            <IconLoop size={18} />
+          </button>
+          <button className="tnv-btn tnv-btn--secondary" onClick={() => setPanneauSourcesOuvert(true)}>
+            ⚙ Sources
+          </button>
+        </div>
       </div>
 
       {domaines.length > 0 && (
