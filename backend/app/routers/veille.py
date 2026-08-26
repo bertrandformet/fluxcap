@@ -68,7 +68,7 @@ def agir_sur_item(item_id: int, action: VeilleAction, db: Session = Depends(get_
         item.statut = StatutVeille.ignore
 
     elif action.action == "garder_lecture":
-        note = Note(titre=item.titre, url=item.url, source=SourceNote.veille)
+        note = Note(titre=item.titre, url=item.url, apercu=item.apercu, source=SourceNote.veille)
         note.domaines = list(item.domaines)
         db.add(note)
         db.flush()
