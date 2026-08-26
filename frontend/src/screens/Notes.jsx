@@ -86,11 +86,14 @@ export default function Notes({ contexte }) {
   }, [contexte]);
 
   useEffect(() => {
+    setNotes(null); // changement de filtre/contexte : contenu différent, on veut bien le flash "Chargement…"
     charger();
   }, [filtreDomaine, contexte]);
 
+  // items reste affiché pendant le fetch (pas de setNotes(null) ici) : un rechargement
+  // déclenché par une action (tag, suppression, édition...) ne doit pas faire disparaître
+  // toute la liste le temps de la requête — même correctif que sur l'écran Veille.
   function charger() {
-    setNotes(null);
     api
       .getNotes(filtreDomaine || undefined, contexte)
       .then((data) => {
