@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import (
     Contexte,
@@ -20,8 +20,23 @@ MAX_TACHES = 4
 ANTI_OUBLI_JOURS = 7
 
 
+def _options_selection_eager() -> list:
+    """Évite le N+1 sur SelectionJour.tache et ses propres collections lazy-loaded
+    (domaines, sous_taches, jalons, historique_reports) — sinon chaque tâche du jour
+    déclenche jusqu'à 5 requêtes séparées vers Supabase (voir même correctif sur
+    GET /notes, /taches, /veille)."""
+    return [
+        selectinload(SelectionJour.tache).selectinload(Tache.domaines),
+        selectinload(SelectionJour.tache).selectinload(Tache.sous_taches),
+        selectinload(SelectionJour.tache).selectinload(Tache.jalons),
+        selectinload(SelectionJour.tache).selectinload(Tache.historique_reports),
+    ]
+
+
 def obtenir_ou_construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> list[SelectionJour]:
-    existantes = db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).all()
+    existantes = (
+        db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).options(*_options_selection_eager()).all()
+    )
     if existantes:
         return existantes
     try:
@@ -32,7 +47,9 @@ def obtenir_ou_construire_selection(db: Session, contexte: Contexte, aujourdhui:
         # tache_id) fait échouer la perdante ici plutôt que dupliquer des lignes —
         # elle récupère simplement ce que l'autre a déjà committé.
         db.rollback()
-        return db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).all()
+        return (
+            db.query(SelectionJour).filter_by(date=aujourdhui, contexte=contexte).options(*_options_selection_eager()).all()
+        )
 
 
 def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> list[SelectionJour]:
@@ -118,9 +135,8 @@ def _construire_selection(db: Session, contexte: Contexte, aujourdhui: date) -> 
     ]
     db.add_all(lignes)
     db.commit()
-    for ligne in lignes:
-        db.refresh(ligne)
-    return lignes
+    ids = [ligne.id for ligne in lignes]
+    return db.query(SelectionJour).filter(SelectionJour.id.in_(ids)).options(*_options_selection_eager()).all()
 
 
 def appliquer_decision(db: Session, selection: SelectionJour, decision: DecisionAction, aujourdhui: date) -> None:

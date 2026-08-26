@@ -2,7 +2,7 @@ from datetime import date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.models import Contexte, Domaine, SelectionJour, StatutVeille, VeilleItem
@@ -22,6 +22,7 @@ def obtenir_jour(contexte: Literal["pro", "perso"], db: Session = Depends(get_db
         .filter(Domaine.contexte.in_([contexte, Contexte.les_deux]), VeilleItem.statut == StatutVeille.nouveau)
         .distinct()
         .order_by(VeilleItem.date_ingestion.desc())
+        .options(selectinload(VeilleItem.domaines))
         .all()
     )
     return JourOut(
