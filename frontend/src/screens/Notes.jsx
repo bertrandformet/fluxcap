@@ -246,6 +246,10 @@ export default function Notes({ contexte }) {
     setTagsRapidesOuverts(false);
     // Choisir une note en mode "liste seule" doit rouvrir le volet de détail, sinon rien ne s'affiche.
     setModeDesktop((m) => (m === "liste" ? "split" : m));
+    // La page défile comme un seul bloc (liste + détail) : après avoir fait défiler une
+    // longue liste, le détail nouvellement sélectionné se rendrait hors-champ au-dessus
+    // sans ce recentrage.
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function basculerSelection(id) {
