@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import MarkdownToolbar from "../components/MarkdownToolbar.jsx";
 import { DomainBadges } from "../components/DomainBadge.jsx";
@@ -79,6 +79,31 @@ export default function Notes({ contexte }) {
   const [tagSheetOuvert, setTagSheetOuvert] = useState(false);
   const [fusionCible, setFusionCible] = useState(null); // null | "note" | "tache"
   const [fusionTitre, setFusionTitre] = useState("");
+
+  const layoutRef = useRef(null);
+  const detailPaneRef = useRef(null);
+
+  // Sur desktop (≥900px), la liste et le détail défilent chacun indépendamment plutôt
+  // que toute la page : on fixe la hauteur du volet à l'espace vertical restant sous son
+  // point de départ, recalculé à chaque rendu (le contenu au-dessus — filtres qui
+  // wrappent, formulaire ouvert, barre de sélection — fait varier ce point). En dessous
+  // de 900px, l'écran retombe sur le défilement normal de la page (un seul volet visible
+  // à la fois), pas de hauteur forcée.
+  useLayoutEffect(() => {
+    function ajusterHauteur() {
+      const el = layoutRef.current;
+      if (!el) return;
+      if (window.innerWidth < 900) {
+        el.style.removeProperty("height");
+        return;
+      }
+      const haut = el.getBoundingClientRect().top;
+      el.style.height = `${Math.max(360, window.innerHeight - haut - 24)}px`;
+    }
+    ajusterHauteur();
+    window.addEventListener("resize", ajusterHauteur);
+    return () => window.removeEventListener("resize", ajusterHauteur);
+  });
 
   useEffect(() => {
     api.getDomaines(contexte).then(setDomaines).catch((e) => setErreur(e.message));
@@ -246,10 +271,13 @@ export default function Notes({ contexte }) {
     setTagsRapidesOuverts(false);
     // Choisir une note en mode "liste seule" doit rouvrir le volet de détail, sinon rien ne s'affiche.
     setModeDesktop((m) => (m === "liste" ? "split" : m));
-    // La page défile comme un seul bloc (liste + détail) : après avoir fait défiler une
-    // longue liste, le détail nouvellement sélectionné se rendrait hors-champ au-dessus
-    // sans ce recentrage.
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Le volet détail défile indépendamment de la liste (voir ajusterHauteur ci-dessus) :
+    // le remettre en haut à chaque nouvelle sélection, sinon il resterait scrollé là où
+    // la note précédente en était.
+    if (detailPaneRef.current) detailPaneRef.current.scrollTop = 0;
+    // En dessous de 900px, un seul volet est visible à la fois et la page défile
+    // normalement : remonter en haut a le même effet que sur le volet détail ci-dessus.
+    if (window.innerWidth < 900) window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function basculerSelection(id) {
@@ -465,6 +493,7 @@ export default function Notes({ contexte }) {
       </div>
 
       <div
+        ref={layoutRef}
         className={[
           "tnv-notes-layout",
           noteSelectionnee && "tnv-notes-layout--detail-actif",
@@ -531,7 +560,7 @@ export default function Notes({ contexte }) {
           </div>
         </div>
 
-        <div className="tnv-notes-detail-pane">
+        <div className="tnv-notes-detail-pane" ref={detailPaneRef}>
           {!noteSelectionnee && (
             <p className="tnv-empty tnv-notes-detail-empty">Sélectionnez une note pour l'afficher ici.</p>
           )}

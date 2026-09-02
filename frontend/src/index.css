@@ -300,18 +300,24 @@
 @media (min-width: 900px) {
   .tnv-notes-layout {
     flex-direction: row;
-    align-items: flex-start;
+    /* align-items reste "stretch" (défaut) : la hauteur du volet, posée en JS sur cet
+       élément (voir Notes.jsx), doit se répercuter sur les deux colonnes pour qu'elles
+       défilent chacune indépendamment plutôt que de faire défiler toute la page. */
   }
   .tnv-notes-list-pane {
     display: flex !important;
     flex: 0 0 340px;
     max-width: 340px;
+    height: 100%;
+    overflow-y: auto;
   }
   .tnv-notes-detail-pane {
     display: flex !important;
     flex: 1;
     min-width: 0;
     justify-content: center;
+    height: 100%;
+    overflow-y: auto;
   }
   .tnv-notes-back {
     display: none;
