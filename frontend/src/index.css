@@ -261,6 +261,15 @@
    pour profiter de toute la largeur de l'écran plutôt que de déborder sur de
    nombreuses lignes courtes dès qu'il y a beaucoup de domaines. Masqués sur
    mobile quand le détail plein écran est affiché (pas de sens sans la liste). */
+.tnv-notes-recherche {
+  margin-bottom: var(--tnv-space-3);
+}
+@media (min-width: 900px) {
+  .tnv-notes-recherche {
+    max-width: 340px;
+  }
+}
+
 .tnv-notes-filtres {
   display: flex;
   gap: 8px;

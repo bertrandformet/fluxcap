@@ -51,6 +51,7 @@ export default function Notes({ contexte }) {
   const [notes, setNotes] = useState(null);
   const [domaines, setDomaines] = useState([]);
   const [filtreDomaine, setFiltreDomaine] = useState("");
+  const [recherche, setRecherche] = useState("");
   const [erreur, setErreur] = useState(null);
   const [info, setInfo] = useState(null);
   const [noteSelectionneeId, setNoteSelectionneeId] = useState(null);
@@ -290,7 +291,9 @@ export default function Notes({ contexte }) {
   }
 
   function toutSelectionner() {
-    setSelection(new Set((notes || []).map((n) => n.id)));
+    // Seulement les notes actuellement visibles (recherche en cours comprise), pas
+    // celles masquées par un terme de recherche.
+    setSelection(new Set((notesAffichees || []).map((n) => n.id)));
   }
 
   async function supprimerSelection() {
@@ -390,6 +393,16 @@ export default function Notes({ contexte }) {
 
   const noteSelectionnee = notes && noteSelectionneeId ? notes.find((n) => n.id === noteSelectionneeId) : null;
 
+  // Recherche côté client : toutes les notes du contexte/filtre de domaine courant sont
+  // déjà chargées, pas besoin d'un aller-retour réseau supplémentaire pour filtrer.
+  const termeRecherche = recherche.trim().toLowerCase();
+  const notesAffichees =
+    !notes || !termeRecherche
+      ? notes
+      : notes.filter((n) =>
+          [n.titre, n.apercu, n.contenu].some((champ) => champ && champ.toLowerCase().includes(termeRecherche))
+        );
+
   return (
     <div className="tnv-screen">
       <div className="tnv-screen-head">
@@ -479,6 +492,18 @@ export default function Notes({ contexte }) {
       )}
 
       <div
+        className={["tnv-notes-recherche", noteSelectionnee && "tnv-notes-filtres--cache-mobile"].filter(Boolean).join(" ")}
+      >
+        <input
+          type="search"
+          className="tnv-input"
+          placeholder="Rechercher dans les notes…"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+        />
+      </div>
+
+      <div
         className={["tnv-notes-filtres", noteSelectionnee && "tnv-notes-filtres--cache-mobile"].filter(Boolean).join(" ")}
       >
         {filtres.map((f) => (
@@ -515,10 +540,13 @@ export default function Notes({ contexte }) {
 
           {!notes && <p className="tnv-empty">Chargement…</p>}
           {notes && notes.length === 0 && <p className="tnv-empty">Aucune note.</p>}
+          {notes && notes.length > 0 && notesAffichees.length === 0 && (
+            <p className="tnv-empty">Aucune note ne correspond à « {recherche.trim()} ».</p>
+          )}
 
           <div className="tnv-notes-row-list" style={{ marginBottom: modeSelection && selection.size > 0 ? 90 : 0 }}>
-            {notes &&
-              notes.map((n) => (
+            {notesAffichees &&
+              notesAffichees.map((n) => (
                 <div
                   key={n.id}
                   role="button"
