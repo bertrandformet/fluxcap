@@ -10,11 +10,12 @@ Raccourci qui apparaît dans le menu Partager natif (synchronisé entre iPhone e
 
 ### Résultat
 
-- Partage un lien depuis Safari **ou une autre app** (LinkedIn, etc. — testé et confirmé fonctionnel au-delà de Safari) → une note apparaît dans FluxCap, sans domaine assigné (à trier ensuite dans l'écran Notes), avec :
+- Partage un lien depuis Safari **ou une autre app** (LinkedIn, etc. — testé et confirmé fonctionnel au-delà de Safari) → une note apparaît dans FluxCap, avec :
   - **titre** : le vrai titre de la page si trouvable, sinon l'URL elle-même
   - **url** : le lien
   - **apercu** : la meta-description de la page (classique ou Open Graph), si disponible
-- Partage un texte simple (pas de lien) → une note avec ce texte comme titre, sans URL ni aperçu.
+  - **domaine(s)** : ceux choisis dans la liste au moment de la capture (étape "Choisir des domaines" ci-dessous) — sans sélection, la note reste sans domaine assigné (à trier ensuite dans l'écran Notes).
+- Partage un texte simple (pas de lien) → une note avec ce texte comme titre, sans URL ni aperçu (le choix de domaines s'applique quand même).
 
 ### Prérequis : clé API
 
@@ -42,11 +43,22 @@ Dans l'app **Raccourcis** (macOS ou iOS — se synchronise automatiquement entre
    5. **Obtenir la valeur du dictionnaire** — Dictionnaire = `ApercuLien`, Clé = texte `apercu` → **Définir la variable** `Apercu` sur ce résultat
    6. **Si** `TitreServeur` possède n'importe quelle valeur → **Définir la variable** `Titre` sur `TitreServeur` (remplace le fallback URL par le vrai titre) → Terminer si
    - Terminer si
-4. **Obtenir le contenu de** `https://taches-notes-veille-api.onrender.com/notes` :
+4. **Choisir des domaines** (optionnel — sans cette étape, la note reste "sans domaine assigné", comme avant) :
+   1. **Obtenir le contenu de** `https://taches-notes-veille-api.onrender.com/domaines` — Méthode `GET`, en-tête `Authorization: Bearer <clé API>` → **Définir la variable** `Domaines`
+   2. **Obtenir la valeur du dictionnaire** — Dictionnaire = `Domaines`, Clé = texte `nom` *(cette action itère automatiquement sur toute la liste et renvoie la liste des noms)* → **Définir la variable** `NomsDomaines`
+   3. **Choisir dans la liste** — Liste = `NomsDomaines`, activer **"Sélectionner plusieurs éléments"** → **Définir la variable** `NomsChoisis`
+   4. **Répéter avec chaque élément** de `NomsChoisis` (élément = `NomChoisi`) :
+      1. **Filtrer [Fichiers]** *(action générique "Filtrer", fonctionne sur n'importe quelle liste de dictionnaires malgré son nom)* — Liste = `Domaines`, condition `nom` est égal à `NomChoisi` → **Définir la variable** `DomaineFiltre`
+      2. **Obtenir l'élément à l'index** 1 de `DomaineFiltre` → **Définir la variable** `DomaineTrouve`
+      3. **Obtenir la valeur du dictionnaire** — Dictionnaire = `DomaineTrouve`, Clé = texte `id` → **Ajouter à la variable** (liste) `DomaineIdsChoisis`
+   - Terminer la répétition
+5. **Obtenir le contenu de** `https://taches-notes-veille-api.onrender.com/notes` :
    - Méthode : `POST`
    - En-têtes : `Authorization: Bearer <clé API>`, `Content-Type: application/json`
-   - Corps (type **JSON**, pas Texte — évite les problèmes d'échappement) : `titre` = `Titre`, `url` = `Lien`, `apercu` = `Apercu`
-5. **Afficher une notification** (optionnel) : confirmation visuelle après capture.
+   - Corps (type **JSON**, pas Texte — évite les problèmes d'échappement) : `titre` = `Titre`, `url` = `Lien`, `apercu` = `Apercu`, `domaine_ids` = `DomaineIdsChoisis`
+6. **Afficher une notification** (optionnel) : confirmation visuelle après capture.
+
+*(La sélection multiple ne mémorise pas le dernier choix d'un lancement à l'autre — normal pour ce type d'action dans Raccourcis, chaque capture repart d'une liste vierge.)*
 
 #### Sur Mac
 
@@ -61,7 +73,7 @@ Chrome ne supporte pas nativement les raccourcis Apple Shortcuts. Un bookmarklet
 
 ### Résultat
 
-Ouvre une petite fenêtre FluxCap qui appelle `apercu-lien` pour récupérer le vrai titre de la page et son résumé (comme le raccourci Shortcuts), crée la note (sans domaine assigné), affiche une confirmation, puis se referme toute seule après ~1 seconde. Si `apercu-lien` échoue (site protégé, voir limites plus bas), retombe sur le titre d'onglet du navigateur.
+Ouvre une petite fenêtre FluxCap qui demande confirmation avant de créer quoi que ce soit (un lien piégé ouvert avec une session active ne doit pas suffire à créer une note tout seul) : elle affiche le titre/lien détecté et propose de choisir un ou plusieurs domaines dans la liste. Au clic sur "Ajouter à FluxCap", elle appelle `apercu-lien` pour récupérer le vrai titre de la page et son résumé (comme le raccourci Shortcuts), crée la note avec les domaines choisis (aucun de sélectionné = sans domaine assigné), affiche une confirmation, puis se referme toute seule après ~1,2 seconde. Si `apercu-lien` échoue (site protégé, voir limites plus bas), retombe sur le titre d'onglet du navigateur.
 
 ### Installation (Chrome)
 
