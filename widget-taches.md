@@ -151,7 +151,14 @@ def charger_jour(contexte):
 def taches_en_attente(jour):
     if not jour:
         return []
-    return [s["tache"]["titre"] for s in jour["selection"] if s["statut_jour"] == "en_attente"]
+    # xbar découpe une ligne sur le premier "|" pour séparer texte et paramètres (ex.
+    # href=...) : un titre contenant lui-même un "|" casse ce format. On le remplace par
+    # un caractère visuellement proche plutôt que de le retirer.
+    return [
+        s["tache"]["titre"].replace("|", "❘")
+        for s in jour["selection"]
+        if s["statut_jour"] == "en_attente"
+    ]
 
 pro = charger_jour("pro")
 perso = charger_jour("perso")
